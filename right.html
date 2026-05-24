@@ -1,4 +1,54 @@
 <!doctype html>
 <title>Right</title>
-<style>html, body { margin: 0; height: 100%; background: var(--sideBar-background); color: var(--sideBar-foreground); }</style>
-right
+<style>
+  html, body { margin: 0; height: 100%; background: var(--editor-background); color: var(--sideBar-foreground); }
+  body { box-sizing: border-box; padding: 8px; }
+  .prompt {
+    position: relative;
+    height: 120px;
+    border: 1px solid var(--editorGroup-border);
+    border-radius: 8px;
+    background: var(--input-background);
+    overflow: hidden;
+  }
+  textarea {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    padding: 8px 8px 18px;
+    border: 0;
+    outline: 0;
+    resize: none;
+    background: transparent;
+    color: var(--input-foreground);
+    font: inherit;
+  }
+  .promptFooter {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 10px;
+    cursor: default;
+  }
+  .send {
+    position: absolute;
+    right: 4px;
+    bottom: 4px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(20, 20, 20, 0.68);
+    cursor: default;
+  }
+  .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
+  .send img { width: 18px; height: 18px; display: block; }
+</style>
+<div class="prompt">
+  <textarea></textarea>
+  <div class="promptFooter">
+    <button class="send" type="button" aria-label="Send"><img src="icons/arrow-up.svg" alt=""></button>
+  </div>
+</div>
