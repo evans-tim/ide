@@ -3,6 +3,11 @@
 - Left + right sidebars: span between top and status bars; x-precedence over bottom panel.
 - Bottom panel: spans center column only (under center pane).
 
+**Keyboard panel toggles**
+- Cmd+I toggles the right panel open/closed.
+- Cmd+B toggles the left panel open/closed.
+- Ctrl+` toggles the bottom panel open/closed.
+
 **Dividers**
 - 2px visible between panes.
 - ±1px invisible hit area around each divider.

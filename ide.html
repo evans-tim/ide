@@ -6,12 +6,12 @@
     position: fixed; inset: 0;
     display: grid;
     grid-template-columns:
-      minmax(0, var(--lw, 20%)) 2px
-      minmax(0, 1fr) 2px
+      minmax(0, var(--lw, 20%)) var(--gl, 2px)
+      minmax(0, 1fr) var(--gr, 2px)
       minmax(0, var(--rw, 20%));
     grid-template-rows:
       40px
-      minmax(0, 1fr) 2px
+      minmax(0, 1fr) var(--gb, 2px)
       minmax(0, var(--bh, 20%))
       20px;
     color: var(--foreground);
@@ -46,6 +46,7 @@
 <div id="bottomBar"></div>
 <script>
   const root = document.documentElement;
+  const savedSize = { lw: null, rw: null, bh: null };
 
   let themeCss = '';
   const injectTheme = doc => {
@@ -62,8 +63,12 @@
     }
     for (const f of panes()) injectTheme(f.contentDocument);
   });
-  for (const f of document.querySelectorAll('iframe.pane')) {
-    f.addEventListener('load', () => injectTheme(f.contentDocument));
+  const panes = () => [...document.querySelectorAll('iframe.pane')];
+  for (const f of panes()) {
+    f.addEventListener('load', () => {
+      injectTheme(f.contentDocument);
+      f.contentDocument.addEventListener('keydown', handleKeydown);
+    });
   }
 
   const vfs = {
@@ -72,7 +77,6 @@
     'hello.txt': 'Hello, world!',
   };
 
-  const panes = () => [...document.querySelectorAll('iframe.pane')];
   const broadcast = (msg, from) => {
     for (const f of panes()) {
       if (f.contentWindow !== from) f.contentWindow.postMessage(msg, '*');
@@ -92,6 +96,32 @@
   });
 
   const GUTTER = 2, MIN = 40;
+  const isClosed = name => root.style.getPropertyValue(`--${name}`) === '0px';
+  const togglePanel = (name, gutter) => {
+    if (isClosed(name)) {
+      root.style.setProperty(`--${name}`, savedSize[name] || '20%');
+      root.style.setProperty(`--${gutter}`, px(GUTTER));
+    } else {
+      savedSize[name] = root.style.getPropertyValue(`--${name}`) || getComputedStyle(root).getPropertyValue(`--${name}`).trim() || '20%';
+      root.style.setProperty(`--${name}`, '0px');
+      root.style.setProperty(`--${gutter}`, '0px');
+    }
+  };
+  function handleKeydown(e) {
+    if (e.repeat) return;
+    const key = e.key.toLowerCase();
+    if (e.metaKey && !e.ctrlKey && !e.altKey && key === 'i') {
+      e.preventDefault();
+      togglePanel('rw', 'gr');
+    } else if (e.metaKey && !e.ctrlKey && !e.altKey && key === 'b') {
+      e.preventDefault();
+      togglePanel('lw', 'gl');
+    } else if (e.ctrlKey && !e.metaKey && !e.altKey && (e.key === '`' || e.code === 'Backquote')) {
+      e.preventDefault();
+      togglePanel('bh', 'gb');
+    }
+  }
+  document.addEventListener('keydown', handleKeydown);
   const drag = (el, onMove) => {
     el.addEventListener('mousedown', e => {
       e.preventDefault();
