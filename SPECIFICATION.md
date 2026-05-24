@@ -1,7 +1,7 @@
 **Layout**
-- Center pane: red.
-- Left + right sidebars: full-height; x-precedence over bottom bar.
-- Bottom bar: spans center column only (under center pane).
+- Top bar and bottom status bar span full viewport width.
+- Left + right sidebars: span between top and status bars; x-precedence over bottom panel.
+- Bottom panel: spans center column only (under center pane).
 
 **Dividers**
 - 2px visible between panes.
@@ -14,9 +14,9 @@
 - Structurally impossible; viewport is hard ceiling (not merely hidden).
 
 **Pane embedding**
-- Each pane (left, right, bottom, center) loaded via its own iframe (`left.html`, `right.html`, `bottom.html`, `canvas.html`).
-- Each iframe wrapped in `overflow: hidden` grid cell; iframe absolutely fills wrapper to prevent subpixel gaps at borders.
-- All pane iframes `pointer-events: none` while a divider drag is active so parent receives `mousemove`/`mouseup` across them.
+- Each pane is an independently-loaded document.
+- Pane content is clipped to its region; pane fills its region edge-to-edge with no subpixel gaps at borders.
+- Panes do not intercept pointer events while a divider drag is active.
 
 **Divider hover affordance**
 - Fade-in: 0.1s ease-in, 0.2s delay.
