@@ -14,12 +14,12 @@
       minmax(0, var(--bh, 20%));
     color: var(--foreground);
   }
-  #left, #right, #bottom { min-width: 0; min-height: 0; overflow: hidden; }
-  #left   { grid-row: 1 / 4; grid-column: 1; background: var(--sideBar-background); color: var(--panel-foreground, var(--foreground)); }
-  #right  { grid-row: 1 / 4; grid-column: 5; background: var(--sideBar-background); color: var(--panel-foreground, var(--foreground)); }
-  #canvasWrap { grid-row: 1; grid-column: 3; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--sideBar-background); }
-  #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border: 0; }
-  #bottom { grid-row: 3; grid-column: 3; background: var(--panel-background); color: var(--panel-foreground, var(--foreground)); }
+  #leftWrap, #rightWrap, #bottomWrap, #canvasWrap { min-width: 0; min-height: 0; overflow: hidden; position: relative; }
+  #leftWrap   { grid-row: 1 / 4; grid-column: 1; background: var(--sideBar-background); }
+  #rightWrap  { grid-row: 1 / 4; grid-column: 5; background: var(--sideBar-background); }
+  #canvasWrap { grid-row: 1; grid-column: 3; background: var(--sideBar-background); }
+  #bottomWrap { grid-row: 3; grid-column: 3; background: var(--panel-background); }
+  iframe.pane { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border: 0; }
 
   .gutter { background: var(--editorGroup-border); position: relative; z-index: 1; }
   .gutter::before { content: ""; position: absolute; background: var(--focusBorder); opacity: 0; transition: opacity 0.15s ease-out; }
@@ -29,15 +29,15 @@
   #gL::before, #gR::before { top: 0; bottom: 0; left: -1px; right: -1px; }
   #gB { grid-row: 2; grid-column: 3; cursor: row-resize; }
   #gB::before { left: 0; right: 0; top: -1px; bottom: -1px; }
-  body.dragging #canvasWrap { pointer-events: none; }
+  body.dragging iframe.pane { pointer-events: none; }
 </style>
-<div id="left">left</div>
+<div id="leftWrap"><iframe class="pane" src="left.html"></iframe></div>
 <div id="gL" class="gutter"></div>
-<div id="canvasWrap"><iframe id="canvas" src="canvas.html"></iframe></div>
+<div id="canvasWrap"><iframe class="pane" src="canvas.html"></iframe></div>
 <div id="gB" class="gutter"></div>
-<div id="bottom">bottom</div>
+<div id="bottomWrap"><iframe class="pane" src="bottom.html"></iframe></div>
 <div id="gR" class="gutter"></div>
-<div id="right">right</div>
+<div id="rightWrap"><iframe class="pane" src="right.html"></iframe></div>
 <script>
   const root = document.documentElement;
 

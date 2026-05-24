@@ -13,10 +13,10 @@
 **Overflow**
 - Structurally impossible; viewport is hard ceiling (not merely hidden).
 
-**Center pane embedding**
-- Center pane content loaded via iframe (`canvas.html`).
-- Iframe wrapped in `overflow: hidden` grid cell; iframe absolutely fills wrapper to prevent subpixel gaps at borders.
-- Iframe `pointer-events: none` while a divider drag is active so parent receives `mousemove`/`mouseup` across the iframe.
+**Pane embedding**
+- Each pane (left, right, bottom, center) loaded via its own iframe (`left.html`, `right.html`, `bottom.html`, `canvas.html`).
+- Each iframe wrapped in `overflow: hidden` grid cell; iframe absolutely fills wrapper to prevent subpixel gaps at borders.
+- All pane iframes `pointer-events: none` while a divider drag is active so parent receives `mousemove`/`mouseup` across them.
 
 **Divider hover affordance**
 - Fade-in: 0.1s ease-in, 0.2s delay.
