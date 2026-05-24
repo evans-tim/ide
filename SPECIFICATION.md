@@ -55,6 +55,7 @@
 - Arrow keys move the caret; horizontal motion wraps across line boundaries, vertical motion clamps column to line length.
 - No selection or highlight.
 - The caret's line is highlighted using the same Cursor list-selection style as the file list, distinguishing focused vs. unfocused canvas.
+- The caret-line highlight is continuous from the start of the editable area to the canvas's right edge, including through the vertical scroll gutter.
 - Edits are in-memory only; not persisted to the VFS.
 
 **Gutter sizing**
@@ -64,8 +65,14 @@
 - Vertical scrollbar space is always reserved; appearance of the scrollbar causes no layout shift.
 - Scrollbar gutter background matches the canvas background.
 - Scrollbar thumb has square corners and fills the full width of the gutter.
+- Scrolling has no momentum; motion stops as soon as scroll input stops.
+- No horizontal scroll.
 
 **Scroll past end**
 - The canvas can always be scrolled until the last line is precisely flush with the top edge of the canvas viewport, regardless of file length.
 - Even a single-line file is scrollable due to small padding above first line. 
 - Alignment is exact: zero subpixel offset between the top of the last line and the viewport's top edge at maximum scroll.
+
+**Scroll affordance**
+- When the canvas is not scrolled to the very top, a subtle shadow appears along the top border spanning the full canvas width.
+- The shadow is absent at scroll position zero.

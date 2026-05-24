@@ -2,24 +2,30 @@
 <title>Canvas</title>
 <style>
   html, body { margin: 0; height: 100%; }
-  html { scrollbar-gutter: stable; background: var(--editor-background); }
-  ::-webkit-scrollbar { width: 14px; height: 14px; background: var(--editor-background); }
-  ::-webkit-scrollbar-track { background: var(--editor-background); }
+  html, body { background: var(--editor-background); }
+  ::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
+  ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
-  ::-webkit-scrollbar-corner { background: var(--editor-background); }
-  body { background: var(--editor-background); color: var(--editor-foreground); font: 13px "Menlo", monospace; line-height: 18px; }
+  ::-webkit-scrollbar-corner { background: transparent; }
+  body { color: var(--editor-foreground); font: 13px "Menlo", monospace; line-height: 18px; overflow: hidden; }
+  html { overflow: hidden; }
   html, body { cursor: default; }
+  .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; }
+  #top-shadow { position: fixed; top: 0; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
+  body.scrolled #top-shadow { opacity: 1; }
   .wrap { display: flex; min-height: 100%; cursor: text; }
   .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
-  #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; }
+  #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; }
+  #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
+  body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
   .line { display: block; height: 18px; line-height: 18px; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
   .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
-<div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div>
+<div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo';
@@ -28,14 +34,46 @@
   let cur = { line: 0, col: 0 };
   const view = document.getElementById('view');
   const gutter = document.getElementById('gutter');
+  const scroller = document.getElementById('scroller');
+  const gutterHighlight = document.getElementById('gutter-highlight');
+
+  function positionGutterHighlight() {
+    const line = view.querySelector('.line.active');
+    if (!line) {
+      gutterHighlight.style.display = 'none';
+      return;
+    }
+    const lr = line.getBoundingClientRect();
+    const sr = scroller.getBoundingClientRect();
+    const gutterW = sr.right - sr.left - scroller.clientWidth;
+    if (gutterW <= 0) {
+      gutterHighlight.style.display = 'none';
+      return;
+    }
+    gutterHighlight.style.display = 'block';
+    gutterHighlight.style.top = lr.top + 'px';
+    gutterHighlight.style.left = (sr.left + scroller.clientWidth) + 'px';
+    gutterHighlight.style.width = gutterW + 'px';
+    gutterHighlight.style.height = LINE_HEIGHT + 'px';
+  }
+
+  function updateTopShadow() {
+    document.body.classList.toggle('scrolled', scroller.scrollTop > 0);
+  }
 
   function updateScrollPast() {
-    const pad = Math.max(0, innerHeight - LINE_HEIGHT);
+    const pad = Math.max(0, scroller.clientHeight - LINE_HEIGHT);
     view.style.paddingBottom = pad + 'px';
     gutter.style.paddingBottom = pad + 'px';
   }
-  addEventListener('resize', updateScrollPast);
+  addEventListener('resize', () => { updateScrollPast(); positionGutterHighlight(); updateTopShadow(); });
+  scroller.addEventListener('scroll', () => { positionGutterHighlight(); updateTopShadow(); });
+  scroller.addEventListener('wheel', e => {
+    e.preventDefault();
+    scroller.scrollTop += e.deltaY;
+  }, { passive: false });
   updateScrollPast();
+  updateTopShadow();
 
   function render() {
     gutter.textContent = lines.map((_, i) => i + 1).join('\n');
@@ -57,6 +95,7 @@
       }
       view.appendChild(div);
     });
+    positionGutterHighlight();
   }
 
   function setFromContent(content) {
