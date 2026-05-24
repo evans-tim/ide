@@ -8,7 +8,13 @@
   ::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
   ::-webkit-scrollbar-corner { background: transparent; }
-  body { color: var(--editor-foreground); font: 13px "Menlo", monospace; line-height: 18px; overflow: hidden; }
+  body {
+    color: var(--editor-foreground);
+    font-family: var(--ide-font-editor, Menlo, Monaco, "Courier New", monospace);
+    font-size: var(--ide-font-size, 13px);
+    line-height: var(--ide-line-height, 18px);
+    overflow: hidden;
+  }
   html { overflow: hidden; }
   html, body { cursor: default; }
   .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; }
@@ -19,17 +25,17 @@
   #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
   #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
   body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
-  .line { display: block; height: 18px; line-height: 18px; }
+  .line { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
-  .selection { display: inline-block; height: 18px; line-height: 18px; background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
+  .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
   .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
-  const FONT = '13px Menlo';
+  const FONT = '13px Menlo, Monaco, "Courier New", monospace';
   const LINE_HEIGHT = layout(prepare('M', FONT), 10000, 18).height;
   let lines = [''];
   let cur = { line: 0, col: 0 };

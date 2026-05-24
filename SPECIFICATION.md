@@ -31,6 +31,12 @@
 - Single source of truth: Cursor theme tokens are owned by the root and propagated to every pane.
 - Each pane owns its own visual styling using theme tokens; the root does not style pane interiors.
 
+**Fonts**
+- Canvas text and line numbers use the editor monospace font stack: `Menlo, Monaco, "Courier New", monospace`.
+- All non-canvas UI uses the workbench/interface font stack: `-apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif`.
+- Default font size is 13px.
+- Font choices are propagated as root-owned tokens so panes can apply the correct stack locally.
+
 **Virtual file system**
 - Flat set of text files, no directories.
 - Owned by the root; panes never access it directly.
@@ -45,6 +51,17 @@
 - Left pane lists every file in the VFS.
 - Clicking a file selects it (highlighted with the relevant Cursor list-selection style, distinguishing focused vs. unfocused) and opens it.
 - Opening a file displays its contents in the canvas pane.
+
+
+# Right Panel
+**Prompt composer**
+- Right pane contains a prompt composer with an editable text input area.
+- The composer has a non-editable bottom affordance area; the text cursor does not appear over this affordance area.
+- Send control sits in the bottom-right corner of the composer affordance area.
+- Hovering the send control uses pointer cursor and a subtly lighter control background.
+- Clicking the send control toggles between send and stop states.
+- Send state displays an upward arrow icon.
+- Stop state displays a rounded stop icon.
 
 
 # Canvas

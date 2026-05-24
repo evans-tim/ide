@@ -1,6 +1,12 @@
 <!doctype html>
 <title>IDE</title>
 <style>
+  :root {
+    --ide-font-ui: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif;
+    --ide-font-editor: Menlo, Monaco, "Courier New", monospace;
+    --ide-font-size: 13px;
+    --ide-line-height: 18px;
+  }
   html, body { margin: 0; }
   body {
     position: fixed; inset: 0;
@@ -14,6 +20,7 @@
       minmax(0, 1fr) var(--gb, 2px)
       minmax(0, var(--bh, 20%))
       20px;
+    font: var(--ide-font-size) var(--ide-font-ui);
     color: var(--foreground);
   }
   #topBar    { grid-row: 1; grid-column: 1 / 6; background: var(--titleBar-activeBackground, var(--sideBar-background)); border-bottom: 1px solid var(--editorGroup-border); }
@@ -57,7 +64,14 @@
   };
   fetch('cursor-light-theme.json').then(r => r.json()).then(theme => {
     const decls = Object.entries(theme.colors).map(([k, v]) => `--${k.replace(/\./g, '-')}:${v};`).join('');
-    themeCss = `:root{${decls}}`;
+    const fonts = getComputedStyle(root);
+    const fontDecls = [
+      `--ide-font-ui:${fonts.getPropertyValue('--ide-font-ui').trim()}`,
+      `--ide-font-editor:${fonts.getPropertyValue('--ide-font-editor').trim()}`,
+      `--ide-font-size:${fonts.getPropertyValue('--ide-font-size').trim()}`,
+      `--ide-line-height:${fonts.getPropertyValue('--ide-line-height').trim()}`
+    ].join(';');
+    themeCss = `:root{${fontDecls};${decls}}`;
     for (const [k, v] of Object.entries(theme.colors)) {
       root.style.setProperty('--' + k.replace(/\./g, '-'), v);
     }

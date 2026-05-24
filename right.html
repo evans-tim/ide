@@ -1,7 +1,7 @@
 <!doctype html>
 <title>Right</title>
 <style>
-  html, body { margin: 0; height: 100%; background: var(--editor-background); color: var(--sideBar-foreground); }
+  html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--editor-background); color: var(--sideBar-foreground); }
   body { box-sizing: border-box; padding: 8px; }
   .prompt {
     position: relative;
@@ -52,3 +52,14 @@
     <button class="send" type="button" aria-label="Send"><img src="icons/arrow-up.svg" alt=""></button>
   </div>
 </div>
+<script>
+  const sendButton = document.querySelector('.send');
+  const sendIcon = sendButton.querySelector('img');
+  let isStopped = false;
+
+  sendButton.addEventListener('click', () => {
+    isStopped = !isStopped;
+    sendButton.setAttribute('aria-label', isStopped ? 'Stop' : 'Send');
+    sendIcon.src = isStopped ? 'icons/stop-rounded.svg' : 'icons/arrow-up.svg';
+  });
+</script>
