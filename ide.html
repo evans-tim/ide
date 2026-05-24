@@ -6,22 +6,23 @@
     position: fixed; inset: 0;
     display: grid;
     grid-template-columns:
-      minmax(0, var(--lw, 20%)) 1px
-      minmax(0, 1fr) 1px
+      minmax(0, var(--lw, 20%)) 2px
+      minmax(0, 1fr) 2px
       minmax(0, var(--rw, 20%));
     grid-template-rows:
-      minmax(0, 1fr) 1px
+      minmax(0, 1fr) 2px
       minmax(0, var(--bh, 20%));
+    color: var(--foreground);
   }
   #left, #right, #bottom { min-width: 0; min-height: 0; overflow: hidden; }
-  #left   { grid-row: 1 / 4; grid-column: 1; background: #ddd; }
-  #right  { grid-row: 1 / 4; grid-column: 5; background: #ddd; }
-  #canvasWrap { grid-row: 1; grid-column: 3; position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+  #left   { grid-row: 1 / 4; grid-column: 1; background: var(--sideBar-background); color: var(--panel-foreground, var(--foreground)); }
+  #right  { grid-row: 1 / 4; grid-column: 5; background: var(--sideBar-background); color: var(--panel-foreground, var(--foreground)); }
+  #canvasWrap { grid-row: 1; grid-column: 3; position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--sideBar-background); }
   #canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border: 0; }
-  #bottom { grid-row: 3;     grid-column: 3; background: #bbb; }
+  #bottom { grid-row: 3; grid-column: 3; background: var(--panel-background); color: var(--panel-foreground, var(--foreground)); }
 
-  .gutter { background: #888; position: relative; z-index: 1; }
-  .gutter::before { content: ""; position: absolute; background: #888; opacity: 0; transition: opacity 0.15s ease-out; }
+  .gutter { background: var(--editorGroup-border); position: relative; z-index: 1; }
+  .gutter::before { content: ""; position: absolute; background: var(--focusBorder); opacity: 0; transition: opacity 0.15s ease-out; }
   .gutter:hover::before, .gutter.dragging::before { opacity: 1; transition: opacity 0.10s ease-in 0.2s; }
   #gL, #gR { grid-row: 1 / 4; cursor: col-resize; }
   #gL { grid-column: 2; } #gR { grid-column: 4; }
@@ -39,7 +40,14 @@
 <div id="right">right</div>
 <script>
   const root = document.documentElement;
-  const GUTTER = 1, MIN = 40;
+
+  fetch('cursor-light-theme.json').then(r => r.json()).then(theme => {
+    for (const [k, v] of Object.entries(theme.colors)) {
+      root.style.setProperty('--' + k.replace(/\./g, '-'), v);
+    }
+  });
+
+  const GUTTER = 2, MIN = 40;
   const drag = (el, onMove) => {
     el.addEventListener('mousedown', e => {
       e.preventDefault();
