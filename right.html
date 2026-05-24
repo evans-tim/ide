@@ -2,7 +2,45 @@
 <title>Right</title>
 <style>
   html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--editor-background); color: var(--sideBar-foreground); }
-  body { box-sizing: border-box; padding: 8px; }
+  body { box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  .messages {
+    display: none;
+  }
+  body.submitted .messages {
+    display: block;
+  }
+  .message {
+    position: relative;
+    min-height: 18px;
+    padding: 8px 32px 8px 8px;
+    border: 1px solid var(--editorGroup-border);
+    border-radius: 8px;
+    white-space: pre-wrap;
+  }
+  .messageStop {
+    display: none;
+    position: absolute;
+    right: 6px;
+    top: 6px;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(20, 20, 20, 0.68);
+  }
+  .message.responding:hover .messageStop {
+    display: block;
+    cursor: pointer;
+  }
+  .messageStop:hover {
+    background: rgba(20, 20, 20, 0.58);
+  }
+  .messageStop img { width: 18px; height: 18px; display: block; }
+  .response {
+    padding: 0 8px;
+    color: var(--descriptionForeground);
+  }
   .prompt {
     position: relative;
     height: 120px;
@@ -10,6 +48,9 @@
     border-radius: 8px;
     background: var(--input-background);
     overflow: hidden;
+  }
+  body.submitted .prompt {
+    margin-top: auto;
   }
   textarea {
     box-sizing: border-box;
@@ -46,6 +87,7 @@
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
 </style>
+<div class="messages"></div>
 <div class="prompt">
   <textarea></textarea>
   <div class="promptFooter">
@@ -53,13 +95,74 @@
   </div>
 </div>
 <script>
+  const messages = document.querySelector('.messages');
+  const textarea = document.querySelector('textarea');
   const sendButton = document.querySelector('.send');
   const sendIcon = sendButton.querySelector('img');
-  let isStopped = false;
+  let responseTimer = null;
+  let isResponding = false;
+
+  function setComposerState(isStop) {
+    sendButton.setAttribute('aria-label', isStop ? 'Stop' : 'Send');
+    sendIcon.src = isStop ? 'icons/stop-rounded.svg' : 'icons/arrow-up.svg';
+  }
+
+  function completeResponse(response) {
+    clearTimeout(responseTimer);
+    isResponding = false;
+    setComposerState(false);
+    response.textContent = 'Hello.';
+    const message = messages.querySelector('.message.responding');
+    if (message) message.classList.remove('responding');
+  }
+
+  function submitChat() {
+    if (isResponding) return;
+
+    const text = textarea.value;
+    if (!text.trim()) return;
+
+    document.body.classList.add('submitted');
+    textarea.value = '';
+    messages.innerHTML = '';
+
+    const message = document.createElement('div');
+    message.className = 'message responding';
+    message.textContent = text;
+
+    const stopButton = document.createElement('button');
+    stopButton.className = 'messageStop';
+    stopButton.type = 'button';
+    stopButton.setAttribute('aria-label', 'Stop');
+    stopButton.innerHTML = '<img src="icons/stop-rounded.svg" alt="">';
+    message.append(stopButton);
+
+    const response = document.createElement('div');
+    response.className = 'response';
+    response.textContent = 'Planning next moves';
+
+    messages.append(message, response);
+    isResponding = true;
+    setComposerState(true);
+
+    stopButton.addEventListener('click', () => completeResponse(response));
+    responseTimer = setTimeout(() => completeResponse(response), 1000);
+  }
+
+  textarea.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      submitChat();
+    }
+  });
 
   sendButton.addEventListener('click', () => {
-    isStopped = !isStopped;
-    sendButton.setAttribute('aria-label', isStopped ? 'Stop' : 'Send');
-    sendIcon.src = isStopped ? 'icons/stop-rounded.svg' : 'icons/arrow-up.svg';
+    if (isResponding) {
+      const response = messages.querySelector('.response');
+      if (response) completeResponse(response);
+      return;
+    }
+
+    submitChat();
   });
 </script>

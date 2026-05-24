@@ -55,7 +55,7 @@
 
 # Right Panel
 **Prompt composer**
-- Right pane contains a prompt composer with an editable text input area.
+- Right pane contains a prompt composer with an editable text input area at the top. 
 - The editable text input area sits above the non-editable bottom affordance area.
 - The text input scroll area ends above the bottom affordance; the text cursor does not appear over the affordance area.
 - Send control sits in the bottom-right corner of the composer affordance area.
@@ -63,6 +63,19 @@
 - Clicking the send control toggles between send and stop states.
 - Send state displays an upward arrow icon.
 - Stop state displays a rounded stop icon.
+- Shift+Enter inserts a newline in the editable text input area.
+- Enter submits the chat.
+- Clicking the upward arrow send control submits the chat.
+
+
+**Submission**
+- Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
+- After submission, the composer is in stop state and displays the rounded stop icon until the response is complete. 
+- Submitted user messages display at the top as plain message panels with a minimalist border.
+- Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.
+- While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response is not complete. 
+- Immediately after chat submission, `Planning next moves` displays beneath the submitted user message panel.
+- After 1000ms, `Planning next moves` is replaced with `Hello.` and the response is complete. 
 
 
 # Canvas
