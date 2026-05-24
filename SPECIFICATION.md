@@ -39,6 +39,21 @@
 - Clicking a file selects it (highlighted with the relevant Cursor list-selection style, distinguishing focused vs. unfocused) and opens it.
 - Opening a file displays its contents in the canvas pane.
 
+
+# Canvas
 **Canvas**
 - Center pane; renders the contents of the currently opened file.
 - Gutter on the left displays line numbers, one per content line, right-aligned.
+
+**Canvas editing**
+- Click positions the caret at the nearest character boundary on the clicked line; clicking past end-of-line places caret at line end.
+- Text cursor (I-beam) over the editable canvas area; default cursor over the gutter.
+- Typing inserts characters at the caret.
+- Return splits the current line at the caret.
+- Backspace deletes the character before the caret; at column 0, merges the current line into the previous line with the caret at the join point.
+- Arrow keys move the caret; horizontal motion wraps across line boundaries, vertical motion clamps column to line length.
+- No selection or highlight.
+- Edits are in-memory only; not persisted to the VFS.
+
+**Gutter sizing**
+- Reserves width for 3 digits by default; grows only when line count requires more digits.

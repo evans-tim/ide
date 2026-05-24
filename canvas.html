@@ -3,18 +3,118 @@
 <style>
   html, body { margin: 0; height: 100%; }
   body { background: var(--editor-background); color: var(--editor-foreground); font: 13px ui-monospace, monospace; }
-  .wrap { display: flex; padding: 12px; }
-  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding-right: 12px; user-select: none; white-space: pre; }
-  pre { margin: 0; white-space: pre-wrap; }
+  .wrap { display: flex; padding: 12px; cursor: text; }
+  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding-right: 12px; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
+  #view { margin: 0; white-space: pre; outline: none; position: relative; flex: 1; }
+  .line { display: block; min-height: 1em; }
+  .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
+  @keyframes blink { 50% { opacity: 0; } }
 </style>
-<div class="wrap"><div class="gutter" id="gutter"></div><pre id="view"></pre></div>
+<div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div>
 <script>
+  let lines = [''];
+  let cur = { line: 0, col: 0 };
+  const view = document.getElementById('view');
+  const gutter = document.getElementById('gutter');
+
+  function render() {
+    gutter.textContent = lines.map((_, i) => i + 1).join('\n');
+    view.innerHTML = '';
+    lines.forEach((text, i) => {
+      const div = document.createElement('div');
+      div.className = 'line';
+      div.dataset.line = i;
+      if (i === cur.line) {
+        const before = document.createTextNode(text.slice(0, cur.col));
+        const caret = document.createElement('span');
+        caret.className = 'cursor';
+        const after = document.createTextNode(text.slice(cur.col) || '\u200b');
+        div.appendChild(before);
+        div.appendChild(caret);
+        div.appendChild(after);
+      } else {
+        div.textContent = text || '\u200b';
+      }
+      view.appendChild(div);
+    });
+  }
+
+  function setFromContent(content) {
+    lines = content.split('\n');
+    cur = { line: 0, col: 0 };
+    render();
+  }
+
   addEventListener('message', e => {
-    if (e.data?.type === 'vfs:opened') {
-      const content = e.data.content;
-      document.getElementById('view').textContent = content;
-      const n = content.split('\n').length;
-      document.getElementById('gutter').textContent = Array.from({length: n}, (_, i) => i + 1).join('\n');
-    }
+    if (e.data?.type === 'vfs:opened') setFromContent(e.data.content);
   });
+
+  view.addEventListener('mousedown', e => {
+    const lineEl = e.target.closest('.line');
+    if (!lineEl) return;
+    const li = +lineEl.dataset.line;
+    const text = lines[li];
+    const rect = lineEl.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const measure = document.createElement('span');
+    measure.style.font = getComputedStyle(view).font;
+    measure.style.visibility = 'hidden';
+    measure.style.position = 'absolute';
+    measure.style.whiteSpace = 'pre';
+    document.body.appendChild(measure);
+    let col = text.length;
+    for (let i = 0; i <= text.length; i++) {
+      measure.textContent = text.slice(0, i);
+      if (measure.offsetWidth >= x) { col = i > 0 ? (measure.offsetWidth - x < (measure.offsetWidth - (measure.textContent = text.slice(0, i - 1), measure.offsetWidth)) ? i : i - 1) : 0; break; }
+    }
+    document.body.removeChild(measure);
+    cur = { line: li, col };
+    render();
+    view.focus();
+  });
+
+  view.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      const text = lines[cur.line];
+      lines.splice(cur.line, 1, text.slice(0, cur.col), text.slice(cur.col));
+      cur = { line: cur.line + 1, col: 0 };
+      e.preventDefault();
+    } else if (e.key === 'Backspace') {
+      if (cur.col > 0) {
+        const text = lines[cur.line];
+        lines[cur.line] = text.slice(0, cur.col - 1) + text.slice(cur.col);
+        cur.col--;
+      } else if (cur.line > 0) {
+        const prev = lines[cur.line - 1];
+        const text = lines[cur.line];
+        cur = { line: cur.line - 1, col: prev.length };
+        lines.splice(cur.line, 2, prev + text);
+      }
+      e.preventDefault();
+    } else if (e.key === 'ArrowLeft') {
+      if (cur.col > 0) cur.col--;
+      else if (cur.line > 0) { cur.line--; cur.col = lines[cur.line].length; }
+      e.preventDefault();
+    } else if (e.key === 'ArrowRight') {
+      if (cur.col < lines[cur.line].length) cur.col++;
+      else if (cur.line < lines.length - 1) { cur.line++; cur.col = 0; }
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      if (cur.line > 0) { cur.line--; cur.col = Math.min(cur.col, lines[cur.line].length); }
+      e.preventDefault();
+    } else if (e.key === 'ArrowDown') {
+      if (cur.line < lines.length - 1) { cur.line++; cur.col = Math.min(cur.col, lines[cur.line].length); }
+      e.preventDefault();
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      const text = lines[cur.line];
+      lines[cur.line] = text.slice(0, cur.col) + e.key + text.slice(cur.col);
+      cur.col++;
+      e.preventDefault();
+    } else {
+      return;
+    }
+    render();
+  });
+
+  render();
 </script>
