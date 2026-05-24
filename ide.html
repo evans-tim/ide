@@ -1,0 +1,78 @@
+<!doctype html>
+<title>IDE</title>
+<style>
+  html, body { margin: 0; }
+  body {
+    position: fixed; inset: 0;
+    display: grid;
+    grid-template-columns:
+      minmax(0, var(--lw, 20%)) 1px
+      minmax(0, 1fr) 1px
+      minmax(0, var(--rw, 20%));
+    grid-template-rows:
+      minmax(0, 1fr) 1px
+      minmax(0, var(--bh, 20%));
+  }
+  #left, #right, #bottom, #canvas { min-width: 0; min-height: 0; overflow: hidden; }
+  #left   { grid-row: 1 / 4; grid-column: 1; background: #ddd; }
+  #right  { grid-row: 1 / 4; grid-column: 5; background: #ddd; }
+  #canvas { grid-row: 1;     grid-column: 3; background: red; width: 100%; height: 100%; display: block; }
+  #bottom { grid-row: 3;     grid-column: 3; background: #bbb; }
+
+  .gutter { background: #888; position: relative; z-index: 1; }
+  .gutter::before { content: ""; position: absolute; background: #888; opacity: 0; transition: opacity 0.15s ease-out; }
+  .gutter:hover::before, .gutter.dragging::before { opacity: 1; transition: opacity 0.10s ease-in 0.2s; }
+  #gL, #gR { grid-row: 1 / 4; cursor: col-resize; }
+  #gL { grid-column: 2; } #gR { grid-column: 4; }
+  #gL::before, #gR::before { top: 0; bottom: 0; left: -2px; right: -2px; }
+  #gB { grid-row: 2; grid-column: 3; cursor: row-resize; }
+  #gB::before { left: 0; right: 0; top: -2px; bottom: -2px; }
+</style>
+<div id="left">left</div>
+<div id="gL" class="gutter"></div>
+<canvas id="canvas"></canvas>
+<div id="gB" class="gutter"></div>
+<div id="bottom">bottom</div>
+<div id="gR" class="gutter"></div>
+<div id="right">right</div>
+<script>
+  const root = document.documentElement;
+  const GUTTER = 1, MIN = 40;
+  const drag = (el, onMove) => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const offX = e.clientX - (r.left + r.width / 2);
+      const offY = e.clientY - (r.top + r.height / 2);
+      const move = ev => onMove(ev, offX, offY);
+      const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        el.classList.remove('dragging');
+      };
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = getComputedStyle(el).cursor;
+      el.classList.add('dragging');
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
+  };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const px = n => n + 'px';
+  const curRW = () => parseFloat(getComputedStyle(root).getPropertyValue('--rw')) || innerWidth * 0.2;
+  const curLW = () => parseFloat(getComputedStyle(root).getPropertyValue('--lw')) || innerWidth * 0.2;
+  drag(gL, (e, offX) => {
+    const max = innerWidth - curRW() - 2 * GUTTER - MIN;
+    root.style.setProperty('--lw', px(clamp(e.clientX - offX, MIN, max)));
+  });
+  drag(gR, (e, offX) => {
+    const max = innerWidth - curLW() - 2 * GUTTER - MIN;
+    root.style.setProperty('--rw', px(clamp(innerWidth - (e.clientX - offX), MIN, max)));
+  });
+  drag(gB, (e, offX, offY) => {
+    const max = innerHeight - GUTTER - MIN;
+    root.style.setProperty('--bh', px(clamp(innerHeight - (e.clientY - offY), MIN, max)));
+  });
+</script>
