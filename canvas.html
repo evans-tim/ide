@@ -188,9 +188,12 @@
       return { line: li, col };
     }
     let col = text.length;
-    for (let i = 0; i <= text.length; i++) {
-      measure.textContent = text.slice(0, i);
-      if (measure.offsetWidth >= x) { col = i > 0 ? (measure.offsetWidth - x < (measure.offsetWidth - (measure.textContent = text.slice(0, i - 1), measure.offsetWidth)) ? i : i - 1) : 0; break; }
+    let left = 0;
+    for (let i = 0; i < text.length; i++) {
+      measure.textContent = text.slice(0, i + 1);
+      const right = measure.offsetWidth;
+      if (x < left + (right - left) / 2) { col = i; break; }
+      left = right;
     }
     document.body.removeChild(measure);
     return { line: li, col };

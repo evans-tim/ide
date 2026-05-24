@@ -60,7 +60,7 @@
 - `editor.wordSeparators` defines the characters that delimit words.
 
 **Canvas editing**
-- Click positions the caret at the nearest character boundary on the clicked line; clicking past end-of-line places caret at line end.
+- Normal click positions the caret by splitting each hit character at its horizontal midpoint: clicking the left half places the caret before that character, clicking the right half places it after that character, and clicking past end-of-line places caret at line end.
 - Clicking anywhere in the editable canvas area below the last line places the caret at the end of the last line.
 - Text cursor (I-beam) over the entire editable canvas area to the right of the gutter, including padding above the first line, below the last line, and to the right of text; default cursor over the gutter.
 - Typing inserts characters at the caret.
