@@ -4,7 +4,7 @@
 - Bottom bar: spans center column only (under center pane).
 
 **Dividers**
-- 1px visible between panes.
+- 2px visible between panes.
 - ±2px invisible hit area around each divider.
 - Drag-to-resize each region.
 - Mousedown captures cursor-to-divider offset; drag applies offset so divider tracks cursor without snapping when grab originates anywhere within hit area.
