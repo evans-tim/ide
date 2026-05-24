@@ -49,6 +49,7 @@
 **Canvas**
 - Center pane; renders the contents of the currently opened file.
 - Gutter on the left displays line numbers, one per content line, right-aligned.
+- `editor.wordSeparators` defines the characters that delimit words.
 
 **Canvas editing**
 - Click positions the caret at the nearest character boundary on the clicked line; clicking past end-of-line places caret at line end.
@@ -63,6 +64,7 @@
 - Selection may start or end beyond the visible text on a line; horizontal positions past end-of-line resolve to that line's end.
 - Selection may continue while the pointer is outside the canvas pane or outside the containing iframe; the selected endpoint continues to track the pointer's logical text position until mouse release.
 - Clicking without dragging clears the selection and places the caret at the clicked position.
+- Double-clicking a word selects the whole word using `editor.wordSeparators`, replacing any existing selection.
 - Typing while text is selected replaces the selection with the typed character and places the caret after the inserted character.
 - Return while text is selected replaces the selection with a line break and places the caret at the start of the new line.
 - Backspace/Delete while text is selected removes the selection and places the caret at the start of the removed range.

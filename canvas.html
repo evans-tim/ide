@@ -37,7 +37,11 @@
   const gutter = document.getElementById('gutter');
   const scroller = document.getElementById('scroller');
   const gutterHighlight = document.getElementById('gutter-highlight');
+  const settings = {
+    'editor.wordSeparators': " `~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?"
+  };
   let sel = null;
+  let lastPointerDown = null;
 
   function positionGutterHighlight() {
     const line = view.querySelector('.line.active');
@@ -180,6 +184,18 @@
     return { line: li, col };
   }
 
+  function wordRangeAt(pos) {
+    const text = lines[pos.line];
+    const separators = new Set(settings['editor.wordSeparators']);
+    let index = pos.col < text.length && !separators.has(text[pos.col]) ? pos.col : pos.col - 1;
+    if (index < 0 || separators.has(text[index])) return null;
+    let start = index;
+    let end = index + 1;
+    while (start > 0 && !separators.has(text[start - 1])) start--;
+    while (end < text.length && !separators.has(text[end])) end++;
+    return { start: { line: pos.line, col: start }, end: { line: pos.line, col: end } };
+  }
+
   function deleteSelection() {
     const range = selectionRange();
     if (!range) return false;
@@ -191,14 +207,40 @@
     return true;
   }
 
+  function closestTarget(target, selector) {
+    return target instanceof Element
+      ? target.closest(selector)
+      : target.parentElement?.closest(selector);
+  }
+
+  function isRepeatedPointerDown(e) {
+    if (!lastPointerDown) return false;
+    const elapsed = e.timeStamp - lastPointerDown.time;
+    const distance = Math.hypot(e.clientX - lastPointerDown.x, e.clientY - lastPointerDown.y);
+    return elapsed < 300 && distance < 6;
+  }
+
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:opened') setFromContent(e.data.content);
   });
 
   document.addEventListener('pointerdown', e => {
-    if (e.target.closest('.gutter')) return;
+    if (closestTarget(e.target, '.gutter')) return;
     const start = positionFromEvent(e);
     if (!start) return;
+    const repeatedPointerDown = isRepeatedPointerDown(e);
+    lastPointerDown = { time: e.timeStamp, x: e.clientX, y: e.clientY };
+    if (repeatedPointerDown) {
+      const range = wordRangeAt(start);
+      if (range) {
+        cur = range.end;
+        sel = { anchor: range.start, head: range.end };
+        render();
+        view.focus();
+        e.preventDefault();
+      }
+      return;
+    }
     view.setPointerCapture(e.pointerId);
     cur = start;
     sel = null;
@@ -222,6 +264,19 @@
     view.addEventListener('pointermove', onMove);
     view.addEventListener('pointerup', onUp);
     view.addEventListener('pointercancel', onUp);
+    e.preventDefault();
+  });
+
+  document.addEventListener('dblclick', e => {
+    if (closestTarget(e.target, '.gutter')) return;
+    const pos = positionFromEvent(e);
+    if (!pos) return;
+    const range = wordRangeAt(pos);
+    if (!range) return;
+    cur = range.end;
+    sel = { anchor: range.start, head: range.end };
+    render();
+    view.focus();
     e.preventDefault();
   });
 
