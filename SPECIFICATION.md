@@ -65,6 +65,10 @@
 - Selection may continue while the pointer is outside the canvas pane or outside the containing iframe; the selected endpoint continues to track the pointer's logical text position until mouse release.
 - Clicking without dragging clears the selection and places the caret at the clicked position.
 - Double-clicking a word selects the whole word using `editor.wordSeparators`, replacing any existing selection.
+- If the pointer remains down after the second click, dragging enters word selection mode with the initially selected word as the fixed root.
+- In word selection mode, the moving selection caret endpoint snaps by hovered word: to the beginning of the hovered word when the hover position is left/upward of the root, and to the end of the hovered word when the hover position is right/downward of the root.
+- For the root word itself, word selection mode snaps the caret endpoint to the end of the word.
+- Each delimiter character defined by `editor.wordSeparators` counts as its own word for word selection mode.
 - Typing while text is selected replaces the selection with the typed character and places the caret after the inserted character.
 - Return while text is selected replaces the selection with a line break and places the caret at the start of the new line.
 - Backspace/Delete while text is selected removes the selection and places the caret at the start of the removed range.

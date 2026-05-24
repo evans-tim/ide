@@ -155,7 +155,7 @@
     render();
   }
 
-  function positionFromEvent(e) {
+  function positionFromEvent(e, mode = 'caret') {
     const padTop = parseFloat(getComputedStyle(view).paddingTop) || 0;
     const viewRect = view.getBoundingClientRect();
     const lineIndex = Math.max(0, Math.min(lines.length - 1, Math.floor((e.clientY - viewRect.top - padTop) / LINE_HEIGHT)));
@@ -175,6 +175,15 @@
     measure.style.position = 'absolute';
     measure.style.whiteSpace = 'pre';
     document.body.appendChild(measure);
+    if (mode === 'character') {
+      let col = Math.max(0, text.length - 1);
+      for (let i = 0; i < text.length; i++) {
+        measure.textContent = text.slice(0, i + 1);
+        if (measure.offsetWidth > x) { col = i; break; }
+      }
+      document.body.removeChild(measure);
+      return { line: li, col };
+    }
     let col = text.length;
     for (let i = 0; i <= text.length; i++) {
       measure.textContent = text.slice(0, i);
@@ -187,13 +196,25 @@
   function wordRangeAt(pos) {
     const text = lines[pos.line];
     const separators = new Set(settings['editor.wordSeparators']);
-    let index = pos.col < text.length && !separators.has(text[pos.col]) ? pos.col : pos.col - 1;
-    if (index < 0 || separators.has(text[index])) return null;
+    let index = pos.col < text.length ? pos.col : pos.col - 1;
+    if (index < 0) return null;
+    const isSeparator = separators.has(text[index]);
+    if (isSeparator) return { start: { line: pos.line, col: index }, end: { line: pos.line, col: index + 1 } };
     let start = index;
     let end = index + 1;
     while (start > 0 && !separators.has(text[start - 1])) start--;
     while (end < text.length && !separators.has(text[end])) end++;
     return { start: { line: pos.line, col: start }, end: { line: pos.line, col: end } };
+  }
+
+  function wordSelectionFrom(root, hover) {
+    if (posBefore(hover.end, root.start) || samePos(hover.end, root.start)) {
+      return { anchor: root.end, head: hover.start };
+    }
+    if (posBefore(root.start, hover.start) || samePos(root.start, hover.start)) {
+      return { anchor: root.start, head: hover.end };
+    }
+    return { anchor: root.start, head: root.end };
   }
 
   function deleteSelection() {
@@ -231,12 +252,32 @@
     const repeatedPointerDown = isRepeatedPointerDown(e);
     lastPointerDown = { time: e.timeStamp, x: e.clientX, y: e.clientY };
     if (repeatedPointerDown) {
-      const range = wordRangeAt(start);
+      const range = wordRangeAt(positionFromEvent(e, 'character'));
       if (range) {
         cur = range.end;
         sel = { anchor: range.start, head: range.end };
         render();
         view.focus();
+        view.setPointerCapture(e.pointerId);
+        const onMove = moveEvent => {
+          const pos = positionFromEvent(moveEvent, 'character');
+          if (!pos) return;
+          const hover = wordRangeAt(pos);
+          if (!hover) return;
+          sel = wordSelectionFrom(range, hover);
+          cur = sel.head;
+          render();
+        };
+        const onUp = upEvent => {
+          view.releasePointerCapture(upEvent.pointerId);
+          view.removeEventListener('pointermove', onMove);
+          view.removeEventListener('pointerup', onUp);
+          view.removeEventListener('pointercancel', onUp);
+          render();
+        };
+        view.addEventListener('pointermove', onMove);
+        view.addEventListener('pointerup', onUp);
+        view.addEventListener('pointercancel', onUp);
         e.preventDefault();
       }
       return;
@@ -269,7 +310,7 @@
 
   document.addEventListener('dblclick', e => {
     if (closestTarget(e.target, '.gutter')) return;
-    const pos = positionFromEvent(e);
+    const pos = positionFromEvent(e, 'character');
     if (!pos) return;
     const range = wordRangeAt(pos);
     if (!range) return;
