@@ -61,6 +61,8 @@
 - Arrow keys move the caret; horizontal motion wraps across line boundaries, vertical motion clamps column to line length.
 - Dragging across text selects a contiguous range between the drag start and current pointer position.
 - Cmd+A selects all canvas text.
+- Cmd+C copies the selected canvas text to the system clipboard.
+- Cmd+V replaces the selection with clipboard text, or inserts clipboard text at the caret when there is no selection.
 - Selection may start or end beyond the visible text on a line; horizontal positions past end-of-line resolve to that line's end.
 - Selection may continue while the pointer is outside the canvas pane or outside the containing iframe; the selected endpoint continues to track the pointer's logical text position until mouse release.
 - Clicking without dragging clears the selection and places the caret at the clicked position.

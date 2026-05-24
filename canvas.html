@@ -228,6 +228,35 @@
     return true;
   }
 
+  function selectedText() {
+    const range = selectionRange();
+    if (!range) return '';
+    if (range.start.line === range.end.line) {
+      return lines[range.start.line].slice(range.start.col, range.end.col);
+    }
+    return [
+      lines[range.start.line].slice(range.start.col),
+      ...lines.slice(range.start.line + 1, range.end.line),
+      lines[range.end.line].slice(0, range.end.col)
+    ].join('\n');
+  }
+
+  function insertText(text) {
+    deleteSelection();
+    const parts = text.split('\n');
+    const line = lines[cur.line];
+    const before = line.slice(0, cur.col);
+    const after = line.slice(cur.col);
+    if (parts.length === 1) {
+      lines[cur.line] = before + parts[0] + after;
+      cur.col += parts[0].length;
+      return;
+    }
+    const inserted = [before + parts[0], ...parts.slice(1, -1), parts.at(-1) + after];
+    lines.splice(cur.line, 1, ...inserted);
+    cur = { line: cur.line + parts.length - 1, col: parts.at(-1).length };
+  }
+
   function closestTarget(target, selector) {
     return target instanceof Element
       ? target.closest(selector)
@@ -321,13 +350,19 @@
     e.preventDefault();
   });
 
-  view.addEventListener('keydown', e => {
+  view.addEventListener('keydown', async e => {
     if (e.metaKey && e.key.toLowerCase() === 'a') {
       const start = { line: 0, col: 0 };
       const end = { line: lines.length - 1, col: lines[lines.length - 1].length };
       cur = end;
       sel = { anchor: start, head: end };
       e.preventDefault();
+    } else if (e.metaKey && e.key.toLowerCase() === 'c') {
+      e.preventDefault();
+      await navigator.clipboard.writeText(selectedText());
+    } else if (e.metaKey && e.key.toLowerCase() === 'v') {
+      e.preventDefault();
+      insertText(await navigator.clipboard.readText());
     } else if (e.key === 'Enter') {
       deleteSelection();
       const text = lines[cur.line];
