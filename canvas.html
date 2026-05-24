@@ -8,24 +8,34 @@
   ::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
   ::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
   ::-webkit-scrollbar-corner { background: var(--editor-background); }
-  body { background: var(--editor-background); color: var(--editor-foreground); font: 13px ui-monospace, monospace; }
+  body { background: var(--editor-background); color: var(--editor-foreground); font: 13px "Menlo", monospace; line-height: 18px; }
   html, body { cursor: default; }
   .wrap { display: flex; min-height: 100%; cursor: text; }
-  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 12px 0; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
-  #view { padding: 12px 12px 12px 0; }
-  #view { margin: 0; white-space: pre; outline: none; position: relative; flex: 1; }
-  .line { display: block; min-height: 1em; }
+  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
+  #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; }
+  .line { display: block; height: 18px; line-height: 18px; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
   .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div>
-<script>
+<script type="module">
+  import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
+  const FONT = '13px Menlo';
+  const LINE_HEIGHT = layout(prepare('M', FONT), 10000, 18).height;
   let lines = [''];
   let cur = { line: 0, col: 0 };
   const view = document.getElementById('view');
   const gutter = document.getElementById('gutter');
+
+  function updateScrollPast() {
+    const pad = Math.max(0, innerHeight - LINE_HEIGHT);
+    view.style.paddingBottom = pad + 'px';
+    gutter.style.paddingBottom = pad + 'px';
+  }
+  addEventListener('resize', updateScrollPast);
+  updateScrollPast();
 
   function render() {
     gutter.textContent = lines.map((_, i) => i + 1).join('\n');

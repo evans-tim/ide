@@ -64,3 +64,8 @@
 - Vertical scrollbar space is always reserved; appearance of the scrollbar causes no layout shift.
 - Scrollbar gutter background matches the canvas background.
 - Scrollbar thumb has square corners and fills the full width of the gutter.
+
+**Scroll past end**
+- The canvas can always be scrolled until the last line is precisely flush with the top edge of the canvas viewport, regardless of file length.
+- Even a single-line file is scrollable due to small padding above first line. 
+- Alignment is exact: zero subpixel offset between the top of the last line and the viewport's top edge at maximum scroll.
