@@ -148,8 +148,11 @@
     parent.appendChild(caret);
   }
 
-  function setFromContent(content) {
-    lines = content.split('\n');
+  function setFromContent(content, metadata = {}) {
+    const visibleContent = metadata.activeView === 'json'
+      ? JSON.stringify({ contents: [...content] }, null, 2)
+      : content;
+    lines = visibleContent.split('\n');
     cur = { line: 0, col: 0 };
     sel = null;
     render();
@@ -271,7 +274,7 @@
   }
 
   addEventListener('message', e => {
-    if (e.data?.type === 'vfs:opened') setFromContent(e.data.content);
+    if (e.data?.type === 'vfs:opened') setFromContent(e.data.content, e.data.metadata);
   });
 
   document.addEventListener('pointerdown', e => {

@@ -29,10 +29,12 @@
 **Virtual file system**
 - Flat set of text files, no directories.
 - Owned by the root; panes never access it directly.
+- File metadata is also owned by the root, stored in memory for now, and shaped so it can later be persisted with the VFS.
 
 **Inter-pane communication**
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
+- Panes request file metadata changes through the root; the root updates the VFS metadata and broadcasts a metadata-updated event.
 
 
 # File Tree
@@ -43,11 +45,17 @@
 - Hovering a file row reveals a right-aligned view toggle with file and JSON actions; the reserved toggle space causes no layout shift.
 - File view is selected by default; selecting JSON deselects file, and selecting file deselects JSON.
 - Hovering or selecting a toggle action highlights it with a darker themed list background and slightly rounded corners.
+- Toggle state is stored as root-owned file metadata, e.g. an active view of `file` or `json`, rather than as pane-local state.
+- Clicking a toggle action sends a metadata update request to the root; the root updates that file's active view and broadcasts the updated metadata.
+- The left pane reflects active view from root-broadcast metadata so it stays in sync with the VFS source of truth.
 
 
 # Canvas
 **Canvas**
 - Center pane; renders the contents of the currently opened file.
+- The canvas renders the currently opened file according to that file's root-owned active view metadata.
+- File view renders editable text contents.
+- JSON view renders a JSON object with a `contents` array of literal character strings, exposing characters such as `\n` instead of interpreting them only as line breaks.
 - Gutter on the left displays line numbers, one per content line, right-aligned.
 - `editor.wordSeparators` defines the characters that delimit words.
 

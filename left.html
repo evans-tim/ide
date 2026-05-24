@@ -17,43 +17,55 @@
 <ul id="files"></ul>
 <script>
   const ul = document.getElementById('files');
-  let selected = null;
-  const render = files => {
+  let fileNames = [];
+  let fileMetadata = {};
+  let selectedName = null;
+  const render = () => {
     ul.innerHTML = '';
-    for (const name of files) {
+    for (const name of fileNames) {
       const li = document.createElement('li');
       li.dataset.name = name;
+      if (selectedName === name) li.classList.add('selected');
       const label = document.createElement('span');
       label.className = 'file-name';
       label.textContent = name;
       const actions = document.createElement('span');
       actions.className = 'file-actions';
-      for (const [index, icon] of ['file.svg', 'json.svg'].entries()) {
+      const activeView = fileMetadata[name]?.activeView || 'file';
+      for (const [view, icon] of [['file', 'file.svg'], ['json', 'json.svg']]) {
         const button = document.createElement('button');
         button.type = 'button';
-        if (index === 0) button.classList.add('selected');
+        if (view === activeView) button.classList.add('selected');
         const img = document.createElement('img');
         img.src = `icons/${icon}`;
         button.appendChild(img);
         button.onclick = e => {
           e.stopPropagation();
-          actions.querySelector('.selected')?.classList.remove('selected');
-          button.classList.add('selected');
+          selectedName = name;
+          parent.postMessage({ type: 'vfs:updateMetadata', name, metadata: { activeView: view } }, '*');
+          parent.postMessage({ type: 'vfs:open', name }, '*');
+          render();
         };
         actions.appendChild(button);
       }
       li.append(label, actions);
       li.onclick = () => {
-        if (selected) selected.classList.remove('selected');
-        li.classList.add('selected');
-        selected = li;
+        selectedName = name;
         parent.postMessage({ type: 'vfs:open', name }, '*');
+        render();
       };
       ul.appendChild(li);
     }
   };
   addEventListener('message', e => {
-    if (e.data?.type === 'vfs:files') render(e.data.files);
+    if (e.data?.type === 'vfs:files') {
+      fileNames = e.data.files;
+      fileMetadata = e.data.metadata || {};
+      render();
+    } else if (e.data?.type === 'vfs:metadataUpdated') {
+      fileMetadata[e.data.name] = e.data.metadata;
+      render();
+    }
   });
   const setFocused = v => document.body.classList.toggle('focused', v);
   addEventListener('focus', () => setFocused(true));
