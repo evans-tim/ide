@@ -34,10 +34,15 @@
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
 
+
+# File Tree
 **File browsing**
 - Left pane lists every file in the VFS.
 - Clicking a file selects it (highlighted with the relevant Cursor list-selection style, distinguishing focused vs. unfocused) and opens it.
 - Opening a file displays its contents in the canvas pane.
+- Hovering a file row reveals a right-aligned view toggle with file and JSON actions; the reserved toggle space causes no layout shift.
+- File view is selected by default; selecting JSON deselects file, and selecting file deselects JSON.
+- Hovering or selecting a toggle action highlights it with a darker themed list background and slightly rounded corners.
 
 
 # Canvas

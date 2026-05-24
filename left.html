@@ -3,10 +3,16 @@
 <style>
   html, body { margin: 0; height: 100%; font: 13px -apple-system, sans-serif; background: var(--sideBar-background); color: var(--sideBar-foreground); }
   ul { list-style: none; margin: 0; padding: 4px 0; }
-  li { padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; }
   li:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   li.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused li.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
+  .file-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .file-actions { display: flex; align-items: center; gap: 2px; flex: none; visibility: hidden; }
+  li:hover .file-actions { visibility: visible; }
+  .file-actions button { padding: 1px; border: 0; border-radius: 3px; background: transparent; cursor: pointer; }
+  .file-actions button:hover, .file-actions button.selected { background: var(--list-focusBackground); }
+  .file-actions img { width: 16px; height: 16px; display: block; }
 </style>
 <ul id="files"></ul>
 <script>
@@ -16,8 +22,27 @@
     ul.innerHTML = '';
     for (const name of files) {
       const li = document.createElement('li');
-      li.textContent = name;
       li.dataset.name = name;
+      const label = document.createElement('span');
+      label.className = 'file-name';
+      label.textContent = name;
+      const actions = document.createElement('span');
+      actions.className = 'file-actions';
+      for (const [index, icon] of ['file.svg', 'json.svg'].entries()) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        if (index === 0) button.classList.add('selected');
+        const img = document.createElement('img');
+        img.src = `icons/${icon}`;
+        button.appendChild(img);
+        button.onclick = e => {
+          e.stopPropagation();
+          actions.querySelector('.selected')?.classList.remove('selected');
+          button.classList.add('selected');
+        };
+        actions.appendChild(button);
+      }
+      li.append(label, actions);
       li.onclick = () => {
         if (selected) selected.classList.remove('selected');
         li.classList.add('selected');
