@@ -38,3 +38,7 @@
 - Left pane lists every file in the VFS.
 - Clicking a file selects it (highlighted with the relevant Cursor list-selection style, distinguishing focused vs. unfocused) and opens it.
 - Opening a file displays its contents in the canvas pane.
+
+**Canvas**
+- Center pane; renders the contents of the currently opened file.
+- Gutter on the left displays line numbers, one per content line, right-aligned.

@@ -3,11 +3,18 @@
 <style>
   html, body { margin: 0; height: 100%; }
   body { background: var(--editor-background); color: var(--editor-foreground); font: 13px ui-monospace, monospace; }
-  pre { margin: 0; padding: 12px; white-space: pre-wrap; }
+  .wrap { display: flex; padding: 12px; }
+  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding-right: 12px; user-select: none; white-space: pre; }
+  pre { margin: 0; white-space: pre-wrap; }
 </style>
-<pre id="view"></pre>
+<div class="wrap"><div class="gutter" id="gutter"></div><pre id="view"></pre></div>
 <script>
   addEventListener('message', e => {
-    if (e.data?.type === 'vfs:opened') document.getElementById('view').textContent = e.data.content;
+    if (e.data?.type === 'vfs:opened') {
+      const content = e.data.content;
+      document.getElementById('view').textContent = content;
+      const n = content.split('\n').length;
+      document.getElementById('gutter').textContent = Array.from({length: n}, (_, i) => i + 1).join('\n');
+    }
   });
 </script>
