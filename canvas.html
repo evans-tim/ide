@@ -16,12 +16,13 @@
   body.scrolled #top-shadow { opacity: 1; }
   .wrap { display: flex; min-height: 100%; cursor: text; }
   .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
-  #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; }
+  #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
   #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
   body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
   .line { display: block; height: 18px; line-height: 18px; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
+  .selection { background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
   .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
@@ -36,6 +37,7 @@
   const gutter = document.getElementById('gutter');
   const scroller = document.getElementById('scroller');
   const gutterHighlight = document.getElementById('gutter-highlight');
+  let sel = null;
 
   function positionGutterHighlight() {
     const line = view.querySelector('.line.active');
@@ -76,48 +78,88 @@
   updateTopShadow();
 
   function render() {
+    const range = selectionRange();
     gutter.textContent = lines.map((_, i) => i + 1).join('\n');
     view.innerHTML = '';
     lines.forEach((text, i) => {
       const div = document.createElement('div');
       div.className = 'line' + (i === cur.line ? ' active' : '');
       div.dataset.line = i;
-      if (i === cur.line) {
-        const before = document.createTextNode(text.slice(0, cur.col));
-        const caret = document.createElement('span');
-        caret.className = 'cursor';
-        const after = document.createTextNode(text.slice(cur.col) || '\u200b');
-        div.appendChild(before);
-        div.appendChild(caret);
-        div.appendChild(after);
-      } else {
-        div.textContent = text || '\u200b';
-      }
+      appendLine(div, text, i, range);
       view.appendChild(div);
     });
     positionGutterHighlight();
   }
 
+  function samePos(a, b) {
+    return a.line === b.line && a.col === b.col;
+  }
+
+  function posBefore(a, b) {
+    return a.line < b.line || (a.line === b.line && a.col < b.col);
+  }
+
+  function selectionRange() {
+    if (!sel || samePos(sel.anchor, sel.head)) return null;
+    return posBefore(sel.anchor, sel.head)
+      ? { start: sel.anchor, end: sel.head }
+      : { start: sel.head, end: sel.anchor };
+  }
+
+  function appendLine(div, text, lineIndex, range) {
+    const startCol = range && lineIndex >= range.start.line && lineIndex <= range.end.line
+      ? (lineIndex === range.start.line ? range.start.col : 0)
+      : null;
+    const endCol = startCol === null
+      ? null
+      : (lineIndex === range.end.line ? range.end.col : text.length);
+    const boundaries = [0, text.length, cur.line === lineIndex ? cur.col : null, startCol, endCol]
+      .filter(v => v !== null)
+      .sort((a, b) => a - b);
+    const unique = [...new Set(boundaries)];
+    if (cur.line === lineIndex && cur.col === 0) appendCaret(div);
+    for (let j = 0; j < unique.length - 1; j++) {
+      const from = unique[j];
+      const to = unique[j + 1];
+      if (to > from) appendText(div, text.slice(from, to), startCol !== null && from >= startCol && to <= endCol);
+      if (cur.line === lineIndex && cur.col === to) appendCaret(div);
+    }
+    if (!text && !(cur.line === lineIndex && cur.col === 0)) div.textContent = '\u200b';
+  }
+
+  function appendText(parent, text, selected) {
+    if (!selected) {
+      parent.appendChild(document.createTextNode(text));
+      return;
+    }
+    const span = document.createElement('span');
+    span.className = 'selection';
+    span.textContent = text;
+    parent.appendChild(span);
+  }
+
+  function appendCaret(parent) {
+    const caret = document.createElement('span');
+    caret.className = 'cursor';
+    parent.appendChild(caret);
+  }
+
   function setFromContent(content) {
     lines = content.split('\n');
     cur = { line: 0, col: 0 };
+    sel = null;
     render();
   }
 
-  addEventListener('message', e => {
-    if (e.data?.type === 'vfs:opened') setFromContent(e.data.content);
-  });
-
-  document.addEventListener('mousedown', e => {
-    if (e.target.closest('.gutter')) return;
-    let lineEl = e.target.closest('.line');
+  function positionFromEvent(e) {
+    const padTop = parseFloat(getComputedStyle(view).paddingTop) || 0;
+    const viewRect = view.getBoundingClientRect();
+    const lineIndex = Math.max(0, Math.min(lines.length - 1, Math.floor((e.clientY - viewRect.top - padTop) / LINE_HEIGHT)));
+    let lineEl = view.querySelector(`[data-line="${lineIndex}"]`);
     if (!lineEl) {
       const last = view.lastElementChild;
-      if (!last) return;
-      cur = { line: lines.length - 1, col: lines[lines.length - 1].length };
-      render();
-      view.focus();
-      return;
+      if (!last) return null;
+      return { line: lines.length - 1, col: lines[lines.length - 1].length };
     }
     const li = +lineEl.dataset.line;
     const text = lines[li];
@@ -135,19 +177,64 @@
       if (measure.offsetWidth >= x) { col = i > 0 ? (measure.offsetWidth - x < (measure.offsetWidth - (measure.textContent = text.slice(0, i - 1), measure.offsetWidth)) ? i : i - 1) : 0; break; }
     }
     document.body.removeChild(measure);
-    cur = { line: li, col };
+    return { line: li, col };
+  }
+
+  function deleteSelection() {
+    const range = selectionRange();
+    if (!range) return false;
+    const before = lines[range.start.line].slice(0, range.start.col);
+    const after = lines[range.end.line].slice(range.end.col);
+    lines.splice(range.start.line, range.end.line - range.start.line + 1, before + after);
+    cur = { ...range.start };
+    sel = null;
+    return true;
+  }
+
+  addEventListener('message', e => {
+    if (e.data?.type === 'vfs:opened') setFromContent(e.data.content);
+  });
+
+  document.addEventListener('pointerdown', e => {
+    if (e.target.closest('.gutter')) return;
+    const start = positionFromEvent(e);
+    if (!start) return;
+    view.setPointerCapture(e.pointerId);
+    cur = start;
+    sel = null;
     render();
     view.focus();
+    const onMove = moveEvent => {
+      const pos = positionFromEvent(moveEvent);
+      if (!pos) return;
+      cur = pos;
+      sel = { anchor: start, head: pos };
+      render();
+    };
+    const onUp = upEvent => {
+      view.releasePointerCapture(upEvent.pointerId);
+      view.removeEventListener('pointermove', onMove);
+      view.removeEventListener('pointerup', onUp);
+      view.removeEventListener('pointercancel', onUp);
+      if (!selectionRange()) sel = null;
+      render();
+    };
+    view.addEventListener('pointermove', onMove);
+    view.addEventListener('pointerup', onUp);
+    view.addEventListener('pointercancel', onUp);
+    e.preventDefault();
   });
 
   view.addEventListener('keydown', e => {
     if (e.key === 'Enter') {
+      deleteSelection();
       const text = lines[cur.line];
       lines.splice(cur.line, 1, text.slice(0, cur.col), text.slice(cur.col));
       cur = { line: cur.line + 1, col: 0 };
       e.preventDefault();
     } else if (e.key === 'Backspace') {
-      if (cur.col > 0) {
+      if (deleteSelection()) {
+      } else if (cur.col > 0) {
         const text = lines[cur.line];
         lines[cur.line] = text.slice(0, cur.col - 1) + text.slice(cur.col);
         cur.col--;
@@ -158,21 +245,50 @@
         lines.splice(cur.line, 2, prev + text);
       }
       e.preventDefault();
+    } else if (e.key === 'Delete') {
+      if (!deleteSelection()) {
+        const text = lines[cur.line];
+        if (cur.col < text.length) {
+          lines[cur.line] = text.slice(0, cur.col) + text.slice(cur.col + 1);
+        } else if (cur.line < lines.length - 1) {
+          lines.splice(cur.line, 2, text + lines[cur.line + 1]);
+        }
+      }
+      e.preventDefault();
     } else if (e.key === 'ArrowLeft') {
+      if (sel && !e.shiftKey) {
+        cur = selectionRange().start;
+        sel = null;
+      } else {
+        const anchor = e.shiftKey && !sel ? { ...cur } : sel?.anchor;
       if (cur.col > 0) cur.col--;
       else if (cur.line > 0) { cur.line--; cur.col = lines[cur.line].length; }
+        sel = e.shiftKey ? { anchor, head: { ...cur } } : null;
+      }
       e.preventDefault();
     } else if (e.key === 'ArrowRight') {
+      if (sel && !e.shiftKey) {
+        cur = selectionRange().end;
+        sel = null;
+      } else {
+        const anchor = e.shiftKey && !sel ? { ...cur } : sel?.anchor;
       if (cur.col < lines[cur.line].length) cur.col++;
       else if (cur.line < lines.length - 1) { cur.line++; cur.col = 0; }
+        sel = e.shiftKey ? { anchor, head: { ...cur } } : null;
+      }
       e.preventDefault();
     } else if (e.key === 'ArrowUp') {
+      const anchor = e.shiftKey && !sel ? { ...cur } : sel?.anchor;
       if (cur.line > 0) { cur.line--; cur.col = Math.min(cur.col, lines[cur.line].length); }
+      sel = e.shiftKey ? { anchor, head: { ...cur } } : null;
       e.preventDefault();
     } else if (e.key === 'ArrowDown') {
+      const anchor = e.shiftKey && !sel ? { ...cur } : sel?.anchor;
       if (cur.line < lines.length - 1) { cur.line++; cur.col = Math.min(cur.col, lines[cur.line].length); }
+      sel = e.shiftKey ? { anchor, head: { ...cur } } : null;
       e.preventDefault();
     } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey) {
+      deleteSelection();
       const text = lines[cur.line];
       lines[cur.line] = text.slice(0, cur.col) + e.key + text.slice(cur.col);
       cur.col++;

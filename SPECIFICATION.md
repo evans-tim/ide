@@ -53,7 +53,15 @@
 - Return splits the current line at the caret.
 - Backspace deletes the character before the caret; at column 0, merges the current line into the previous line with the caret at the join point.
 - Arrow keys move the caret; horizontal motion wraps across line boundaries, vertical motion clamps column to line length.
-- No selection or highlight.
+- Dragging across text selects a contiguous range between the drag start and current pointer position.
+- Selection may start or end beyond the visible text on a line; horizontal positions past end-of-line resolve to that line's end.
+- Selection may continue while the pointer is outside the canvas pane or outside the containing iframe; the selected endpoint continues to track the pointer's logical text position until mouse release.
+- Clicking without dragging clears the selection and places the caret at the clicked position.
+- Typing while text is selected replaces the selection with the typed character and places the caret after the inserted character.
+- Return while text is selected replaces the selection with a line break and places the caret at the start of the new line.
+- Backspace/Delete while text is selected removes the selection and places the caret at the start of the removed range.
+- Arrow keys without Shift clear any selection; Left/Right collapse to the start/end of the selection, and Up/Down move from the current caret endpoint.
+- Shift+Arrow extends or shrinks the selection from its original anchor.
 - The caret's line is highlighted using the same Cursor list-selection style as the file list, distinguishing focused vs. unfocused canvas.
 - The caret-line highlight is continuous from the start of the editable area to the canvas's right edge, including through the vertical scroll gutter.
 - Edits are in-memory only; not persisted to the VFS.
