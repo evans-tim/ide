@@ -2,7 +2,12 @@
 <title>Canvas</title>
 <style>
   html, body { margin: 0; height: 100%; }
-  html { scrollbar-gutter: stable; }
+  html { scrollbar-gutter: stable; background: var(--editor-background); }
+  ::-webkit-scrollbar { width: 14px; height: 14px; background: var(--editor-background); }
+  ::-webkit-scrollbar-track { background: var(--editor-background); }
+  ::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
+  ::-webkit-scrollbar-corner { background: var(--editor-background); }
   body { background: var(--editor-background); color: var(--editor-foreground); font: 13px ui-monospace, monospace; }
   html, body { cursor: default; }
   .wrap { display: flex; min-height: 100%; cursor: text; }

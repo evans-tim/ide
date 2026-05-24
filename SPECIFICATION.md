@@ -62,3 +62,5 @@
 
 **Scrollbar**
 - Vertical scrollbar space is always reserved; appearance of the scrollbar causes no layout shift.
+- Scrollbar gutter background matches the canvas background.
+- Scrollbar thumb has square corners and fills the full width of the gutter.
