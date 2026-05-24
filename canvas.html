@@ -83,7 +83,7 @@
     view.innerHTML = '';
     lines.forEach((text, i) => {
       const div = document.createElement('div');
-      div.className = 'line' + (i === cur.line ? ' active' : '');
+      div.className = 'line' + (!range && i === cur.line ? ' active' : '');
       div.dataset.line = i;
       appendLine(div, text, i, range);
       view.appendChild(div);
