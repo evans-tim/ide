@@ -64,6 +64,10 @@
 - Arrow keys without Shift clear any selection; Left/Right collapse to the start/end of the selection, and Up/Down move from the current caret endpoint.
 - Shift+Arrow extends or shrinks the selection from its original anchor.
 - Text selection highlight height matches the caret-line row highlight height.
+- Text selection highlights have super subtle rounding on the selected shape's visible perimeter.
+- Convex outer corners are rounded where the selected shape begins or ends horizontally or vertically.
+- Concave inner corners are rounded where adjacent selected rows have different horizontal extents, using the visual complement of a rounded rectangle so the stepped selection outline curves inward rather than forming a square notch.
+- Inner corner rounding applies at every selected-row transition where one row starts farther right, starts farther left, ends earlier, or ends later than its adjacent selected row.
 - When there is no selection, the caret's line is highlighted using the same Cursor list-selection style as the file list, distinguishing focused vs. unfocused canvas.
 - When there is no selection, the caret-line highlight is continuous from the start of the editable area to the canvas's right edge, including through the vertical scroll gutter.
 - Edits are in-memory only; not persisted to the VFS.
