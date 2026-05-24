@@ -21,3 +21,20 @@
 **Divider hover affordance**
 - Fade-in: 0.1s ease-in, 0.2s delay.
 - Fade-out: 0.15s ease-out, no delay.
+
+**Theming**
+- Single source of truth: Cursor theme tokens are owned by the root and propagated to every pane.
+- Each pane owns its own visual styling using theme tokens; the root does not style pane interiors.
+
+**Virtual file system**
+- Flat set of text files, no directories.
+- Owned by the root; panes never access it directly.
+
+**Inter-pane communication**
+- All messages route through the root; panes never address each other directly.
+- Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
+
+**File browsing**
+- Left pane lists every file in the VFS.
+- Clicking a file selects it (highlighted with the relevant Cursor list-selection style, distinguishing focused vs. unfocused) and opens it.
+- Opening a file displays its contents in the canvas pane.

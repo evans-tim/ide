@@ -1,4 +1,39 @@
 <!doctype html>
 <title>Left</title>
-<style>html, body { margin: 0; height: 100%; }</style>
-left
+<style>
+  html, body { margin: 0; height: 100%; font: 13px -apple-system, sans-serif; background: var(--sideBar-background); color: var(--sideBar-foreground); }
+  ul { list-style: none; margin: 0; padding: 4px 0; }
+  li { padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  li:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
+  li.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
+  body.focused li.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
+</style>
+<ul id="files"></ul>
+<script>
+  const ul = document.getElementById('files');
+  let selected = null;
+  const render = files => {
+    ul.innerHTML = '';
+    for (const name of files) {
+      const li = document.createElement('li');
+      li.textContent = name;
+      li.dataset.name = name;
+      li.onclick = () => {
+        if (selected) selected.classList.remove('selected');
+        li.classList.add('selected');
+        selected = li;
+        parent.postMessage({ type: 'vfs:open', name }, '*');
+      };
+      ul.appendChild(li);
+    }
+  };
+  addEventListener('message', e => {
+    if (e.data?.type === 'vfs:files') render(e.data.files);
+  });
+  const setFocused = v => document.body.classList.toggle('focused', v);
+  addEventListener('focus', () => setFocused(true));
+  addEventListener('blur', () => setFocused(false));
+  document.addEventListener('mousedown', () => setFocused(true));
+  setFocused(document.hasFocus());
+  parent.postMessage({ type: 'vfs:list' }, '*');
+</script>
