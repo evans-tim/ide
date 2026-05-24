@@ -25,11 +25,11 @@
   #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
   #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
   body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
-  .line { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); }
+  .line { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); position: relative; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
   .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
-  .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
+  .cursor { position: absolute; top: 0; width: 1px; background: var(--editor-foreground, #000); animation: blink 1s step-end infinite; height: var(--ide-line-height, 18px); }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div>
@@ -127,12 +127,12 @@
       .filter(v => v !== null)
       .sort((a, b) => a - b);
     const unique = [...new Set(boundaries)];
-    if (cur.line === lineIndex && cur.col === 0) appendCaret(div);
+    if (cur.line === lineIndex && cur.col === 0) appendCaret(div, text, 0);
     for (let j = 0; j < unique.length - 1; j++) {
       const from = unique[j];
       const to = unique[j + 1];
       if (to > from) appendText(div, text.slice(from, to), startCol !== null && from >= startCol && to <= endCol);
-      if (cur.line === lineIndex && cur.col === to) appendCaret(div);
+      if (cur.line === lineIndex && cur.col === to) appendCaret(div, text, to);
     }
     if (!text && !(cur.line === lineIndex && cur.col === 0)) div.textContent = '\u200b';
   }
@@ -148,9 +148,17 @@
     parent.appendChild(span);
   }
 
-  function appendCaret(parent) {
+  function textWidth(text) {
+    if (!text) return 0;
+    return layout(prepare(text, FONT), 10000, LINE_HEIGHT).width;
+  }
+
+  function appendCaret(parent, text, col) {
     const caret = document.createElement('span');
     caret.className = 'cursor';
+    const ratio = window.devicePixelRatio || 1;
+    caret.style.left = Math.round(textWidth(text.slice(0, col)) * ratio) / ratio + 'px';
+    caret.style.width = 1 / ratio + 'px';
     parent.appendChild(caret);
   }
 
