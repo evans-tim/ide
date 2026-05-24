@@ -3,22 +3,15 @@
 <style>
   html, body { margin: 0; height: 100%; font: 13px -apple-system, sans-serif; background: var(--sideBar-background); color: var(--sideBar-foreground); }
   ul { list-style: none; margin: 0; padding: 4px 0; }
-  li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; }
+  li { padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   li:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   li.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused li.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
-  .file-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-  .file-actions { display: flex; align-items: center; gap: 2px; flex: none; visibility: hidden; }
-  li:hover .file-actions { visibility: visible; }
-  .file-actions button { padding: 1px; border: 0; border-radius: 3px; background: transparent; cursor: pointer; }
-  .file-actions button:hover, .file-actions button.selected { background: var(--list-focusBackground); }
-  .file-actions img { width: 16px; height: 16px; display: block; }
 </style>
 <ul id="files"></ul>
 <script>
   const ul = document.getElementById('files');
   let fileNames = [];
-  let fileMetadata = {};
   let selectedName = null;
   const render = () => {
     ul.innerHTML = '';
@@ -26,29 +19,7 @@
       const li = document.createElement('li');
       li.dataset.name = name;
       if (selectedName === name) li.classList.add('selected');
-      const label = document.createElement('span');
-      label.className = 'file-name';
-      label.textContent = name;
-      const actions = document.createElement('span');
-      actions.className = 'file-actions';
-      const activeView = fileMetadata[name]?.activeView || 'file';
-      for (const [view, icon] of [['file', 'file.svg'], ['json', 'json.svg']]) {
-        const button = document.createElement('button');
-        button.type = 'button';
-        if (view === activeView) button.classList.add('selected');
-        const img = document.createElement('img');
-        img.src = `icons/${icon}`;
-        button.appendChild(img);
-        button.onclick = e => {
-          e.stopPropagation();
-          selectedName = name;
-          parent.postMessage({ type: 'vfs:updateMetadata', name, metadata: { activeView: view } }, '*');
-          parent.postMessage({ type: 'vfs:open', name }, '*');
-          render();
-        };
-        actions.appendChild(button);
-      }
-      li.append(label, actions);
+      li.textContent = name;
       li.onclick = () => {
         selectedName = name;
         parent.postMessage({ type: 'vfs:open', name }, '*');
@@ -60,10 +31,6 @@
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:files') {
       fileNames = e.data.files;
-      fileMetadata = e.data.metadata || {};
-      render();
-    } else if (e.data?.type === 'vfs:metadataUpdated') {
-      fileMetadata[e.data.name] = e.data.metadata;
       render();
     }
   });

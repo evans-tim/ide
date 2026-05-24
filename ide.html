@@ -71,8 +71,6 @@
     'notes.txt': 'Shopping list:\n- milk\n- eggs\n- bread',
     'hello.txt': 'Hello, world!',
   };
-  const metadata = Object.fromEntries(Object.keys(vfs).map(name => [name, { activeView: 'file' }]));
-  let currentFile = null;
 
   const panes = () => [...document.querySelectorAll('iframe.pane')];
   const broadcast = (msg, from) => {
@@ -81,20 +79,15 @@
     }
   };
   const openFile = (name, from) => {
-    currentFile = name;
-    broadcast({ type: 'vfs:opened', name, content: vfs[name] ?? '', metadata: metadata[name] }, from);
+    broadcast({ type: 'vfs:opened', name, content: vfs[name] ?? '' }, from);
   };
   addEventListener('message', e => {
     const m = e.data;
     if (!m || typeof m !== 'object') return;
     if (m.type === 'vfs:list') {
-      e.source.postMessage({ type: 'vfs:files', files: Object.keys(vfs), metadata }, '*');
+      e.source.postMessage({ type: 'vfs:files', files: Object.keys(vfs) }, '*');
     } else if (m.type === 'vfs:open') {
       openFile(m.name, e.source);
-    } else if (m.type === 'vfs:updateMetadata' && vfs[m.name] !== undefined) {
-      metadata[m.name] = { ...metadata[m.name], ...m.metadata };
-      broadcast({ type: 'vfs:metadataUpdated', name: m.name, metadata: metadata[m.name] });
-      if (currentFile === m.name) openFile(m.name);
     }
   });
 
