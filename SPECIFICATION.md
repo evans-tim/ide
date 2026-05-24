@@ -59,3 +59,6 @@
 
 **Gutter sizing**
 - Reserves width for 3 digits by default; grows only when line count requires more digits.
+
+**Scrollbar**
+- Vertical scrollbar space is always reserved; appearance of the scrollbar causes no layout shift.
