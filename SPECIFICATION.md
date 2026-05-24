@@ -56,7 +56,8 @@
 # Right Panel
 **Prompt composer**
 - Right pane contains a prompt composer with an editable text input area.
-- The composer has a non-editable bottom affordance area; the text cursor does not appear over this affordance area.
+- The editable text input area sits above the non-editable bottom affordance area.
+- The text input scroll area ends above the bottom affordance; the text cursor does not appear over the affordance area.
 - Send control sits in the bottom-right corner of the composer affordance area.
 - Hovering the send control uses pointer cursor and a subtly lighter control background.
 - Clicking the send control toggles between send and stop states.
