@@ -5,7 +5,7 @@
 
 **Dividers**
 - 2px visible between panes.
-- ±2px invisible hit area around each divider.
+- ±1px invisible hit area around each divider.
 - Drag-to-resize each region.
 - Mousedown captures cursor-to-divider offset; drag applies offset so divider tracks cursor without snapping when grab originates anywhere within hit area.
 - Resize cursor pinned during drag until mouseup.
