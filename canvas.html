@@ -22,7 +22,7 @@
   .line { display: block; height: 18px; line-height: 18px; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
-  .selection { background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
+  .selection { display: inline-block; height: 18px; line-height: 18px; background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
   .cursor { display: inline-block; width: 1px; background: var(--editor-foreground, #000); margin-left: -1px; animation: blink 1s step-end infinite; vertical-align: text-bottom; height: 1em; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
