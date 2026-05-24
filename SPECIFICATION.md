@@ -47,7 +47,8 @@
 
 **Canvas editing**
 - Click positions the caret at the nearest character boundary on the clicked line; clicking past end-of-line places caret at line end.
-- Text cursor (I-beam) over the editable canvas area; default cursor over the gutter.
+- Clicking anywhere in the editable canvas area below the last line places the caret at the end of the last line.
+- Text cursor (I-beam) over the entire editable canvas area to the right of the gutter, including padding above the first line, below the last line, and to the right of text; default cursor over the gutter.
 - Typing inserts characters at the caret.
 - Return splits the current line at the caret.
 - Backspace deletes the character before the caret; at column 0, merges the current line into the previous line with the caret at the join point.
