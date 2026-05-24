@@ -54,6 +54,7 @@
 - Backspace deletes the character before the caret; at column 0, merges the current line into the previous line with the caret at the join point.
 - Arrow keys move the caret; horizontal motion wraps across line boundaries, vertical motion clamps column to line length.
 - No selection or highlight.
+- The caret's line is highlighted using the same Cursor list-selection style as the file list, distinguishing focused vs. unfocused canvas.
 - Edits are in-memory only; not persisted to the VFS.
 
 **Gutter sizing**
