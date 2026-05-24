@@ -10,27 +10,32 @@
       minmax(0, 1fr) 2px
       minmax(0, var(--rw, 20%));
     grid-template-rows:
+      40px
       minmax(0, 1fr) 2px
-      minmax(0, var(--bh, 20%));
+      minmax(0, var(--bh, 20%))
+      20px;
     color: var(--foreground);
   }
+  #topBar    { grid-row: 1; grid-column: 1 / 6; background: var(--titleBar-activeBackground, var(--sideBar-background)); border-bottom: 1px solid var(--editorGroup-border); }
+  #bottomBar { grid-row: 5; grid-column: 1 / 6; background: var(--statusBar-background, var(--sideBar-background)); border-top: 1px solid var(--editorGroup-border); }
   #leftWrap, #rightWrap, #bottomWrap, #canvasWrap { min-width: 0; min-height: 0; overflow: hidden; position: relative; }
-  #leftWrap   { grid-row: 1 / 4; grid-column: 1; background: var(--sideBar-background); }
-  #rightWrap  { grid-row: 1 / 4; grid-column: 5; background: var(--sideBar-background); }
-  #canvasWrap { grid-row: 1; grid-column: 3; background: var(--sideBar-background); }
-  #bottomWrap { grid-row: 3; grid-column: 3; background: var(--panel-background); }
+  #leftWrap   { grid-row: 2 / 5; grid-column: 1; background: var(--sideBar-background); }
+  #rightWrap  { grid-row: 2 / 5; grid-column: 5; background: var(--sideBar-background); }
+  #canvasWrap { grid-row: 2; grid-column: 3; background: var(--sideBar-background); }
+  #bottomWrap { grid-row: 4; grid-column: 3; background: var(--panel-background); }
   iframe.pane { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border: 0; }
 
   .gutter { background: var(--editorGroup-border); position: relative; z-index: 1; }
   .gutter::before { content: ""; position: absolute; background: var(--focusBorder); opacity: 0; transition: opacity 0.15s ease-out; }
   .gutter:hover::before, .gutter.dragging::before { opacity: 1; transition: opacity 0.10s ease-in 0.2s; }
-  #gL, #gR { grid-row: 1 / 4; cursor: col-resize; }
+  #gL, #gR { grid-row: 2 / 5; cursor: col-resize; }
   #gL { grid-column: 2; } #gR { grid-column: 4; }
   #gL::before, #gR::before { top: 0; bottom: 0; left: -1px; right: -1px; }
-  #gB { grid-row: 2; grid-column: 3; cursor: row-resize; }
+  #gB { grid-row: 3; grid-column: 3; cursor: row-resize; }
   #gB::before { left: 0; right: 0; top: -1px; bottom: -1px; }
   body.dragging iframe.pane { pointer-events: none; }
 </style>
+<div id="topBar"></div>
 <div id="leftWrap"><iframe class="pane" src="left.html"></iframe></div>
 <div id="gL" class="gutter"></div>
 <div id="canvasWrap"><iframe class="pane" src="canvas.html"></iframe></div>
@@ -38,6 +43,7 @@
 <div id="bottomWrap"><iframe class="pane" src="bottom.html"></iframe></div>
 <div id="gR" class="gutter"></div>
 <div id="rightWrap"><iframe class="pane" src="right.html"></iframe></div>
+<div id="bottomBar"></div>
 <script>
   const root = document.documentElement;
 
@@ -84,7 +90,8 @@
     root.style.setProperty('--rw', px(clamp(innerWidth - (e.clientX - offX), MIN, max)));
   });
   drag(gB, (e, offX, offY) => {
-    const max = innerHeight - GUTTER - MIN;
-    root.style.setProperty('--bh', px(clamp(innerHeight - (e.clientY - offY), MIN, max)));
+    const avail = innerHeight - 40 - 20;
+    const max = avail - GUTTER - MIN;
+    root.style.setProperty('--bh', px(clamp(innerHeight - 20 - (e.clientY - offY), MIN, max)));
   });
 </script>
