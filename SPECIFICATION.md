@@ -48,9 +48,27 @@
 
 # File Tree
 **File browsing**
-- Left pane lists every file in the VFS.
-- Clicking a file selects it (highlighted with the relevant Cursor list-selection style, distinguishing focused vs. unfocused) and opens it.
+- The left pane lists every file in the VFS as a file tree.
+- Directories are inferred from slash-delimited file paths; the VFS remains a flat set of text files.
+- A file row displays the file name.
+- Clicking a file row selects and opens the file.
 - Opening a file displays its contents in the canvas pane.
+- The selected file row uses the relevant Cursor list-selection style, including a slightly darker 1px top and bottom border, and distinguishes focused vs. unfocused states.
+- Hovering a file row uses the relevant Cursor list-selection style without top and bottom border.
+- A directory row displays a caret icon followed by the directory name.
+- Clicking a directory row toggles it between collapsed and expanded.
+- An expanded directory row uses a downward caret.
+- A collapsed directory row uses a right-facing caret.
+- An expanded directory shows its direct child file rows and directory rows.
+- Each directory's expanded/collapsed state is stored in memory; directories are collapsed by default until expanded.
+- An expanded directory has a 1px vertical indent guide alongside its child rows.
+- Each indent guide aligns horizontally with the left edge of its parent directory row's caret.
+- When the mouse is inside the left pane, indent guides are visible for all expanded directories.
+- When the mouse is outside the left pane, only indent guides for directories containing the selected file are visible.
+- Indent guides for directories containing the selected file are slightly darker than hover-only indent guides.
+
+
+
 
 
 # Right Panel
