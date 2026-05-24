@@ -226,7 +226,13 @@
   });
 
   view.addEventListener('keydown', e => {
-    if (e.key === 'Enter') {
+    if (e.metaKey && e.key.toLowerCase() === 'a') {
+      const start = { line: 0, col: 0 };
+      const end = { line: lines.length - 1, col: lines[lines.length - 1].length };
+      cur = end;
+      sel = { anchor: start, head: end };
+      e.preventDefault();
+    } else if (e.key === 'Enter') {
       deleteSelection();
       const text = lines[cur.line];
       lines.splice(cur.line, 1, text.slice(0, cur.col), text.slice(cur.col));
