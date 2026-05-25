@@ -79,7 +79,13 @@
     background: transparent;
     color: var(--input-foreground);
     font: inherit;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
   }
+  textarea::-webkit-scrollbar { width: 12px; }
+  textarea::-webkit-scrollbar-track { background: transparent; }
+  textarea::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, rgba(121, 121, 121, 0.4)); background-clip: padding-box; border: 2px solid transparent; border-radius: 6px; }
+  textarea::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7)); background-clip: padding-box; }
   .promptFooter {
     position: absolute;
     left: 0;

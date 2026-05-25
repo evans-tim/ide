@@ -110,6 +110,13 @@
 - The scrollbar thumb has fully rounded top and bottom ends.
 - The scrollbar track is transparent.
 
+**Composer scrollbar**
+- The composer text input area scrolls vertically when its content exceeds the available height.
+- The composer scrollbar gutter is reserved within the composer's right edge; its appearance causes no layout shift and the text input's right edge remains fixed whether or not the scrollbar is visible.
+- The scrollbar thumb is centered horizontally within the gutter, with equal small insets on its left and right so its width is narrower than the gutter (standard scrollbar thickness).
+- The scrollbar thumb has fully rounded top and bottom ends.
+- The scrollbar track is transparent.
+
 
 # Canvas
 **Canvas**
