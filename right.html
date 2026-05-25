@@ -2,12 +2,22 @@
 <title>Right</title>
 <style>
   html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--editor-background); color: var(--sideBar-foreground); }
-  body { box-sizing: border-box; padding: 8px; display: flex; flex-direction: column; gap: 8px; }
+  body { box-sizing: border-box; padding: 12px; display: flex; flex-direction: column; gap: 12px; }
   .messages {
     display: none;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
-  body.submitted .messages {
-    display: block;
+  body:not(.submitted) .messages { display: none; }
+  body.submitted .messages { display: flex; }
+  .turn {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
   .message {
     position: relative;
@@ -38,7 +48,6 @@
   }
   .messageStop img { width: 18px; height: 18px; display: block; }
   .response {
-    margin-top: 12px;
     padding: 0 8px;
     color: var(--descriptionForeground);
   }
@@ -100,32 +109,35 @@
   const textarea = document.querySelector('textarea');
   const sendButton = document.querySelector('.send');
   const sendIcon = sendButton.querySelector('img');
-  let responseTimer = null;
-  let isResponding = false;
+  let activeTurn = null;
 
   function setComposerState(isStop) {
     sendButton.setAttribute('aria-label', isStop ? 'Stop' : 'Send');
     sendIcon.src = isStop ? 'icons/stop-rounded.svg' : 'icons/arrow-up.svg';
   }
 
-  function completeResponse(response) {
-    clearTimeout(responseTimer);
-    isResponding = false;
-    setComposerState(false);
-    response.textContent = 'Hello.';
-    const message = messages.querySelector('.message.responding');
-    if (message) message.classList.remove('responding');
+  function completeResponse(turn) {
+    if (!turn) return;
+    clearTimeout(turn.timer);
+    turn.response.textContent = 'Hello.';
+    turn.message.classList.remove('responding');
+    if (activeTurn === turn) {
+      activeTurn = null;
+      setComposerState(false);
+    }
   }
 
   function submitChat() {
-    if (isResponding) return;
+    if (activeTurn) return;
 
     const text = textarea.value;
     if (!text.trim()) return;
 
     document.body.classList.add('submitted');
     textarea.value = '';
-    messages.innerHTML = '';
+
+    const turnEl = document.createElement('div');
+    turnEl.className = 'turn';
 
     const message = document.createElement('div');
     message.className = 'message responding';
@@ -142,12 +154,16 @@
     response.className = 'response';
     response.textContent = 'Planning next moves';
 
-    messages.append(message, response);
-    isResponding = true;
+    turnEl.append(message, response);
+    messages.append(turnEl);
+    messages.scrollTop = messages.scrollHeight;
+
+    const turn = { message, response, timer: null };
+    activeTurn = turn;
     setComposerState(true);
 
-    stopButton.addEventListener('click', () => completeResponse(response));
-    responseTimer = setTimeout(() => completeResponse(response), 1000);
+    stopButton.addEventListener('click', () => completeResponse(turn));
+    turn.timer = setTimeout(() => completeResponse(turn), 1000);
   }
 
   textarea.addEventListener('keydown', (event) => {
@@ -158,9 +174,8 @@
   });
 
   sendButton.addEventListener('click', () => {
-    if (isResponding) {
-      const response = messages.querySelector('.response');
-      if (response) completeResponse(response);
+    if (activeTurn) {
+      completeResponse(activeTurn);
       return;
     }
 

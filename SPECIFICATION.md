@@ -89,12 +89,18 @@
 
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
-- After submission, the composer is in stop state and displays the rounded stop icon until the response is complete. 
-- Submitted user messages display at the top as plain message panels with a minimalist border.
+- After submission, the composer is in stop state and displays the rounded stop icon until the response is complete.
+- Submitted user messages display above the composer as plain message panels with a minimalist border, in chronological order (oldest at top, newest directly above the composer).
 - Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.
-- While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response is not complete. 
-- Immediately after chat submission, `Planning next moves` displays beneath the submitted user message panel with 12px of margin above it. 
-- After 1000ms, `Planning next moves` is replaced with `Hello.` and the response is complete. 
+- While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response to that message is not complete.
+- Immediately after chat submission, `Planning next moves` displays beneath the just-submitted user message panel with 12px of margin above it.
+- After 1000ms, `Planning next moves` is replaced with `Hello.` and the response is complete.
+- Subsequent submissions append a new user message panel beneath the previous response, followed by its own `Planning next moves` → `Hello.` response; prior messages and responses remain visible above.
+- The conversation area scrolls vertically when its content exceeds the available height; the composer remains pinned to the bottom of the right panel.
+
+**Right panel spacing**
+- 12px padding between the right panel edges and the conversation/composer content on all sides.
+- 12px vertical gap between consecutive conversation items (user message panel, response text, composer).
 
 
 # Canvas
