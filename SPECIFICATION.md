@@ -101,6 +101,14 @@
 **Right panel spacing**
 - 12px padding between the right panel edges and the conversation/composer content on all sides.
 - 12px vertical gap between consecutive conversation items (user message panel, response text, composer).
+- The right-edge padding reserves space for the conversation scrollbar gutter: the scrollbar appears within that reserved margin, leaving the composer and message panels' right edges fixed in place whether or not the scrollbar is visible.
+- The left-edge padding and the right-edge padding (inclusive of reserved scrollbar gutter) are equal, so the composer and message panels remain horizontally centered within the right panel regardless of scrollbar visibility.
+
+**Conversation scrollbar**
+- The conversation scrollbar gutter spans the full 12px right margin between the message/composer content and the right panel edge.
+- The scrollbar thumb is centered horizontally within the gutter, with equal small insets on its left and right so its width is narrower than the gutter (standard scrollbar thickness).
+- The scrollbar thumb has fully rounded top and bottom ends.
+- The scrollbar track is transparent.
 
 
 # Canvas
