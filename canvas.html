@@ -29,7 +29,9 @@
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
   .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
+  body:not(.focused) .selection { background: transparent; color: inherit; }
   .cursor { position: absolute; top: 0; width: 1px; background: var(--editor-foreground, #000); animation: blink 1s step-end infinite; height: var(--ide-line-height, 18px); }
+  body:not(.focused) .cursor { display: none; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div>

@@ -136,6 +136,7 @@
 - (NOT IMPLEMENTED) Inner corner rounding applies at every selected-row transition where one row starts farther right, starts farther left, ends earlier, or ends later than its adjacent selected row.
 - When there is no selection, the caret's line is highlighted using the same Cursor list-selection style as the file list, distinguishing focused vs. unfocused canvas.
 - When there is no selection, the caret-line highlight is continuous from the start of the editable area to the canvas's right edge, including through the vertical scroll gutter.
+- When the canvas is not focused, the caret and any text selection are not rendered, but the line highlight remains.
 - Edits are in-memory only; not persisted to the VFS.
 
 **Gutter sizing**
