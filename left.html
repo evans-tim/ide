@@ -9,9 +9,8 @@
   .row:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   .row.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); border-top: 1px solid color-mix(in srgb, var(--list-inactiveSelectionBackground) 80%, black); border-bottom: 1px solid color-mix(in srgb, var(--list-inactiveSelectionBackground) 80%, black); padding-top: 1px; padding-bottom: 1px; }
   body.focused .row.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); border-top-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); border-bottom-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); }
-  .caret { display: inline-block; width: 12px; height: 12px; flex: none; position: relative; }
-  .caret::before { content: ""; position: absolute; left: 3px; top: 3px; width: 0; height: 0; border-left: 4px solid currentColor; border-top: 3px solid transparent; border-bottom: 3px solid transparent; opacity: 0.7; transition: transform 0.1s; transform-origin: 2px 3px; }
-  .caret.expanded::before { transform: rotate(90deg); }
+  .caret { display: inline-block; width: 16px; height: 16px; flex: none; background: currentColor; opacity: 0.7; -webkit-mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; }
+  .caret.expanded { -webkit-mask-image: url(icons/chevron-down.svg); mask-image: url(icons/chevron-down.svg); }
   .file .caret { visibility: hidden; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
@@ -25,7 +24,7 @@
   const expanded = new Set();
   const INDENT = 12;
   const ROW_PAD_LEFT = 12;
-  const CARET_W = 12;
+  const CARET_W = 16;
 
   const buildTree = paths => {
     const node = { dirs: new Map(), files: [] };
