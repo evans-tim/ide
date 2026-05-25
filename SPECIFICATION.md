@@ -93,7 +93,7 @@
 - Submitted user messages display at the top as plain message panels with a minimalist border.
 - Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.
 - While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response is not complete. 
-- Immediately after chat submission, `Planning next moves` displays beneath the submitted user message panel.
+- Immediately after chat submission, `Planning next moves` displays beneath the submitted user message panel with 12px of margin above it. 
 - After 1000ms, `Planning next moves` is replaced with `Hello.` and the response is complete. 
 
 
