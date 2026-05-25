@@ -64,7 +64,7 @@
 - An expanded directory has a 1px vertical indent guide alongside its child rows.
 - Each indent guide aligns horizontally with the left edge of its parent directory row's caret.
 - When the mouse is inside the left pane, indent guides are visible for all expanded directories.
-- When the mouse is outside the left pane, only indent guides for directories containing the selected file are visible.
+- When the mouse is outside the left pane, only indent guides for the single parent directory immediately containing the selected file are visible.
 - Indent guides for directories containing the selected file are slightly darker than hover-only indent guides.
 
 

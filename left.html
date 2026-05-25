@@ -2,32 +2,123 @@
 <title>Left</title>
 <style>
   html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--sideBar-background); color: var(--sideBar-foreground); }
-  ul { list-style: none; margin: 0; padding: 4px 0; }
-  li { padding: 2px 12px; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  li:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
-  li.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
-  body.focused li.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
+  ul { list-style: none; margin: 0; padding: 0; }
+  ul.root { padding: 4px 0; }
+  ul.children { position: relative; }
+  .row { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; box-sizing: border-box; padding-top: 2px; padding-bottom: 2px; padding-right: 12px; }
+  .row:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
+  .row.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); border-top: 1px solid color-mix(in srgb, var(--list-inactiveSelectionBackground) 80%, black); border-bottom: 1px solid color-mix(in srgb, var(--list-inactiveSelectionBackground) 80%, black); padding-top: 1px; padding-bottom: 1px; }
+  body.focused .row.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); border-top-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); border-bottom-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); }
+  .caret { display: inline-block; width: 12px; height: 12px; flex: none; position: relative; }
+  .caret::before { content: ""; position: absolute; left: 3px; top: 3px; width: 0; height: 0; border-left: 4px solid currentColor; border-top: 3px solid transparent; border-bottom: 3px solid transparent; opacity: 0.7; transition: transform 0.1s; transform-origin: 2px 3px; }
+  .caret.expanded::before { transform: rotate(90deg); }
+  .file .caret { visibility: hidden; }
+  .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
+  .guide.dim { opacity: 0; }
+  body.hovering .guide.dim { opacity: 0.5; }
+  .guide.on-selected { opacity: 1; }
 </style>
-<ul id="files"></ul>
+<ul id="files" class="root"></ul>
 <script>
-  const ul = document.getElementById('files');
   let fileNames = [];
-  let selectedName = null;
-  const render = () => {
-    ul.innerHTML = '';
-    for (const name of fileNames) {
+  let selectedPath = null;
+  const expanded = new Set();
+  const INDENT = 12;
+  const ROW_PAD_LEFT = 12;
+  const CARET_W = 12;
+
+  const buildTree = paths => {
+    const node = { dirs: new Map(), files: [] };
+    for (const p of paths) {
+      const parts = p.split('/');
+      let cur = node;
+      for (let i = 0; i < parts.length - 1; i++) {
+        const part = parts[i];
+        if (!cur.dirs.has(part)) cur.dirs.set(part, { dirs: new Map(), files: [] });
+        cur = cur.dirs.get(part);
+      }
+      cur.files.push(parts[parts.length - 1]);
+    }
+    return node;
+  };
+
+  const isImmediateParent = dirPath => {
+    if (selectedPath == null) return false;
+    const idx = selectedPath.lastIndexOf('/');
+    if (idx < 0) return false;
+    return selectedPath.slice(0, idx) === dirPath;
+  };
+
+  const renderNode = (node, parentPath, depth) => {
+    const ul = document.createElement('ul');
+    ul.className = depth === 0 ? 'root' : 'children';
+    if (depth > 0) {
+      const guide = document.createElement('div');
+      guide.className = 'guide ' + (isImmediateParent(parentPath) ? 'on-selected' : 'dim');
+      // guide aligns with parent directory caret's left edge.
+      // parent row's left padding = ROW_PAD_LEFT + (depth - 1) * INDENT
+      // caret is the first child, so caret left edge is at that offset.
+      const left = ROW_PAD_LEFT + (depth - 1) * INDENT;
+      guide.style.left = left + 'px';
+      ul.appendChild(guide);
+    }
+    const dirNames = [...node.dirs.keys()].sort();
+    for (const name of dirNames) {
+      const childPath = parentPath ? parentPath + '/' + name : name;
       const li = document.createElement('li');
-      li.dataset.name = name;
-      if (selectedName === name) li.classList.add('selected');
-      li.textContent = name;
-      li.onclick = () => {
-        selectedName = name;
-        parent.postMessage({ type: 'vfs:open', name }, '*');
+      const row = document.createElement('div');
+      row.className = 'row dir';
+      row.style.paddingLeft = (ROW_PAD_LEFT + depth * INDENT) + 'px';
+      const caret = document.createElement('span');
+      caret.className = 'caret';
+      if (expanded.has(childPath)) caret.classList.add('expanded');
+      row.appendChild(caret);
+      const label = document.createElement('span');
+      label.textContent = name;
+      row.appendChild(label);
+      row.onclick = () => {
+        if (expanded.has(childPath)) expanded.delete(childPath);
+        else expanded.add(childPath);
         render();
       };
+      li.appendChild(row);
+      if (expanded.has(childPath)) {
+        li.appendChild(renderNode(node.dirs.get(name), childPath, depth + 1));
+      }
       ul.appendChild(li);
     }
+    const files = [...node.files].sort();
+    for (const name of files) {
+      const childPath = parentPath ? parentPath + '/' + name : name;
+      const li = document.createElement('li');
+      const row = document.createElement('div');
+      row.className = 'row file';
+      row.style.paddingLeft = (ROW_PAD_LEFT + depth * INDENT) + 'px';
+      const caret = document.createElement('span');
+      caret.className = 'caret';
+      row.appendChild(caret);
+      const label = document.createElement('span');
+      label.textContent = name;
+      row.appendChild(label);
+      if (selectedPath === childPath) row.classList.add('selected');
+      row.onclick = () => {
+        selectedPath = childPath;
+        parent.postMessage({ type: 'vfs:open', name: childPath }, '*');
+        render();
+      };
+      li.appendChild(row);
+      ul.appendChild(li);
+    }
+    return ul;
   };
+
+  const render = () => {
+    const tree = buildTree(fileNames);
+    const newRoot = renderNode(tree, '', 0);
+    newRoot.id = 'files';
+    document.getElementById('files').replaceWith(newRoot);
+  };
+
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:files') {
       fileNames = e.data.files;
@@ -39,5 +130,9 @@
   addEventListener('blur', () => setFocused(false));
   document.addEventListener('mousedown', () => setFocused(true));
   setFocused(document.hasFocus());
+
+  document.documentElement.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  document.documentElement.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+
   parent.postMessage({ type: 'vfs:list' }, '*');
 </script>
