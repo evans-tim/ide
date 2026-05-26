@@ -49,7 +49,7 @@ Table of Contents
 
 Evans, et. al.     Integrated Development Environment           [Page 1]
 
-RFC 3339      AI-Enabled Integrated Development Environment    July 2002
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
 
 
    7.4. Expand/Collapse Behavior .............................. 8
@@ -72,110 +72,543 @@ RFC 3339      AI-Enabled Integrated Development Environment    July 2002
    11. Not Implemented Yet ................................... 12
    Appendix A. Keybindings ................................... 13
 
-1. Introduction
+1. Overview
 
-   Date and time formats cause a lot of confusion and interoperability
-   problems on the Internet.  This document addresses many of the
-   problems encountered and makes recommendations to improve consistency
-   and interoperability when representing and using date and time in
-   Internet protocols.
+   This specification defines the intended behavior of the Tmplogic
+   AI-Enabled Integrated Development Environment.  It covers the layout
+   model, pane embedding, resizing behavior, theme and font propagation,
+   virtual file system ownership, inter-pane messaging, file tree
+   behavior, right-panel chat behavior, and center canvas editing
+   behavior.
 
-   This document includes an Internet profile of the ISO 8601 [ISO8601]
-   standard for representation of dates and times using the Gregorian
-   calendar.
+   The top bar and bottom status bar span the full viewport width.  The
+   left and right sidebars span the vertical space between those bars and
+   take horizontal precedence over the bottom panel.  The bottom panel
+   spans only the center column beneath the center pane.
 
-   There are many ways in which date and time values might appear in
-   Internet protocols:  this document focuses on just one common usage,
-   viz. timestamps for Internet protocol events.  This limited
-   consideration has the following consequences:
+   Cmd+I toggles the right panel open and closed.  Cmd+B toggles the
+   left panel open and closed.  Ctrl+` toggles the bottom panel open and
+   closed.
 
-   o  All dates and times are assumed to be in the "current era",
-      somewhere between 0000AD and 9999AD.
-
-   o  All times expressed have a stated relationship (offset) to
-      Coordinated Universal Time (UTC).  (This is distinct from some
-      usage in scheduling applications where a local time and location
-      may be known, but the actual relationship to UTC may be dependent
-      on the unknown or unknowable actions of politicians or
-      administrators.  The UTC time corresponding to 17:00 on 23rd March
-      2005 in New York may depend on administrative decisions about
-      daylight savings time.  This specification steers well clear of
-      such considerations.)
-
-   o  Timestamps can express times that occurred before the introduction
-      of UTC.  Such timestamps are expressed relative to universal time,
-      using the best available practice at the stated time.
-
-   o  Date and time expressions indicate an instant in time.
-      Description of time periods, or intervals, is not covered here.
+   This document does not specify persistence beyond the in-memory
+   virtual file system, network transport for chat, multi-user
+   collaboration, or production authentication and authorization.
 
 
 
-
-
-
-
-Klyne, et. al.              Standards Track                     [Page 2]
+Evans, et. al.     Integrated Development Environment           [Page 2]
 
-RFC 3339       Date and Time on the Internet: Timestamps       July 2002
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
 
 
 2. Definitions
 
    The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
    "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
-   document are to be interpreted as described in RFC 2119 [RFC2119].
+   document are to be interpreted as described in RFC 2119.
 
-      UTC         Coordinated Universal Time as maintained by the Bureau
-                  International des Poids et Mesures (BIPM).
+      Root
+                  The top-level host document that owns layout, theme
+                  tokens, font tokens, the virtual file system, and
+                  message routing.
 
-      second      A basic unit of measurement of time in the
-                  International System of Units.  It is defined as the
-                  duration of 9,192,631,770 cycles of microwave light
-                  absorbed or emitted by the hyperfine transition of
-                  cesium-133 atoms in their ground state undisturbed by
-                  external fields.
+      Pane
+                  An independently-loaded document embedded within a
+                  viewport region.
 
-      minute      A period of time of 60 seconds.  However, see also the
-                  restrictions in section 5.7 and Appendix D for how
-                  leap seconds are denoted within minutes.
+      VFS
+                  The root-owned virtual file system.  It is a flat set
+                  of text files and is not accessed directly by panes.
 
-      hour        A period of time of 60 minutes.
+      Canvas
+                  The center editor pane that renders and edits the
+                  contents of the currently opened file.
 
-      day         A period of time of 24 hours.
+      Composer
+                  The editable prompt input area and its bottom
+                  affordance area in the right panel.
 
-      leap year   In the Gregorian calendar, a year which has 366 days.
-                  A leap year is a year whose number is divisible by
-                  four an integral number of times, except that if it is
-                  a centennial year (i.e. divisible by one hundred) it
-                  shall also be divisible by four hundred an integral
-                  number of times.
-
-      ABNF        Augmented Backus-Naur Form, a format used to represent
-                  permissible strings in a protocol or language, as
-                  defined in [ABNF].
-
-      Email Date/Time Format
-                  The date/time format used by Internet Mail as defined
-                  by RFC 2822 [IMAIL-UPDATE].
-
-      Internet Date/Time Format
-                  The date format defined in section 5 of this document.
-
-      Timestamp   This term is used in this document to refer to an
-                  unambiguous representation of some instant in time.
-
-      Z           A suffix which, when applied to a time, denotes a UTC
-                  offset of 00:00; often spoken "Zulu" from the ICAO
-                  phonetic alphabet representation of the letter "Z".
+      Divider
+                  The 2px visible boundary between resizable regions,
+                  including the invisible hit area around it.
 
 
 
-Klyne, et. al.              Standards Track                     [Page 3]
+Evans, et. al.     Integrated Development Environment           [Page 3]
 
-RFC 3339       Date and Time on the Internet: Timestamps       July 2002
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
 
 
-      For more information about time scales, see Appendix E of [NTP],
-      Section 3 of [ISO8601], and the appropriate ITU documents [ITU-R-
-      TF].
+3. Architecture & Layout
+
+3.1. Viewport Regions
+
+   The viewport is divided into a top bar, a bottom status bar, left and
+   right sidebars, a center canvas region, and a bottom panel beneath the
+   center region.  The top bar and status bar span the full viewport
+   width.  The sidebars occupy the space between those bars.
+
+   The bottom panel is constrained to the center column and does not
+   extend beneath either sidebar.
+
+3.2. Layering/Z-Order
+
+   Left and right sidebars have x-axis precedence over the bottom panel.
+   Pane content is clipped to its assigned region and fills that region
+   edge-to-edge with no subpixel gaps at pane borders.
+
+3.3. Divider/Resize Model
+
+   Dividers are 2px visible boundaries with a 1px invisible additional 
+   hit area on each side.  Each divider supports drag-to-resize for its 
+   adjacent region.
+
+   On mousedown, the implementation MUST capture the cursor-to-divider
+   offset.  During drag, resize applies that offset so the divider tracks
+   the cursor without snapping, even when the grab originates anywhere
+   within the hit area.  The resize cursor remains pinned until mouseup.
+
+   Panes do not intercept pointer events while a divider drag is active.
+
+3.4. Overflow Guarantees
+
+   Overflow MUST be structurally impossible.  The viewport is a hard ceiling,
+   not merely a container with hidden overflow.
+
+
+Evans, et. al.     Integrated Development Environment           [Page 4]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+4. Design Rules
+
+4.1. No-Momentum Rule
+
+   Scrolling in the canvas has no momentum.  Motion stops as soon as
+   scroll input stops.
+
+4.2. Shared Scrollbar Principles
+
+   Scrollbar gutters are reserved before scrollbar visibility changes so
+   content edges do not shift when scrollbars appear.  Conversation and
+   composer scrollbars use transparent tracks and fully rounded thumbs.
+   The canvas scrollbar uses a gutter background matching the canvas
+   background; its thumb has square corners and fills the full gutter
+   width.
+
+4.3. Token/Spacing Invariants
+
+   The root owns theme tokens and font tokens and propagates them to all
+   panes.  Each pane owns its own visual styling using the propagated
+   tokens.  The root does not style pane interiors.
+
+   The default font size is 13px.  Canvas text and line numbers use the
+   editor monospace font stack: Menlo, Monaco, "Courier New", monospace.
+   Non-canvas UI uses the workbench font stack: -apple-system,
+   BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif.
+
+
+
+Evans, et. al.     Integrated Development Environment           [Page 5]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+5. Cross-Cutting System Contracts
+
+5.1. Theme Token Propagation
+
+   Vscode-style theme tokens are owned by the root and propagated to every
+   pane.  Panes consume those tokens locally for their own visual
+   styling.
+
+5.2. Font Tokens
+
+   Font choices are propagated as root-owned tokens so panes can apply
+   the correct stack locally.  The canvas applies the editor monospace
+   stack, while all non-canvas UI applies the workbench/interface stack.
+
+5.3. Virtual File System Ownership
+
+   The VFS is a flat set of text files.  It has no directories as stored
+   data.  Directories shown in the file tree are inferred from
+   slash-delimited file paths.
+
+   The root owns the VFS.  Panes never access it directly.
+
+5.4. Inter-Pane Message Bus
+
+   All messages route through the root.  Panes never address each other
+   directly.  Panes request the file list and request to open files; the
+   root responds and broadcasts open events to other panes.
+
+
+
+Evans, et. al.     Integrated Development Environment           [Page 6]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+6. Global Interaction Model
+
+6.1. Focus Rules
+
+   Focus changes affect selected and active visual states.  The selected
+   file row distinguishes focused and unfocused left-pane states.  When
+   the canvas is not focused, its caret and any text selection are not
+   rendered, but the caret-line highlight remains.
+
+6.2. Keyboard Shortcuts
+
+   Cmd+I toggles the right panel.  Cmd+B toggles the left panel.
+   Ctrl+` toggles the bottom panel.  Enter submits chat from the right
+   panel composer, while Shift+Enter inserts a newline.  Canvas editing
+   supports Cmd+A, Cmd+C, Cmd+V, arrows, Shift+Arrow, Return,
+   Backspace, and Delete as specified in Sections 9.3 and 9.5.
+
+
+
+Evans, et. al.     Integrated Development Environment           [Page 7]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+7. Left Panel: File Tree
+
+7.1. Data Model
+
+   The left pane lists every file in the VFS as a file tree.  Directories
+   are inferred from slash-delimited file paths, while the VFS remains a
+   flat set of text files.
+
+7.2. Rendering
+
+   A file row displays the file name.  Clicking a file row selects and
+   opens the file, and opening a file displays its contents in the canvas
+   pane.
+
+   A directory row displays a caret icon followed by the directory name.
+   An expanded directory row uses a downward caret.  A collapsed
+   directory row uses a right-facing caret.  An expanded directory shows
+   its direct child file rows and directory rows.
+
+7.3. Selection/Focus States
+
+   The selected file row uses the relevant list-selection style and 
+   distinguishes focused and unfocused states.  When the left pane is
+   focused, the selected file row additionally shows a slightly darker
+   1px top and bottom border.  When the left pane is unfocused, the
+   selection highlight remains but the borders are absent.
+
+   Hovering a file row uses the relevant list-selection style without 
+   top and bottom border.
+
+7.4. Expand/Collapse Behavior
+
+   Clicking a directory row toggles it between collapsed and expanded.
+   Each directory's expanded/collapsed state is stored in memory, so 
+   that child directory state stays the same if a parent is closed and
+   later reopened. Directories are collapsed by default until expanded. 
+
+7.5. Indent Guides
+
+   An expanded directory has a 1px vertical indent guide alongside its
+   child rows.  Each indent guide aligns horizontally with the left edge
+   of its parent directory row's caret.
+
+   When the mouse is inside the left pane, indent guides are visible for
+   all expanded directories.  When the mouse is outside the left pane,
+   only indent guides for the single parent directory immediately
+   containing the selected file are visible.  Indent guides for
+   directories containing the selected file are slightly darker than
+   hover-only indent guides.
+
+
+Evans, et. al.     Integrated Development Environment           [Page 8]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+8. Right Panel: Chat
+
+8.1. Prompt Input States
+
+   The right pane contains a prompt composer with an editable text input
+   area at the top.  The editable text input area sits above the
+   non-editable bottom affordance area.  The text input scroll area ends
+   above the bottom affordance, so the text cursor does not appear over
+   the affordance area.
+
+   The send control sits in the bottom-right corner of the composer
+   affordance area.  Hovering the send control uses a pointer cursor and
+   a subtly lighter control background.  Clicking the send control
+   toggles between send and stop states.  Send state displays an upward
+   arrow icon.  Stop state displays a rounded stop icon.
+
+   Shift+Enter inserts a newline in the editable text input area.  Enter
+   submits the chat.  Clicking the upward arrow send control submits the
+   chat.
+
+8.2. Submission Lifecycle
+
+   Submitting the chat clears the composer text and places the full
+   composer, including its text area and bottom affordance area, at the
+   bottom of the right panel.  After submission, the composer is in stop
+   state and displays the rounded stop icon until the response is
+   complete.
+
+   Submitted user messages display above the composer as plain message
+   panels with a minimalist border, in chronological order from oldest at
+   top to newest directly above the composer.  Submitted user message
+   panels contain only the submitted text by default; no per-message
+   action buttons are visible.
+
+   While a submitted user message panel is hovered, a rounded stop
+   control appears inside the panel on the right-hand side for as long as
+   the response to that message is not complete.
+
+   Immediately after chat submission, "Planning next moves" displays
+   beneath the just-submitted user message panel with 12px of margin
+   above it.  After 1000ms, that text is replaced with "Hello." and the
+   response is complete.
+
+   Subsequent submissions append a new user message panel beneath the
+   previous response, followed by its own "Planning next moves" to
+   "Hello." response.  Prior messages and responses remain visible above.
+
+8.3. Message Rendering
+
+   The conversation area scrolls vertically when its content exceeds the
+   available height.  The composer remains pinned to the bottom of the
+   right panel.
+
+8.3. Scrollbar/Spacing Invariants
+
+   The right panel has 12px padding between its edges and the
+   conversation/composer content on all sides.  Consecutive conversation
+   items have a 12px vertical gap.
+
+   The right-edge padding reserves space for the conversation scrollbar
+   gutter.  The scrollbar appears within that reserved margin, leaving
+   composer and message panel right edges fixed whether or not the
+   scrollbar is visible.  The left-edge padding and right-edge padding,
+   inclusive of the reserved scrollbar gutter, are equal.
+
+   The conversation scrollbar gutter spans the full 12px right margin.
+   The scrollbar thumb is centered horizontally within the gutter, has
+   equal small insets on its left and right, and has fully rounded top
+   and bottom ends.  The scrollbar track is transparent.
+
+   The composer text input area scrolls vertically when its content
+   exceeds the available height.  The composer scrollbar gutter is
+   reserved within the composer's right edge.  Its appearance causes no
+   layout shift, and the text input's right edge remains fixed.
+
+
+Evans, et. al.     Integrated Development Environment           [Page 9]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+9. Center Panel: Canvas Editor
+
+9.1. Rendering Model
+
+   The center pane renders the contents of the currently opened file as
+   editable text.  A gutter on the left displays line numbers, one per
+   content line, right-aligned.  The gutter reserves width for 3 digits
+   by default and grows only when line count requires more digits.
+
+   editor.wordSeparators defines the characters that delimit words.
+
+9.2. Caret Placement
+
+   A normal click positions the caret by splitting each hit character at
+   its horizontal midpoint.  Clicking the left half places the caret
+   before that character, clicking the right half places it after that
+   character, and clicking past end-of-line places the caret at line end.
+
+   Clicking anywhere in the editable canvas area below the last line
+   places the caret at the end of the last line.  The text cursor appears
+   over the entire editable canvas area to the right of the gutter,
+   including padding above the first line, below the last line, and to
+   the right of text.  The default cursor appears over the gutter.
+
+9.3. Typing/Editing
+
+   Typing inserts characters at the caret.  Return splits the current
+   line at the caret.  Backspace deletes the character before the caret;
+   at column 0, it merges the current line into the previous line with
+   the caret at the join point.  Arrow keys move the caret; horizontal
+   motion wraps across line boundaries, and vertical motion clamps column
+   to line length.
+
+   Typing while text is selected replaces the selection with the typed
+   character and places the caret after the inserted character.  Return
+   while text is selected replaces the selection with a line break and
+   places the caret at the start of the new line.  Backspace or Delete
+   while text is selected removes the selection and places the caret at
+   the start of the removed range.
+
+   Edits are in-memory only and are not persisted to the VFS.
+
+9.4. Selection/Word Selection
+
+   Dragging across text selects a contiguous range between the drag start
+   and current pointer position.  Selection may start or end beyond the
+   visible text on a line; horizontal positions past end-of-line resolve
+   to that line's end.
+
+   Selection may continue while the pointer is outside the canvas pane or
+   outside the containing iframe.  The selected endpoint continues to
+   track the pointer's logical text position until mouse release.
+
+   Clicking without dragging clears the selection and places the caret at
+   the clicked position.  Double-clicking a word selects the whole word
+   using editor.wordSeparators, replacing any existing selection.
+
+   If the pointer remains down after the second click, dragging enters
+   word selection mode with the initially selected word as the fixed
+   root.  In word selection mode, the moving selection caret endpoint
+   snaps by hovered word: to the beginning of the hovered word when the
+   hover position is left/upward of the root, and to the end of the
+   hovered word when the hover position is right/downward of the root.
+   For the root word itself, word selection mode snaps the caret endpoint
+   to the end of the word.  Each delimiter character defined by
+   editor.wordSeparators counts as its own word for word selection mode.
+
+9.5. Clipboard/Keyboard
+
+   Cmd+A selects all canvas text.  Cmd+C copies the selected canvas text
+   to the system clipboard.  Cmd+V replaces the selection with clipboard
+   text, or inserts clipboard text at the caret when there is no
+   selection.
+
+   Arrow keys without Shift clear any selection.  Left and Right collapse
+   to the start or end of the selection, and Up and Down move from the
+   current caret endpoint.  Shift+Arrow extends or shrinks the selection
+   from its original anchor.
+
+9.5. Focus Visibility Rules
+
+   Text selection highlight height matches the caret-line row highlight
+   height.  Text selection highlights have super subtle rounding on the
+   selected shape's visible perimeter.
+
+   The following selection-corner behaviors are not yet implemented:
+   convex outer corners are rounded where the selected shape begins or
+   ends horizontally or vertically; concave inner corners are rounded
+   where adjacent selected rows have different horizontal extents, using
+   the visual complement of a rounded rectangle; and inner corner
+   rounding applies at every selected-row transition where one row starts
+   farther right, starts farther left, ends earlier, or ends later than
+   its adjacent selected row.
+
+   When there is no selection, the caret's line is highlighted using the
+   same Cursor list-selection style as the file list, distinguishing
+   focused and unfocused canvas.  The caret-line highlight is continuous
+   from the start of the editable area to the canvas's right edge,
+   including through the vertical scroll gutter.
+
+   When the canvas is not focused, the caret and any text selection are
+   not rendered, but the line highlight remains.
+
+
+Evans, et. al.     Integrated Development Environment          [Page 10]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+10. State & Event Flows
+
+10.1. Open File Flow
+
+   A pane requests the file list from the root.  The root responds with
+   VFS file entries.  The left pane renders inferred directories and file
+   rows from that flat list.
+
+   When a file row is clicked, the left pane sends an open-file request
+   to the root.  The root reads the file from the VFS, records the open
+   file state, and broadcasts the open event to interested panes.  The
+   canvas receives the event and renders the file contents.
+
+10.2. Submit/Response Flow
+
+   The user enters prompt text in the composer and submits with Enter or
+   the send control.  The right pane clears the composer text, pins the
+   composer to the bottom of the panel, and enters stop state.
+
+   The submitted user message appears above the composer.  "Planning
+   next moves" appears beneath it with 12px of top margin.  After 1000ms,
+   the response text becomes "Hello.", the response is complete, and the
+   composer returns from stop state.
+
+
+
+Evans, et. al.     Integrated Development Environment          [Page 11]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+11. Not Implemented Yet
+
+   The following canvas selection details are specified but not yet
+   implemented:
+
+   o  Convex outer corners are rounded where the selected shape begins
+      or ends horizontally or vertically.
+
+   o  Concave inner corners are rounded where adjacent selected rows have
+      different horizontal extents, using the visual complement of a
+      rounded rectangle so the stepped selection outline curves inward
+      rather than forming a square notch.
+
+   o  Inner corner rounding applies at every selected-row transition
+      where one row starts farther right, starts farther left, ends
+      earlier, or ends later than its adjacent selected row.
+
+
+
+Evans, et. al.     Integrated Development Environment          [Page 12]
+
+RFC 1         AI-Enabled Integrated Development Environment      May 2026
+
+
+Appendix A. Keybindings
+
+      Cmd+I
+                  Toggle the right panel open or closed.
+
+      Cmd+B
+                  Toggle the left panel open or closed.
+
+      Ctrl+`
+                  Toggle the bottom panel open or closed.
+
+      Enter
+                  Submit chat from the right panel composer.
+
+      Shift+Enter
+                  Insert a newline in the right panel composer.
+
+      Cmd+A
+                  Select all canvas text.
+
+      Cmd+C
+                  Copy selected canvas text to the system clipboard.
+
+      Cmd+V
+                  Replace the canvas selection with clipboard text, or
+                  insert clipboard text at the caret when there is no
+                  selection.
+
+      Arrow Keys
+                  Move the canvas caret.  Without Shift, arrows clear any
+                  selection; with Shift, arrows extend or shrink the
+                  selection from its original anchor.
+
+      Backspace/Delete
+                  Delete canvas text before the caret, merge lines, or
+                  remove the current selection as specified in Section
+                  9.3.
