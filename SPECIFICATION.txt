@@ -1,0 +1,181 @@
+Tmplogic, LLC                                                   T. Evans
+Request for Comments: 1                                         May 2026
+Category: Integrated Development Environment
+
+            AI-Enabled Integrated Development Environment
+
+Status of this Memo
+
+   This memo defines the internal behavioral specification for the 
+   Tmplogic AI-Enabled IDE implementation, is intended for engineering 
+   review and iterative refinement, and may change as product 
+   requirements evolve until formally designated stable.
+
+Abstract
+
+   This document defines the behavioral and interaction specification 
+   for the Tmplogic AI-Enabled Integrated Development Environment, 
+   including pane layout, editor interaction semantics, inter-pane 
+   messaging, and theme/token propagation.
+   
+
+Table of Contents
+
+   1. Overview (Purpose, Scope, Non-Goals) .................... 2
+   2. Definitions ............................................. 3
+   3. Architecture & Layout ................................... 4
+   3.1. Viewport Regions ...................................... 4
+   3.2. Layering/Z-Order ...................................... 4
+   3.3. Divider/Resize Model .................................. 4
+   3.4. Overflow Guarantees ................................... 4
+   4. Design Rules ............................................ 5
+   4.1. No-Momentum Rule ...................................... 5
+   4.2. Shared Scrollbar Principles ........................... 5
+   4.3. Token/Spacing Invariants .............................. 5
+   5. Cross-Cutting System Contracts .......................... 6
+   5.1. Theme Token Propagation ............................... 6
+   5.2. Font Tokens ........................................... 6
+   5.3. Virtual File System Ownership ......................... 6
+   5.4. Inter-Pane Message Bus ................................ 6
+   6. Global Interaction Model ................................ 7
+   6.1. Focus Rules ........................................... 7
+   6.2. Keyboard Shortcuts .................................... 7
+   7. Left Panel: File Tree ................................... 8
+   7.1. Data Model ............................................ 8
+   7.2. Rendering ............................................. 8
+   7.3. Selection/Focus States ................................ 8
+
+
+
+Evans, et. al.     Integrated Development Environment           [Page 1]
+
+RFC 3339      AI-Enabled Integrated Development Environment    July 2002
+
+
+   7.4. Expand/Collapse Behavior .............................. 8
+   7.5. Indent Guides ......................................... 8
+   8. Right Panel: Chat ....................................... 9
+   8.1. Prompt Input States ................................... 9
+   8.2. Submission Lifecycle .................................. 9
+   8.3. Message Rendering ..................................... 9
+   8.3. Scrollbar/Spacing Invariants .......................... 9
+   9. Center Panel: Canvas Editor ............................ 10
+   9.1. Rendering Model ...................................... 10
+   9.2. Caret Placement ...................................... 10
+   9.3. Typing/Editing ....................................... 10
+   9.4. Selection/Word Selection ............................. 10
+   9.5. Clipboard/Keyboard ................................... 10
+   9.5. Focus Visibility Rules ............................... 10
+   10. State & Event Flows ................................... 11
+   10.1. Open File Flow ...................................... 11
+   10.2. Submit/Response Flow ................................ 11
+   11. Not Implemented Yet ................................... 12
+   Appendix A. Keybindings ................................... 13
+
+1. Introduction
+
+   Date and time formats cause a lot of confusion and interoperability
+   problems on the Internet.  This document addresses many of the
+   problems encountered and makes recommendations to improve consistency
+   and interoperability when representing and using date and time in
+   Internet protocols.
+
+   This document includes an Internet profile of the ISO 8601 [ISO8601]
+   standard for representation of dates and times using the Gregorian
+   calendar.
+
+   There are many ways in which date and time values might appear in
+   Internet protocols:  this document focuses on just one common usage,
+   viz. timestamps for Internet protocol events.  This limited
+   consideration has the following consequences:
+
+   o  All dates and times are assumed to be in the "current era",
+      somewhere between 0000AD and 9999AD.
+
+   o  All times expressed have a stated relationship (offset) to
+      Coordinated Universal Time (UTC).  (This is distinct from some
+      usage in scheduling applications where a local time and location
+      may be known, but the actual relationship to UTC may be dependent
+      on the unknown or unknowable actions of politicians or
+      administrators.  The UTC time corresponding to 17:00 on 23rd March
+      2005 in New York may depend on administrative decisions about
+      daylight savings time.  This specification steers well clear of
+      such considerations.)
+
+   o  Timestamps can express times that occurred before the introduction
+      of UTC.  Such timestamps are expressed relative to universal time,
+      using the best available practice at the stated time.
+
+   o  Date and time expressions indicate an instant in time.
+      Description of time periods, or intervals, is not covered here.
+
+
+
+
+
+
+
+Klyne, et. al.              Standards Track                     [Page 2]
+
+RFC 3339       Date and Time on the Internet: Timestamps       July 2002
+
+
+2. Definitions
+
+   The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT",
+   "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this
+   document are to be interpreted as described in RFC 2119 [RFC2119].
+
+      UTC         Coordinated Universal Time as maintained by the Bureau
+                  International des Poids et Mesures (BIPM).
+
+      second      A basic unit of measurement of time in the
+                  International System of Units.  It is defined as the
+                  duration of 9,192,631,770 cycles of microwave light
+                  absorbed or emitted by the hyperfine transition of
+                  cesium-133 atoms in their ground state undisturbed by
+                  external fields.
+
+      minute      A period of time of 60 seconds.  However, see also the
+                  restrictions in section 5.7 and Appendix D for how
+                  leap seconds are denoted within minutes.
+
+      hour        A period of time of 60 minutes.
+
+      day         A period of time of 24 hours.
+
+      leap year   In the Gregorian calendar, a year which has 366 days.
+                  A leap year is a year whose number is divisible by
+                  four an integral number of times, except that if it is
+                  a centennial year (i.e. divisible by one hundred) it
+                  shall also be divisible by four hundred an integral
+                  number of times.
+
+      ABNF        Augmented Backus-Naur Form, a format used to represent
+                  permissible strings in a protocol or language, as
+                  defined in [ABNF].
+
+      Email Date/Time Format
+                  The date/time format used by Internet Mail as defined
+                  by RFC 2822 [IMAIL-UPDATE].
+
+      Internet Date/Time Format
+                  The date format defined in section 5 of this document.
+
+      Timestamp   This term is used in this document to refer to an
+                  unambiguous representation of some instant in time.
+
+      Z           A suffix which, when applied to a time, denotes a UTC
+                  offset of 00:00; often spoken "Zulu" from the ICAO
+                  phonetic alphabet representation of the letter "Z".
+
+
+
+Klyne, et. al.              Standards Track                     [Page 3]
+
+RFC 3339       Date and Time on the Internet: Timestamps       July 2002
+
+
+      For more information about time scales, see Appendix E of [NTP],
+      Section 3 of [ISO8601], and the appropriate ITU documents [ITU-R-
+      TF].
