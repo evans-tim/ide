@@ -2,7 +2,33 @@
 <title>Right</title>
 <style>
   html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--editor-background); color: var(--sideBar-foreground); }
-  body { box-sizing: border-box; padding: 12px 0 12px 12px; display: flex; flex-direction: column; gap: 12px; }
+  body { display: flex; flex-direction: column; }
+  .topbar {
+    box-sizing: border-box;
+    height: 32px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 12px;
+    background: var(--titleBar-activeBackground, var(--sideBar-background));
+    border-bottom: 1px solid var(--editorGroup-border);
+  }
+  .add {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 5px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    cursor: pointer;
+  }
+  .add:hover { background: var(--list-inactiveSelectionBackground); }
+  .add img { width: 12px; height: 12px; display: block; }
+  .content { box-sizing: border-box; min-height: 0; flex: 1; padding: 12px 0 12px 12px; display: flex; flex-direction: column; gap: 12px; }
   .messages {
     display: none;
     flex: 1;
@@ -109,11 +135,14 @@
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
 </style>
-<div class="messages"></div>
-<div class="prompt">
-  <textarea></textarea>
-  <div class="promptFooter">
-    <button class="send" type="button" aria-label="Send"><img src="icons/arrow-up.svg" alt=""></button>
+<div class="topbar"><button class="add" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
+<div class="content">
+  <div class="messages"></div>
+  <div class="prompt">
+    <textarea></textarea>
+    <div class="promptFooter">
+      <button class="send" type="button" aria-label="Send"><img src="icons/arrow-up.svg" alt=""></button>
+    </div>
   </div>
 </div>
 <script>

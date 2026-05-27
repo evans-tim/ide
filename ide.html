@@ -16,7 +16,7 @@
       minmax(0, 1fr) var(--gr, 2px)
       minmax(0, var(--rw, 20%));
     grid-template-rows:
-      40px
+      32px
       minmax(0, 1fr) var(--gb, 2px)
       minmax(0, var(--bh, 20%))
       20px;
@@ -115,7 +115,7 @@
     }
   });
 
-  const GUTTER = 2, MIN = 40;
+  const GUTTER = 2, MIN = 32;
   const isClosed = name => root.style.getPropertyValue(`--${name}`) === '0px';
   const togglePanel = (name, gutter) => {
     if (isClosed(name)) {
@@ -178,7 +178,7 @@
     root.style.setProperty('--rw', px(clamp(innerWidth - (e.clientX - offX), MIN, max)));
   });
   drag(gB, (e, offX, offY) => {
-    const avail = innerHeight - 40 - 20;
+    const avail = innerHeight - 32 - 20;
     const max = avail - GUTTER - MIN;
     root.style.setProperty('--bh', px(clamp(innerHeight - 20 - (e.clientY - offY), MIN, max)));
   });

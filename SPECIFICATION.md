@@ -1,5 +1,6 @@
 **Layout**
 - Top bar and bottom status bar span full viewport width.
+- Main top bar height is 32px.
 - Left + right sidebars: span between top and status bars; x-precedence over bottom panel.
 - Bottom panel: spans center column only (under center pane).
 
@@ -73,6 +74,13 @@
 
 
 # Right Panel
+**Topbar**
+- Right panel has a topbar equal in height to the main top bar.
+- Right panel topbar height is 32px.
+- The right panel topbar contains the `add.svg` icon right-aligned.
+- Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
+- The `add.svg` icon renders at 12px by 12px.
+
 **Prompt composer**
 - Right pane contains a prompt composer with an editable text input area at the top. 
 - The editable text input area sits above the non-editable bottom affordance area.
