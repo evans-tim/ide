@@ -9,11 +9,12 @@
     flex: none;
     display: flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: space-between;
     padding: 0 12px;
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     border-bottom: 1px solid var(--editorGroup-border);
   }
+  .chatIcon { width: 16px; height: 16px; display: block; }
   .add {
     width: 20px;
     height: 20px;
@@ -135,7 +136,7 @@
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
 </style>
-<div class="topbar"><button class="add" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
+<div class="topbar"><img class="chatIcon" src="icons/chat.svg" alt=""><button class="add" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
 <div class="content">
   <div class="messages"></div>
   <div class="prompt">
