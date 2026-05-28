@@ -229,6 +229,7 @@
   const tabs = [createTab(1)];
   let activeTabId = 1;
   let nextTabId = 2;
+  let activeTabHistory = [1];
 
   function createTab(id) {
     return {
@@ -241,6 +242,11 @@
 
   function activeTab() {
     return tabs.find(tab => tab.id === activeTabId);
+  }
+
+  function saveActiveDraft() {
+    const tab = activeTab();
+    if (tab) tab.draft = textarea.value;
   }
 
   function respondingTurn(tab) {
@@ -259,7 +265,10 @@
       tabEl.innerHTML = '<img class="chatIcon" src="icons/chat.svg" alt=""><span></span><button class="topbarControl closeControl" type="button" aria-label="Close"><img src="icons/close.svg" alt=""></button>';
       tabEl.querySelector('span').textContent = tab.title;
       tabEl.addEventListener('click', () => switchTab(tab.id));
-      tabEl.querySelector('.closeControl').addEventListener('click', event => event.stopPropagation());
+      tabEl.querySelector('.closeControl').addEventListener('click', event => {
+        event.stopPropagation();
+        closeTab(tab.id);
+      });
       return tabEl;
     }));
     requestAnimationFrame(updateTabScrollbar);
@@ -308,6 +317,7 @@
 
   function renderActiveTab() {
     const tab = activeTab();
+    if (!tab) return;
     renderTabs();
     renderConversation(tab);
     textarea.value = tab.draft;
@@ -326,16 +336,62 @@
   }
 
   function switchTab(id) {
-    activeTab().draft = textarea.value;
+    if (id === activeTabId) return;
+    saveActiveDraft();
     activeTabId = id;
+    activeTabHistory = activeTabHistory.filter(tabId => tabId !== id);
+    activeTabHistory.push(id);
     renderActiveTab();
   }
 
   function addTab() {
-    activeTab().draft = textarea.value;
+    saveActiveDraft();
     const tab = createTab(nextTabId++);
     tabs.push(tab);
     activeTabId = tab.id;
+    activeTabHistory = activeTabHistory.filter(tabId => tabId !== tab.id);
+    activeTabHistory.push(tab.id);
+    renderActiveTab();
+    textarea.focus();
+  }
+
+  function closeTab(id) {
+    const index = tabs.findIndex(tab => tab.id === id);
+    if (index === -1) return;
+
+    const [closedTab] = tabs.splice(index, 1);
+    for (const turn of closedTab.turns) clearTimeout(turn.timer);
+    activeTabHistory = activeTabHistory.filter(tabId => tabId !== id);
+
+    if (tabs.length === 0) {
+      activeTabId = null;
+      messages.replaceChildren();
+      textarea.value = '';
+      document.body.classList.remove('submitted');
+      setComposerState(false);
+      renderTabs();
+      parent.postMessage({ type: 'right:close' }, '*');
+      return;
+    }
+
+    if (id === activeTabId) {
+      activeTabId = activeTabHistory[activeTabHistory.length - 1] || tabs[tabs.length - 1].id;
+    }
+
+    renderActiveTab();
+  }
+
+  function ensureTabForOpen() {
+    if (tabs.length > 0) {
+      renderActiveTab();
+      textarea.focus();
+      return;
+    }
+
+    const tab = createTab(nextTabId++);
+    tabs.push(tab);
+    activeTabId = tab.id;
+    activeTabHistory = [tab.id];
     renderActiveTab();
     textarea.focus();
   }
@@ -400,6 +456,11 @@
     document.addEventListener('mouseup', up);
   });
   addEventListener('resize', updateTabScrollbar);
+  addEventListener('message', event => {
+    const message = event.data;
+    if (!message || typeof message !== 'object') return;
+    if (message.type === 'right:open') ensureTabForOpen();
+  });
 
   sendButton.addEventListener('click', () => {
     const tab = activeTab();

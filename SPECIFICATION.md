@@ -5,7 +5,10 @@
 - Bottom panel: spans center column only (under center pane).
 
 **Keyboard panel toggles**
-- Cmd+I toggles the right panel open/closed.
+- Cmd+I opens the right panel when it is closed.
+- If the right panel is closed and at least one agent tab exists, Cmd+I restores the right panel with the last active tab selected.
+- If the right panel is closed and no agent tabs exist, Cmd+I creates a new fresh agent tab and opens the right panel with that tab selected.
+- If the right panel is open, Cmd+I closes the right panel without deleting any existing agent tabs.
 - Cmd+B toggles the left panel open/closed.
 - Ctrl+` toggles the bottom panel open/closed.
 
@@ -111,6 +114,10 @@
 - Composer draft text remains visible for the active tab whether the composer is in the top starting position or pinned to the bottom after a submission.
 - Composer position is preserved per tab according to that tab's conversation state.
 - Creating or switching tabs does not modify any other tab's conversation history or composer draft.
+- Clicking a tab's `close.svg` icon closes that tab.
+- Closing an inactive tab does not change the active tab.
+- Closing the active tab selects the most recently active remaining tab.
+- Closing the active tab when it is the last remaining tab closes the entire right panel and leaves no agent tabs.
 
 
 - (NOT IMPLEMENTED) The `close.svg` icon beside `New Agent` should be visually centered against the lowercase character body of `New Agent`, not against the full text line box.

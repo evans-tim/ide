@@ -54,6 +54,7 @@
 <script>
   const root = document.documentElement;
   const savedSize = { lw: null, rw: null, bh: null };
+  const rightFrame = document.querySelector('#rightWrap iframe');
 
   let themeCss = '';
   const injectTheme = doc => {
@@ -112,19 +113,28 @@
       e.source.postMessage({ type: 'vfs:files', files: Object.keys(vfs) }, '*');
     } else if (m.type === 'vfs:open') {
       openFile(m.name, e.source);
+    } else if (m.type === 'right:close') {
+      closePanel('rw', 'gr');
     }
   });
 
   const GUTTER = 2, MIN = 32;
   const isClosed = name => root.style.getPropertyValue(`--${name}`) === '0px';
+  const openPanel = (name, gutter) => {
+    root.style.setProperty(`--${name}`, savedSize[name] || '20%');
+    root.style.setProperty(`--${gutter}`, px(GUTTER));
+  };
+  const closePanel = (name, gutter) => {
+    if (isClosed(name)) return;
+    savedSize[name] = root.style.getPropertyValue(`--${name}`) || getComputedStyle(root).getPropertyValue(`--${name}`).trim() || '20%';
+    root.style.setProperty(`--${name}`, '0px');
+    root.style.setProperty(`--${gutter}`, '0px');
+  };
   const togglePanel = (name, gutter) => {
     if (isClosed(name)) {
-      root.style.setProperty(`--${name}`, savedSize[name] || '20%');
-      root.style.setProperty(`--${gutter}`, px(GUTTER));
+      openPanel(name, gutter);
     } else {
-      savedSize[name] = root.style.getPropertyValue(`--${name}`) || getComputedStyle(root).getPropertyValue(`--${name}`).trim() || '20%';
-      root.style.setProperty(`--${name}`, '0px');
-      root.style.setProperty(`--${gutter}`, '0px');
+      closePanel(name, gutter);
     }
   };
   function handleKeydown(e) {
@@ -132,7 +142,12 @@
     const key = e.key.toLowerCase();
     if (e.metaKey && !e.ctrlKey && !e.altKey && key === 'i') {
       e.preventDefault();
-      togglePanel('rw', 'gr');
+      if (isClosed('rw')) {
+        openPanel('rw', 'gr');
+        rightFrame.contentWindow.postMessage({ type: 'right:open' }, '*');
+      } else {
+        closePanel('rw', 'gr');
+      }
     } else if (e.metaKey && !e.ctrlKey && !e.altKey && key === 'b') {
       e.preventDefault();
       togglePanel('lw', 'gl');
