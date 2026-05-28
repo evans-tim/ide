@@ -25,4 +25,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
   });
-}).listen(3000, () => console.log('http://localhost:3000'));
+}).listen(process.env.PORT, () => console.log(`http://localhost:${process.env.PORT}`));
