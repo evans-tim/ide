@@ -10,14 +10,21 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 12px;
+    padding: 0 12px 0 0;
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     border-bottom: 1px solid var(--editorGroup-border);
   }
   .topbarTitle {
+    box-sizing: border-box;
+    height: 32px;
+    margin-bottom: -1px;
+    padding: 0 8px;
     display: flex;
     align-items: center;
     gap: 6px;
+    background: var(--editor-background);
+    border-left: 1px solid var(--editorGroup-border);
+    border-right: 1px solid var(--editorGroup-border);
   }
   .chatIcon { width: 16px; height: 16px; display: block; }
   .topbarControl {

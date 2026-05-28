@@ -79,6 +79,9 @@
 - Right panel topbar height is 32px.
 - The right panel topbar contains the `chat.svg` icon all the way to the left, followed by the text `New Agent`, followed by the `close.svg` icon.
 - The right panel topbar contains the `add.svg` icon right-aligned.
+- The `chat.svg` icon, `New Agent` text, and adjacent `close.svg` icon form a single left-side tab section.
+- The left-side tab section has a 1px border on its left and right edges only; it has no bottom border.
+- The left-side tab section background matches the main right panel background, not the right panel topbar background.
 - Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - Hovering the close control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - The `chat.svg` icon renders at 16px by 16px.
