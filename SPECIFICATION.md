@@ -77,11 +77,19 @@
 **Topbar**
 - Right panel has a topbar equal in height to the main top bar.
 - Right panel topbar height is 32px.
-- The right panel topbar contains the `chat.svg` icon all the way to the left, followed by the text `New Agent`.
+- The right panel topbar contains the `chat.svg` icon all the way to the left, followed by the text `New Agent`, followed by the `close.svg` icon.
 - The right panel topbar contains the `add.svg` icon right-aligned.
 - Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
+- Hovering the close control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - The `chat.svg` icon renders at 16px by 16px.
+- The `close.svg` icon renders at 12px by 12px.
 - The `add.svg` icon renders at 12px by 12px.
+
+
+- (NOT IMPLEMENTED) The `close.svg` icon beside `New Agent` should be visually centered against the lowercase character body of `New Agent`, not against the full text line box.
+- (NOT IMPLEMENTED) The `close.svg` icon beside `New Agent` should target the vertical center of the lowercase glyph area, approximately the midpoint between the lowercase x-height top and baseline.
+- (NOT IMPLEMENTED) The `close.svg` icon beside `New Agent` should not rely on aligning the SVG box center to the text line center, because the visible X glyph does not fill the SVG viewport.
+- (NOT IMPLEMENTED) The `close.svg` icon beside `New Agent` should preserve the 20px by 20px hover background center while aligning the visible X glyph to the lowercase character center.
 
 **Prompt composer**
 - Right pane contains a prompt composer with an editable text input area at the top. 
