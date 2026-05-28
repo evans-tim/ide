@@ -151,6 +151,17 @@
 - After submission, the composer is in stop state and displays the rounded stop icon until the response is complete.
 - Submitted user messages display above the composer as plain message panels with a minimalist border, in chronological order (oldest at top, newest directly above the composer).
 - Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.
+- Submitted user message panels have the same maximum height as an in-place prompt composer.
+- Submitted user message panels do not scroll internally; text that exceeds the maximum height visually fades out at the bottom with a subtle shadow/fade affordance.
+- Hovering a submitted user message panel darkens its border and uses the pointer cursor.
+- Clicking a submitted user message panel converts that panel in place into a prompt composer panel containing the submitted text.
+- When a submitted user message panel converts into an in-place prompt composer, focus enters the composer with the text cursor at the end of the prompt.
+- The in-place prompt composer's text area height is the smallest height that fits the submitted text, up to the normal prompt composer's maximum text area height.
+- If the submitted text exceeds that maximum height, the in-place prompt composer uses the same vertical scrolling behavior as the normal prompt composer.
+- When focus leaves the in-place prompt composer without submitting, it converts back into a submitted user message panel.
+- Clicking a different submitted user message panel while an in-place prompt composer is active closes the active in-place composer and opens the clicked message panel as an in-place prompt composer in the same click.
+- The bottom prompt composer remains visible while a submitted user message is being edited in place.
+- Submitting from an in-place prompt composer replaces that user message with the submitted text, submits the conversation from that point, and removes every later message and response from the conversation history.
 - While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response to that message is not complete.
 - Immediately after chat submission, `Planning next moves` displays beneath the just-submitted user message panel with 12px of margin above it.
 - After 500ms, `Planning next moves` is replaced by the default response stream.

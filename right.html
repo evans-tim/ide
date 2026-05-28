@@ -127,12 +127,30 @@
     gap: 12px;
   }
   .message {
+    box-sizing: border-box;
     position: relative;
     min-height: 18px;
+    max-height: 120px;
     padding: 8px 32px 8px 8px;
     border: 1px solid var(--editorGroup-border);
     border-radius: 8px;
+    overflow: hidden;
     white-space: pre-wrap;
+  }
+  .message:hover {
+    border-color: var(--focusBorder);
+    cursor: pointer;
+  }
+  .message.overflowing::after {
+    content: "";
+    position: absolute;
+    left: 1px;
+    right: 1px;
+    bottom: 1px;
+    height: 24px;
+    border-radius: 0 0 7px 7px;
+    background: linear-gradient(to bottom, transparent, var(--editor-background));
+    pointer-events: none;
   }
   .messageStop {
     display: none;
@@ -167,8 +185,11 @@
     background: var(--input-background);
     overflow: hidden;
   }
-  body.submitted .prompt {
+  body.submitted .content > .prompt {
     margin-top: auto;
+  }
+  .editPrompt {
+    margin-right: 0;
   }
   textarea {
     box-sizing: border-box;
@@ -241,6 +262,8 @@
       id,
       title: 'New Agent',
       draft: '',
+      editingTurnIndex: null,
+      editingDraft: '',
       turns: [],
     };
   }
@@ -271,6 +294,86 @@
   function clearTurnTimers(turn) {
     clearTimeout(turn.planningTimer);
     clearTimeout(turn.streamTimer);
+  }
+
+  function createTurn(text) {
+    return {
+      text,
+      responseText: 'Planning next moves',
+      responseTokens: [],
+      responding: true,
+      planningTimer: null,
+      streamTimer: null,
+    };
+  }
+
+  function startTurnResponse(tab, turn) {
+    renderActiveTab();
+    turn.planningTimer = setTimeout(() => streamResponse(tab, turn), 500);
+  }
+
+  function createEditComposer(tab, turn, index) {
+    const prompt = document.createElement('div');
+    prompt.className = 'prompt editPrompt';
+
+    const editTextarea = document.createElement('textarea');
+    editTextarea.value = tab.editingDraft;
+    editTextarea.addEventListener('input', () => {
+      tab.editingDraft = editTextarea.value;
+      resizeEditComposer(editTextarea);
+    });
+    editTextarea.addEventListener('keydown', event => {
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        submitEditedTurn(tab, index);
+      }
+    });
+
+    const footer = document.createElement('div');
+    footer.className = 'promptFooter';
+
+    const button = document.createElement('button');
+    button.className = 'send';
+    button.type = 'button';
+    button.setAttribute('aria-label', 'Send');
+    button.innerHTML = '<img src="icons/arrow-up.svg" alt="">';
+    button.addEventListener('click', () => submitEditedTurn(tab, index));
+
+    footer.append(button);
+    prompt.append(editTextarea, footer);
+    prompt.addEventListener('focusout', event => {
+      if (prompt.contains(event.relatedTarget)) return;
+      if (tab.editingTurnIndex !== index) return;
+      cancelEditTurn(tab);
+    });
+    requestAnimationFrame(() => resizeEditComposer(editTextarea));
+    return prompt;
+  }
+
+  function resizeEditComposer(editTextarea) {
+    const maxTextAreaHeight = 92;
+    editTextarea.style.height = 'auto';
+    const textAreaHeight = Math.min(editTextarea.scrollHeight, maxTextAreaHeight);
+    editTextarea.style.height = textAreaHeight + 'px';
+    editTextarea.style.overflowY = editTextarea.scrollHeight > maxTextAreaHeight ? 'auto' : 'hidden';
+    editTextarea.parentElement.style.height = textAreaHeight + 28 + 'px';
+  }
+
+  function editTurn(tab, index) {
+    tab.editingTurnIndex = index;
+    tab.editingDraft = tab.turns[index].text;
+    renderActiveTab();
+    const editTextarea = messages.querySelector('.editPrompt textarea');
+    if (editTextarea) {
+      editTextarea.focus();
+      editTextarea.setSelectionRange(editTextarea.value.length, editTextarea.value.length);
+    }
+  }
+
+  function cancelEditTurn(tab) {
+    tab.editingTurnIndex = null;
+    tab.editingDraft = '';
+    renderActiveTab();
   }
 
   function renderTabs() {
@@ -304,21 +407,36 @@
   function renderConversation(tab) {
     messages.replaceChildren();
 
-    for (const turn of tab.turns) {
+    tab.turns.forEach((turn, index) => {
       const turnEl = document.createElement('div');
       turnEl.className = 'turn';
 
-      const message = document.createElement('div');
-      message.className = turn.responding ? 'message responding' : 'message';
-      message.textContent = turn.text;
+      let message;
+      if (tab.editingTurnIndex === index) {
+        message = createEditComposer(tab, turn, index);
+      } else {
+        message = document.createElement('div');
+        message.className = turn.responding ? 'message responding' : 'message';
+        message.textContent = turn.text;
+        message.addEventListener('mousedown', event => {
+          if (tab.editingTurnIndex === null || tab.editingTurnIndex === index) return;
+          event.preventDefault();
+          editTurn(tab, index);
+        });
+        message.addEventListener('click', () => editTurn(tab, index));
 
-      const stopButton = document.createElement('button');
-      stopButton.className = 'messageStop';
-      stopButton.type = 'button';
-      stopButton.setAttribute('aria-label', 'Stop');
-      stopButton.innerHTML = '<img src="icons/stop-rounded.svg" alt="">';
-      stopButton.addEventListener('click', () => completeResponse(tab, turn));
-      message.append(stopButton);
+        const stopButton = document.createElement('button');
+        stopButton.className = 'messageStop';
+        stopButton.type = 'button';
+        stopButton.setAttribute('aria-label', 'Stop');
+        stopButton.innerHTML = '<img src="icons/stop-rounded.svg" alt="">';
+        stopButton.addEventListener('mousedown', event => event.stopPropagation());
+        stopButton.addEventListener('click', event => {
+          event.stopPropagation();
+          completeResponse(tab, turn);
+        });
+        message.append(stopButton);
+      }
 
       const response = document.createElement('div');
       response.className = 'response';
@@ -326,7 +444,10 @@
 
       turnEl.append(message, response);
       messages.append(turnEl);
-    }
+      if (message.classList.contains('message') && message.scrollHeight > message.clientHeight) {
+        message.classList.add('overflowing');
+      }
+    });
 
     messages.scrollTop = messages.scrollHeight;
   }
@@ -349,6 +470,27 @@
     if (tab.id === activeTabId) {
       renderActiveTab();
     }
+  }
+
+  function submitEditedTurn(tab, index) {
+    const text = tab.editingDraft;
+    if (!text.trim()) return;
+
+    for (const turn of tab.turns.slice(index)) clearTurnTimers(turn);
+    tab.turns.splice(index + 1);
+
+    const turn = tab.turns[index];
+    turn.text = text;
+    turn.responseText = 'Planning next moves';
+    turn.responseTokens = [];
+    turn.responding = true;
+    turn.planningTimer = null;
+    turn.streamTimer = null;
+    tab.editingTurnIndex = null;
+    tab.editingDraft = '';
+
+    setChatTitleFromPrompt(tab, text);
+    startTurnResponse(tab, turn);
   }
 
   function streamResponse(tab, turn) {
@@ -439,18 +581,9 @@
     tab.draft = '';
     textarea.value = '';
 
-    const turn = {
-      text,
-      responseText: 'Planning next moves',
-      responseTokens: [],
-      responding: true,
-      planningTimer: null,
-      streamTimer: null,
-    };
+    const turn = createTurn(text);
     tab.turns.push(turn);
-    renderActiveTab();
-
-    turn.planningTimer = setTimeout(() => streamResponse(tab, turn), 500);
+    startTurnResponse(tab, turn);
   }
 
   textarea.addEventListener('input', () => {
