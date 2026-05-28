@@ -78,8 +78,9 @@
 
 # Right Panel
 **Text color**
-- All right panel text uses the darkest available foreground color, except inactive tab titles.
+- All right panel text uses the darkest available foreground color, except inactive tab titles and the `Planning next moves` placeholder.
 - Inactive tab title text uses the inactive tab foreground color.
+- The `Planning next moves` placeholder uses the inactive tab foreground color as its base and displays a subtle looping shimmer that repeats every 1s.
 
 **Topbar**
 - Right panel has a topbar equal in height to the main top bar.

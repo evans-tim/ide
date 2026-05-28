@@ -205,6 +205,23 @@
   .response {
     padding: 0 8px;
   }
+  .response.planning {
+    display: inline-block;
+    width: fit-content;
+    color: transparent;
+    background-image:
+      linear-gradient(90deg, transparent 35%, var(--foreground, var(--editor-foreground)) 50%, transparent 65%),
+      linear-gradient(var(--tab-inactiveForeground), var(--tab-inactiveForeground));
+    background-size: 250% 100%, auto;
+    background-position: 100% center, center;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: planningShimmer 1s linear infinite;
+  }
+  @keyframes planningShimmer {
+    to { background-position: 0% center, center; }
+  }
   .prompt {
     box-sizing: border-box;
     position: relative;
@@ -339,7 +356,7 @@
 
   function startTurnResponse(tab, turn) {
     renderActiveTab();
-    turn.planningTimer = setTimeout(() => streamResponse(tab, turn), 500);
+    turn.planningTimer = setTimeout(() => streamResponse(tab, turn), 5000);
   }
 
   function createEditComposer(tab, turn, index) {
@@ -470,6 +487,7 @@
 
       const response = document.createElement('div');
       response.className = 'response';
+      if (turn.responseText === 'Planning next moves') response.classList.add('planning');
       response.textContent = turn.responseText;
 
       turnEl.append(message, response);
