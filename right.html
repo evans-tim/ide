@@ -74,8 +74,8 @@
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     cursor: pointer;
   }
-  .tab span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .tab:not(.active) span { color: var(--tab-inactiveForeground); }
+  .tabTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab:not(.active) { color: var(--tab-inactiveForeground); }
   .tab .topbarControl { flex: none; }
   .tab.active {
     background: var(--editor-background);
@@ -90,7 +90,35 @@
     align-items: center;
     border-left: 1px solid var(--editorGroup-border);
   }
-  .chatIcon { width: 16px; height: 16px; display: block; }
+  .iconMask {
+    display: block;
+    flex: none;
+    background: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+  .chatIcon {
+    width: 16px;
+    height: 16px;
+    -webkit-mask-image: url("icons/chat.svg");
+    mask-image: url("icons/chat.svg");
+  }
+  .spinnerIcon {
+    width: 16px;
+    height: 16px;
+    -webkit-mask-image: url("icons/spinner.svg");
+    mask-image: url("icons/spinner.svg");
+  }
+  .closeIcon {
+    width: 12px;
+    height: 12px;
+    -webkit-mask-image: url("icons/close.svg");
+    mask-image: url("icons/close.svg");
+  }
   .topbarControl {
     width: 20px;
     height: 20px;
@@ -101,6 +129,7 @@
     align-items: center;
     justify-content: center;
     background: transparent;
+    color: inherit;
     cursor: pointer;
   }
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
@@ -381,9 +410,9 @@
     tabsEl.replaceChildren(...tabs.map(tab => {
       const tabEl = document.createElement('div');
       tabEl.className = tab.id === activeTabId ? 'tab active' : 'tab';
-      const icon = respondingTurn(tab) ? 'spinner.svg' : 'chat.svg';
-      tabEl.innerHTML = `<img class="chatIcon" src="icons/${icon}" alt=""><span></span><button class="topbarControl closeControl" type="button" aria-label="Close"><img src="icons/close.svg" alt=""></button>`;
-      tabEl.querySelector('span').textContent = tab.title;
+      const iconClass = respondingTurn(tab) ? 'spinnerIcon' : 'chatIcon';
+      tabEl.innerHTML = `<span class="iconMask ${iconClass}" aria-hidden="true"></span><span class="tabTitle"></span><button class="topbarControl closeControl" type="button" aria-label="Close"><span class="iconMask closeIcon" aria-hidden="true"></span></button>`;
+      tabEl.querySelector('.tabTitle').textContent = tab.title;
       tabEl.addEventListener('click', () => switchTab(tab.id));
       tabEl.querySelector('.closeControl').addEventListener('click', event => {
         event.stopPropagation();
