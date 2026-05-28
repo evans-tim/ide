@@ -152,6 +152,7 @@
 - Submitted user messages display above the composer as plain message panels with a minimalist border, in chronological order (oldest at top, newest directly above the composer).
 - Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.
 - Submitted user message panels have the same maximum height as an in-place prompt composer.
+- A submitted user message panel at maximum height and its corresponding in-place prompt composer at maximum height occupy the same total panel height, so focusing the message panel causes no layout shift.
 - Submitted user message panels do not scroll internally; text that exceeds the maximum height visually fades out at the bottom with a subtle shadow/fade affordance.
 - Hovering a submitted user message panel darkens its border and uses the pointer cursor.
 - Clicking a submitted user message panel converts that panel in place into a prompt composer panel containing the submitted text.
