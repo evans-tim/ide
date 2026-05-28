@@ -77,7 +77,7 @@
 **Topbar**
 - Right panel has a topbar equal in height to the main top bar.
 - Right panel topbar height is 32px.
-- The right panel topbar contains the `chat.svg` icon all the way to the left.
+- The right panel topbar contains the `chat.svg` icon all the way to the left, followed by the text `New Agent`.
 - The right panel topbar contains the `add.svg` icon right-aligned.
 - Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - The `chat.svg` icon renders at 16px by 16px.

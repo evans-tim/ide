@@ -14,6 +14,11 @@
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     border-bottom: 1px solid var(--editorGroup-border);
   }
+  .topbarTitle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
   .chatIcon { width: 16px; height: 16px; display: block; }
   .add {
     width: 20px;
@@ -136,7 +141,7 @@
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
 </style>
-<div class="topbar"><img class="chatIcon" src="icons/chat.svg" alt=""><button class="add" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
+<div class="topbar"><div class="topbarTitle"><img class="chatIcon" src="icons/chat.svg" alt=""><span>New Agent</span></div><button class="add" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
 <div class="content">
   <div class="messages"></div>
   <div class="prompt">
