@@ -107,6 +107,8 @@
 - Hovering the tab list's horizontal scrollbar thumb makes it slightly darker.
 - Dragging the tab list's horizontal scrollbar thumb scrolls the tab list horizontally.
 - Wheel scrolling the tab list has no momentum; motion stops as soon as scroll input stops.
+- Each tab grows only as wide as needed for its title and controls, up to a maximum width of 200px.
+- Tab title text that exceeds the available tab width is truncated with an ellipsis.
 - Each tab owns its own conversation history and composer draft.
 - Switching tabs displays the selected tab's conversation history.
 - If the selected tab has no submitted messages, switching to it displays its current composer draft only.
@@ -141,6 +143,10 @@
 
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
+- Submitting the chat calls the active chat's title function.
+- The active chat's title changes from `New Agent` to another string after its first submission.
+- (NOT IMPLEMENTED) The active chat's title should be a summary of the submitted prompt: the submitted prompt is sent to an LLM for summarization, and the returned summary is saved as the chat title.
+- The active chat's title is set to the submitted prompt text verbatim.
 - After submission, the composer is in stop state and displays the rounded stop icon until the response is complete.
 - Submitted user messages display above the composer as plain message panels with a minimalist border, in chronological order (oldest at top, newest directly above the composer).
 - Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.

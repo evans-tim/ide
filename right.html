@@ -60,6 +60,8 @@
   .tab {
     box-sizing: border-box;
     flex: none;
+    max-width: 200px;
+    min-width: 0;
     height: 32px;
     margin-bottom: -1px;
     padding: 0 8px;
@@ -72,7 +74,8 @@
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     cursor: pointer;
   }
-  .tab span { white-space: nowrap; }
+  .tab span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab .topbarControl { flex: none; }
   .tab.active {
     background: var(--editor-background);
     border-bottom-color: var(--editor-background);
@@ -258,6 +261,11 @@
     sendIcon.src = isStop ? 'icons/stop-rounded.svg' : 'icons/arrow-up.svg';
   }
 
+  function setChatTitleFromPrompt(tab, promptText) {
+    if (tab.title !== 'New Agent') return;
+    tab.title = promptText;
+  }
+
   function renderTabs() {
     tabsEl.replaceChildren(...tabs.map(tab => {
       const tabEl = document.createElement('div');
@@ -403,6 +411,7 @@
     const text = textarea.value;
     if (!text.trim()) return;
 
+    setChatTitleFromPrompt(tab, text);
     tab.draft = '';
     textarea.value = '';
 
