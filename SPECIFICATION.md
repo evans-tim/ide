@@ -93,6 +93,17 @@
 - Inactive tabs have a 1px border on their left, right, and bottom edges.
 - Clicking the `add.svg` control creates a new agent tab at the end of the current tab list.
 - The newly-created tab becomes the active tab immediately.
+- The button group div containing the `add.svg` control has a left border separating it from the scrollable tab list.
+- When the tab list grows until it reaches the button group border, the tab list scrolls horizontally instead of shrinking the button group.
+- The tab list's horizontal scrollbar appears only while horizontal overflow exists.
+- The tab list's horizontal scrollbar has no visible gutter; only the thumb is visible.
+- The tab list's horizontal scrollbar thumb is flush with the bottom edge of the tab group.
+- The tab list's horizontal scrollbar thumb is 3px tall with square edges.
+- The tab list's horizontal scrollbar has a 4px mouse hit area.
+- The tab list's horizontal scrollbar uses the same base color as the canvas scrollbar.
+- Hovering the tab list's horizontal scrollbar thumb makes it slightly darker.
+- Dragging the tab list's horizontal scrollbar thumb scrolls the tab list horizontally.
+- Wheel scrolling the tab list has no momentum; motion stops as soon as scroll input stops.
 - Each tab owns its own conversation history and composer draft.
 - Switching tabs displays the selected tab's conversation history.
 - If the selected tab has no submitted messages, switching to it displays its current composer draft only.

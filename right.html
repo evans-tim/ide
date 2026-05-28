@@ -9,18 +9,57 @@
     flex: none;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 12px 0 0;
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     border-bottom: 1px solid var(--editorGroup-border);
+  }
+  .tabArea {
+    flex: 1;
+    position: relative;
+    height: 32px;
+    min-width: 0;
   }
   .tabs {
     height: 32px;
     display: flex;
     min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior: none;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabScrollbar {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    pointer-events: none;
+  }
+  .tabArea.hasOverflow .tabScrollbar { display: block; }
+  .tabScrollbarThumb {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    border-radius: 0;
+    background: var(--scrollbarSlider-background, #c1c1c1);
+    pointer-events: auto;
+  }
+  .tabScrollbarThumb:hover {
+    background: var(--scrollbarSlider-hoverBackground, #a8a8a8);
+  }
+  .tabScrollbarThumb::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
   }
   .tab {
     box-sizing: border-box;
+    flex: none;
     height: 32px;
     margin-bottom: -1px;
     padding: 0 8px;
@@ -33,9 +72,19 @@
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     cursor: pointer;
   }
+  .tab span { white-space: nowrap; }
   .tab.active {
     background: var(--editor-background);
     border-bottom-color: var(--editor-background);
+  }
+  .buttonGroup {
+    box-sizing: border-box;
+    flex: none;
+    height: 32px;
+    padding-right: 12px;
+    display: flex;
+    align-items: center;
+    border-left: 1px solid var(--editorGroup-border);
   }
   .chatIcon { width: 16px; height: 16px; display: block; }
   .topbarControl {
@@ -159,7 +208,7 @@
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
 </style>
-<div class="topbar"><div class="tabs"></div><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
+<div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div></div>
 <div class="content">
   <div class="messages"></div>
   <div class="prompt">
@@ -171,6 +220,8 @@
 </div>
 <script>
   const tabsEl = document.querySelector('.tabs');
+  const tabArea = document.querySelector('.tabArea');
+  const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
   const messages = document.querySelector('.messages');
   const textarea = document.querySelector('textarea');
   const sendButton = document.querySelector('.send');
@@ -211,6 +262,18 @@
       tabEl.querySelector('.closeControl').addEventListener('click', event => event.stopPropagation());
       return tabEl;
     }));
+    requestAnimationFrame(updateTabScrollbar);
+  }
+
+  function updateTabScrollbar() {
+    const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+    const hasOverflow = maxScroll > 0;
+    tabArea.classList.toggle('hasOverflow', hasOverflow);
+    if (!hasOverflow) return;
+    const thumbWidth = Math.max(16, tabsEl.clientWidth * tabsEl.clientWidth / tabsEl.scrollWidth);
+    const thumbLeft = tabsEl.scrollLeft * (tabsEl.clientWidth - thumbWidth) / maxScroll;
+    tabScrollbarThumb.style.width = thumbWidth + 'px';
+    tabScrollbarThumb.style.transform = `translateX(${thumbLeft}px)`;
   }
 
   function renderConversation(tab) {
@@ -309,6 +372,34 @@
       submitChat();
     }
   });
+
+  tabsEl.addEventListener('scroll', updateTabScrollbar);
+  tabsEl.addEventListener('wheel', event => {
+    if (tabsEl.scrollWidth <= tabsEl.clientWidth) return;
+    event.preventDefault();
+    tabsEl.scrollLeft += event.deltaX || event.deltaY;
+  }, { passive: false });
+  tabScrollbarThumb.addEventListener('mousedown', event => {
+    event.preventDefault();
+    const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+    const thumbWidth = tabScrollbarThumb.getBoundingClientRect().width;
+    const maxThumbLeft = tabsEl.clientWidth - thumbWidth;
+    if (maxScroll <= 0 || maxThumbLeft <= 0) return;
+    const startX = event.clientX;
+    const startScrollLeft = tabsEl.scrollLeft;
+    const move = moveEvent => {
+      tabsEl.scrollLeft = startScrollLeft + (moveEvent.clientX - startX) * maxScroll / maxThumbLeft;
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      document.body.style.userSelect = '';
+    };
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+  addEventListener('resize', updateTabScrollbar);
 
   sendButton.addEventListener('click', () => {
     const tab = activeTab();
