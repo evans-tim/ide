@@ -79,14 +79,27 @@
 - Right panel topbar height is 32px.
 - The right panel topbar contains the `chat.svg` icon all the way to the left, followed by the text `New Agent`, followed by the `close.svg` icon.
 - The right panel topbar contains the `add.svg` icon right-aligned.
-- The `chat.svg` icon, `New Agent` text, and adjacent `close.svg` icon form a single left-side tab section.
-- The left-side tab section has a 1px border on its left and right edges only; it has no bottom border.
-- The left-side tab section background matches the main right panel background, not the right panel topbar background.
 - Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - Hovering the close control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - The `chat.svg` icon renders at 16px by 16px.
 - The `close.svg` icon renders at 12px by 12px.
 - The `add.svg` icon renders at 12px by 12px.
+
+**Tabs**
+- Each tab contains the `chat.svg` icon, its title text, and its adjacent `close.svg` icon.
+- The active tab background matches the main right panel background, not the right panel topbar background.
+- The active tab has a 1px border on its left, right, and bottom edges; its bottom border matches the main right panel background so switching tabs causes no 1px layout shift.
+- Inactive tab backgrounds match the right panel topbar background.
+- Inactive tabs have a 1px border on their left, right, and bottom edges.
+- Clicking the `add.svg` control creates a new agent tab at the end of the current tab list.
+- The newly-created tab becomes the active tab immediately.
+- Each tab owns its own conversation history and composer draft.
+- Switching tabs displays the selected tab's conversation history.
+- If the selected tab has no submitted messages, switching to it displays its current composer draft only.
+- Composer draft text is preserved per tab when switching away from the tab.
+- Composer draft text remains visible for the active tab whether the composer is in the top starting position or pinned to the bottom after a submission.
+- Composer position is preserved per tab according to that tab's conversation state.
+- Creating or switching tabs does not modify any other tab's conversation history or composer draft.
 
 
 - (NOT IMPLEMENTED) The `close.svg` icon beside `New Agent` should be visually centered against the lowercase character body of `New Agent`, not against the full text line box.

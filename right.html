@@ -14,7 +14,12 @@
     background: var(--titleBar-activeBackground, var(--sideBar-background));
     border-bottom: 1px solid var(--editorGroup-border);
   }
-  .topbarTitle {
+  .tabs {
+    height: 32px;
+    display: flex;
+    min-width: 0;
+  }
+  .tab {
     box-sizing: border-box;
     height: 32px;
     margin-bottom: -1px;
@@ -22,9 +27,15 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    background: var(--editor-background);
     border-left: 1px solid var(--editorGroup-border);
     border-right: 1px solid var(--editorGroup-border);
+    border-bottom: 1px solid var(--editorGroup-border);
+    background: var(--titleBar-activeBackground, var(--sideBar-background));
+    cursor: pointer;
+  }
+  .tab.active {
+    background: var(--editor-background);
+    border-bottom-color: var(--editor-background);
   }
   .chatIcon { width: 16px; height: 16px; display: block; }
   .topbarControl {
@@ -148,7 +159,7 @@
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
 </style>
-<div class="topbar"><div class="topbarTitle"><img class="chatIcon" src="icons/chat.svg" alt=""><span>New Agent</span><button class="topbarControl closeControl" type="button" aria-label="Close"><img src="icons/close.svg" alt=""></button></div><button class="topbarControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
+<div class="topbar"><div class="tabs"></div><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div>
 <div class="content">
   <div class="messages"></div>
   <div class="prompt">
@@ -159,66 +170,138 @@
   </div>
 </div>
 <script>
+  const tabsEl = document.querySelector('.tabs');
   const messages = document.querySelector('.messages');
   const textarea = document.querySelector('textarea');
   const sendButton = document.querySelector('.send');
   const sendIcon = sendButton.querySelector('img');
-  let activeTurn = null;
+  const tabs = [createTab(1)];
+  let activeTabId = 1;
+  let nextTabId = 2;
+
+  function createTab(id) {
+    return {
+      id,
+      title: 'New Agent',
+      draft: '',
+      turns: [],
+    };
+  }
+
+  function activeTab() {
+    return tabs.find(tab => tab.id === activeTabId);
+  }
+
+  function respondingTurn(tab) {
+    return tab.turns.find(turn => turn.responding) || null;
+  }
 
   function setComposerState(isStop) {
     sendButton.setAttribute('aria-label', isStop ? 'Stop' : 'Send');
     sendIcon.src = isStop ? 'icons/stop-rounded.svg' : 'icons/arrow-up.svg';
   }
 
-  function completeResponse(turn) {
+  function renderTabs() {
+    tabsEl.replaceChildren(...tabs.map(tab => {
+      const tabEl = document.createElement('div');
+      tabEl.className = tab.id === activeTabId ? 'tab active' : 'tab';
+      tabEl.innerHTML = '<img class="chatIcon" src="icons/chat.svg" alt=""><span></span><button class="topbarControl closeControl" type="button" aria-label="Close"><img src="icons/close.svg" alt=""></button>';
+      tabEl.querySelector('span').textContent = tab.title;
+      tabEl.addEventListener('click', () => switchTab(tab.id));
+      tabEl.querySelector('.closeControl').addEventListener('click', event => event.stopPropagation());
+      return tabEl;
+    }));
+  }
+
+  function renderConversation(tab) {
+    messages.replaceChildren();
+
+    for (const turn of tab.turns) {
+      const turnEl = document.createElement('div');
+      turnEl.className = 'turn';
+
+      const message = document.createElement('div');
+      message.className = turn.responding ? 'message responding' : 'message';
+      message.textContent = turn.text;
+
+      const stopButton = document.createElement('button');
+      stopButton.className = 'messageStop';
+      stopButton.type = 'button';
+      stopButton.setAttribute('aria-label', 'Stop');
+      stopButton.innerHTML = '<img src="icons/stop-rounded.svg" alt="">';
+      stopButton.addEventListener('click', () => completeResponse(tab, turn));
+      message.append(stopButton);
+
+      const response = document.createElement('div');
+      response.className = 'response';
+      response.textContent = turn.responseText;
+
+      turnEl.append(message, response);
+      messages.append(turnEl);
+    }
+
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  function renderActiveTab() {
+    const tab = activeTab();
+    renderTabs();
+    renderConversation(tab);
+    textarea.value = tab.draft;
+    document.body.classList.toggle('submitted', tab.turns.length > 0);
+    setComposerState(Boolean(respondingTurn(tab)));
+  }
+
+  function completeResponse(tab, turn) {
     if (!turn) return;
     clearTimeout(turn.timer);
-    turn.response.textContent = 'Hello.';
-    turn.message.classList.remove('responding');
-    if (activeTurn === turn) {
-      activeTurn = null;
-      setComposerState(false);
+    turn.responseText = 'Hello.';
+    turn.responding = false;
+    if (tab.id === activeTabId) {
+      renderActiveTab();
     }
   }
 
+  function switchTab(id) {
+    activeTab().draft = textarea.value;
+    activeTabId = id;
+    renderActiveTab();
+  }
+
+  function addTab() {
+    activeTab().draft = textarea.value;
+    const tab = createTab(nextTabId++);
+    tabs.push(tab);
+    activeTabId = tab.id;
+    renderActiveTab();
+    textarea.focus();
+  }
+
   function submitChat() {
-    if (activeTurn) return;
+    const tab = activeTab();
+    if (respondingTurn(tab)) return;
 
     const text = textarea.value;
     if (!text.trim()) return;
 
-    document.body.classList.add('submitted');
+    tab.draft = '';
     textarea.value = '';
 
-    const turnEl = document.createElement('div');
-    turnEl.className = 'turn';
+    const turn = {
+      text,
+      responseText: 'Planning next moves',
+      responding: true,
+      timer: null,
+    };
+    tab.turns.push(turn);
+    renderActiveTab();
 
-    const message = document.createElement('div');
-    message.className = 'message responding';
-    message.textContent = text;
-
-    const stopButton = document.createElement('button');
-    stopButton.className = 'messageStop';
-    stopButton.type = 'button';
-    stopButton.setAttribute('aria-label', 'Stop');
-    stopButton.innerHTML = '<img src="icons/stop-rounded.svg" alt="">';
-    message.append(stopButton);
-
-    const response = document.createElement('div');
-    response.className = 'response';
-    response.textContent = 'Planning next moves';
-
-    turnEl.append(message, response);
-    messages.append(turnEl);
-    messages.scrollTop = messages.scrollHeight;
-
-    const turn = { message, response, timer: null };
-    activeTurn = turn;
-    setComposerState(true);
-
-    stopButton.addEventListener('click', () => completeResponse(turn));
-    turn.timer = setTimeout(() => completeResponse(turn), 1000);
+    turn.timer = setTimeout(() => completeResponse(tab, turn), 1000);
   }
+
+  textarea.addEventListener('input', () => {
+    activeTab().draft = textarea.value;
+  });
 
   textarea.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -228,11 +311,16 @@
   });
 
   sendButton.addEventListener('click', () => {
-    if (activeTurn) {
-      completeResponse(activeTurn);
+    const tab = activeTab();
+    const turn = respondingTurn(tab);
+    if (turn) {
+      completeResponse(tab, turn);
       return;
     }
 
     submitChat();
   });
+
+  document.querySelector('.addControl').addEventListener('click', addTab);
+  renderActiveTab();
 </script>
