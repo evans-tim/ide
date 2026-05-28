@@ -153,8 +153,11 @@
 - Submitted user message panels contain only the submitted text by default; no per-message action buttons are visible.
 - While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response to that message is not complete.
 - Immediately after chat submission, `Planning next moves` displays beneath the just-submitted user message panel with 12px of margin above it.
-- After 1000ms, `Planning next moves` is replaced with `Hello.` and the response is complete.
-- Subsequent submissions append a new user message panel beneath the previous response, followed by its own `Planning next moves` → `Hello.` response; prior messages and responses remain visible above.
+- After 500ms, `Planning next moves` is replaced by the default response stream.
+- The default response is `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`
+- Response tokens are delimited by spaces only.
+- The default response streams one token every 50ms until all tokens have displayed, then the response is complete.
+- Subsequent submissions append a new user message panel beneath the previous response, followed by its own streamed default response; prior messages and responses remain visible above.
 - The conversation area scrolls vertically when its content exceeds the available height; the composer remains pinned to the bottom of the right panel.
 
 **Right panel spacing**

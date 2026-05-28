@@ -230,6 +230,8 @@
   const sendButton = document.querySelector('.send');
   const sendIcon = sendButton.querySelector('img');
   const tabs = [createTab(1)];
+  const DEFAULT_RESPONSE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
+  const DEFAULT_RESPONSE_TOKENS = DEFAULT_RESPONSE.split(' ');
   let activeTabId = 1;
   let nextTabId = 2;
   let activeTabHistory = [1];
@@ -264,6 +266,11 @@
   function setChatTitleFromPrompt(tab, promptText) {
     if (tab.title !== 'New Agent') return;
     tab.title = promptText;
+  }
+
+  function clearTurnTimers(turn) {
+    clearTimeout(turn.planningTimer);
+    clearTimeout(turn.streamTimer);
   }
 
   function renderTabs() {
@@ -336,9 +343,25 @@
 
   function completeResponse(tab, turn) {
     if (!turn) return;
-    clearTimeout(turn.timer);
-    turn.responseText = 'Hello.';
+    clearTurnTimers(turn);
+    turn.responseText = DEFAULT_RESPONSE;
     turn.responding = false;
+    if (tab.id === activeTabId) {
+      renderActiveTab();
+    }
+  }
+
+  function streamResponse(tab, turn) {
+    clearTimeout(turn.streamTimer);
+    turn.responseTokens.push(DEFAULT_RESPONSE_TOKENS[turn.responseTokens.length]);
+    turn.responseText = turn.responseTokens.join(' ');
+
+    if (turn.responseTokens.length === DEFAULT_RESPONSE_TOKENS.length) {
+      turn.responding = false;
+    } else {
+      turn.streamTimer = setTimeout(() => streamResponse(tab, turn), 50);
+    }
+
     if (tab.id === activeTabId) {
       renderActiveTab();
     }
@@ -369,7 +392,7 @@
     if (index === -1) return;
 
     const [closedTab] = tabs.splice(index, 1);
-    for (const turn of closedTab.turns) clearTimeout(turn.timer);
+    for (const turn of closedTab.turns) clearTurnTimers(turn);
     activeTabHistory = activeTabHistory.filter(tabId => tabId !== id);
 
     if (tabs.length === 0) {
@@ -419,13 +442,15 @@
     const turn = {
       text,
       responseText: 'Planning next moves',
+      responseTokens: [],
       responding: true,
-      timer: null,
+      planningTimer: null,
+      streamTimer: null,
     };
     tab.turns.push(turn);
     renderActiveTab();
 
-    turn.timer = setTimeout(() => completeResponse(tab, turn), 1000);
+    turn.planningTimer = setTimeout(() => streamResponse(tab, turn), 500);
   }
 
   textarea.addEventListener('input', () => {
