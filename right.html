@@ -1,7 +1,7 @@
 <!doctype html>
 <title>Right</title>
 <style>
-  html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--editor-background); color: var(--sideBar-foreground); }
+  html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--editor-background); color: var(--foreground, var(--editor-foreground)); }
   body { display: flex; flex-direction: column; }
   .topbar {
     box-sizing: border-box;
@@ -75,6 +75,7 @@
     cursor: pointer;
   }
   .tab span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab:not(.active) span { color: var(--tab-inactiveForeground); }
   .tab .topbarControl { flex: none; }
   .tab.active {
     background: var(--editor-background);
@@ -174,7 +175,6 @@
   .messageStop img { width: 18px; height: 18px; display: block; }
   .response {
     padding: 0 8px;
-    color: var(--descriptionForeground);
   }
   .prompt {
     box-sizing: border-box;

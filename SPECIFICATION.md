@@ -77,6 +77,10 @@
 
 
 # Right Panel
+**Text color**
+- All right panel text uses the darkest available foreground color, except inactive tab titles.
+- Inactive tab title text uses the inactive tab foreground color.
+
 **Topbar**
 - Right panel has a topbar equal in height to the main top bar.
 - Right panel topbar height is 32px.
