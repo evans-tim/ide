@@ -90,6 +90,7 @@
 
 **Tabs**
 - Each tab contains the `chat.svg` icon, its title text, and its adjacent `close.svg` icon.
+- While a tab has a submission running, its `chat.svg` icon is replaced by `spinner.svg`.
 - The active tab background matches the main right panel background, not the right panel topbar background.
 - The active tab has a 1px border on its left, right, and bottom edges; its bottom border matches the main right panel background so switching tabs causes no 1px layout shift.
 - Inactive tab backgrounds match the right panel topbar background.

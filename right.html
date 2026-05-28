@@ -270,7 +270,8 @@
     tabsEl.replaceChildren(...tabs.map(tab => {
       const tabEl = document.createElement('div');
       tabEl.className = tab.id === activeTabId ? 'tab active' : 'tab';
-      tabEl.innerHTML = '<img class="chatIcon" src="icons/chat.svg" alt=""><span></span><button class="topbarControl closeControl" type="button" aria-label="Close"><img src="icons/close.svg" alt=""></button>';
+      const icon = respondingTurn(tab) ? 'spinner.svg' : 'chat.svg';
+      tabEl.innerHTML = `<img class="chatIcon" src="icons/${icon}" alt=""><span></span><button class="topbarControl closeControl" type="button" aria-label="Close"><img src="icons/close.svg" alt=""></button>`;
       tabEl.querySelector('span').textContent = tab.title;
       tabEl.addEventListener('click', () => switchTab(tab.id));
       tabEl.querySelector('.closeControl').addEventListener('click', event => {
