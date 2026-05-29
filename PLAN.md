@@ -32,9 +32,9 @@
 
 # VFS
 
-- Mount to the server's current working directory by default
-- Add Settings directory chooser
-- Reload file tree from selected mounted directory
+- (DONE) Mount to the server's current working directory by default
+- (DONE) Add Settings directory chooser
+- (DONE) Reload file tree from selected mounted directory
 - (NOT IMPLEMENTED) Preserve file tabs and chat tabs per mounted directory
 
 # Settings
@@ -42,4 +42,4 @@
 - (DONE) Settings icon at righthandmost side in main topbar
 - (DONE) Opens settings iframe in the canvas pane as a new tab.  
 - (DONE) Change theme
-- Change mounted dir
+- (DONE) Change mounted dir
