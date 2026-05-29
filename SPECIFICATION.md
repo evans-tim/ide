@@ -117,8 +117,8 @@
 - The directory button behaves like a general purpose button.
 - The directory button text is the current mounted workspace directory path.
 - When the current mounted workspace directory path exceeds the directory button's available text area, the path is truncated on the left with an ellipsis so the end of the path remains visible.
-- Clicking the directory button opens a directory chooser.
-- Choosing a directory from the directory chooser changes the mounted workspace directory to that directory.
+- Clicking the directory button opens the browser's native directory picker.
+- Choosing a directory from the native directory picker changes the mounted workspace directory to that directory.
 
 
 # File Tree

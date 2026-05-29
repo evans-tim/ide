@@ -609,6 +609,20 @@
     renderActiveTab();
   }
 
+  function resetWorkspace() {
+    for (const tab of tabs) {
+      for (const turn of tab.turns) clearTurnTimers(turn);
+    }
+    tabs.length = 0;
+    activeTabId = null;
+    activeTabHistory = [];
+    messages.replaceChildren();
+    textarea.value = '';
+    document.body.classList.remove('submitted');
+    setComposerState(false);
+    renderTabs();
+  }
+
   function ensureTabForOpen() {
     if (tabs.length > 0) {
       renderActiveTab();
@@ -682,6 +696,7 @@
     const message = event.data;
     if (!message || typeof message !== 'object') return;
     if (message.type === 'right:open') ensureTabForOpen();
+    else if (message.type === 'right:reset') resetWorkspace();
   });
 
   sendButton.addEventListener('click', () => {

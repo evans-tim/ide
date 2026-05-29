@@ -61,6 +61,8 @@
   const canvasFrame = document.querySelector('#canvasWrap iframe');
   const rightFrame = document.querySelector('#rightWrap iframe');
   const settingsButton = document.getElementById('settingsButton');
+  let mountedDirectory = '';
+  let browserVfs = null;
 
   const themeFiles = {
     light: 'cursor-light-theme.json',
@@ -111,47 +113,90 @@
   };
   applyTheme(activeTheme);
   const panes = () => [...document.querySelectorAll('iframe.pane')];
+  const sendDirectory = target => {
+    if (mountedDirectory) target.postMessage({ type: 'settings:directory', value: mountedDirectory }, '*');
+  };
+  const loadFiles = async () => {
+    if (browserVfs) return Object.keys(browserVfs).sort();
+    const res = await fetch('/api/files');
+    const data = await res.json();
+    return data.files || [];
+  };
+  const sendFiles = async target => {
+    target.postMessage({ type: 'vfs:files', files: await loadFiles() }, '*');
+  };
+  const resetMountedWorkspace = async () => {
+    broadcast({ type: 'vfs:reset' });
+    broadcast({ type: 'right:reset' });
+    broadcast({ type: 'settings:directory', value: mountedDirectory });
+    closePanel('rw', 'gr');
+    broadcast({ type: 'vfs:files', files: await loadFiles() });
+  };
+  const mountDirectory = async message => {
+    if (message.files) {
+      mountedDirectory = message.value;
+      browserVfs = message.files;
+      await resetMountedWorkspace();
+      return;
+    }
+    const value = message.value;
+    const res = await fetch('/api/mount', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: value })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      alert(data.error || 'Unable to mount directory');
+      return;
+    }
+    mountedDirectory = data.directory;
+    browserVfs = null;
+    await resetMountedWorkspace();
+  };
+  fetch('/api/workspace').then(r => r.json()).then(data => {
+    mountedDirectory = data.directory;
+    broadcast({ type: 'settings:directory', value: mountedDirectory });
+  });
   for (const f of panes()) {
     f.addEventListener('load', () => {
       injectTheme(f.contentDocument);
       sendTheme(f.contentWindow);
+      sendDirectory(f.contentWindow);
       f.contentDocument.addEventListener('keydown', handleKeydown);
     });
   }
-
-  const vfs = {
-    'readme.txt': 'Welcome to the IDE.\nThis is a virtual file system.',
-    'notes.txt': 'Shopping list:\n- milk\n- eggs\n- bread',
-    'hello.txt': 'Hello, world!',
-    'src/index.js': 'console.log("hello");',
-    'src/utils/math.js': 'export const add = (a, b) => a + b;',
-    'src/utils/string.js': 'export const upper = s => s.toUpperCase();',
-    'src/components/button.js': 'export const Button = () => {};',
-    'docs/intro.md': '# Intro\n\nWelcome.',
-    'docs/guides/setup.md': '# Setup\n\nSteps...',
-  };
 
   const broadcast = (msg, from) => {
     for (const f of panes()) {
       if (f.contentWindow !== from) f.contentWindow.postMessage(msg, '*');
     }
   };
-  const openFile = (name, from) => {
-    broadcast({ type: 'vfs:opened', name, content: vfs[name] ?? '' }, from);
+  const openFile = async (name, from) => {
+    if (browserVfs) {
+      broadcast({ type: 'vfs:opened', name, content: browserVfs[name] ?? '' }, from);
+      return;
+    }
+    const res = await fetch('/api/file?path=' + encodeURIComponent(name));
+    const data = await res.json();
+    broadcast({ type: 'vfs:opened', name, content: data.content ?? '' }, from);
   };
   addEventListener('message', e => {
     const m = e.data;
     if (!m || typeof m !== 'object') return;
     if (m.type === 'vfs:list') {
-      e.source.postMessage({ type: 'vfs:files', files: Object.keys(vfs) }, '*');
+      sendFiles(e.source);
     } else if (m.type === 'vfs:open') {
       openFile(m.name, e.source);
     } else if (m.type === 'vfs:select') {
       broadcast({ type: 'vfs:selected', name: m.name }, e.source);
     } else if (m.type === 'settings:theme') {
       applyTheme(m.value);
+    } else if (m.type === 'settings:directory') {
+      mountDirectory(m);
     } else if (m.type === 'settings:ready') {
       sendTheme(e.source);
+      sendDirectory(e.source);
     } else if (m.type === 'right:close') {
       closePanel('rw', 'gr');
     }

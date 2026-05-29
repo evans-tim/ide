@@ -144,6 +144,12 @@
     if (e.data?.type === 'vfs:files') {
       fileNames = e.data.files;
       render();
+    } else if (e.data?.type === 'vfs:reset') {
+      fileNames = [];
+      selectedPath = null;
+      selectedType = null;
+      expanded.clear();
+      render();
     } else if (e.data?.type === 'vfs:selected') {
       selectedPath = e.data.name;
       selectedType = selectedPath ? 'file' : null;

@@ -443,6 +443,15 @@
     renderTabs();
   }
 
+  function resetWorkspace() {
+    saveActiveFileContent();
+    fileTabs = [];
+    settingsTabOpen = false;
+    activeTabHistory = [];
+    renderBlankCanvas();
+    parent.postMessage({ type: 'vfs:select', name: null }, '*');
+  }
+
   function renderActiveFile() {
     if (activeTabName === SETTINGS_TAB_NAME) {
       document.body.classList.remove('empty');
@@ -658,8 +667,12 @@
 
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:opened') openFileTab(e.data.name, e.data.content);
+    else if (e.data?.type === 'vfs:reset') resetWorkspace();
     else if (e.data?.type === 'settings:open') openSettingsTab();
     else if (e.data?.type === 'settings:theme') {
+      if (e.source === settingsFrame.contentWindow) parent.postMessage(e.data, '*');
+      else settingsFrame.contentWindow.postMessage(e.data, '*');
+    } else if (e.data?.type === 'settings:directory') {
       if (e.source === settingsFrame.contentWindow) parent.postMessage(e.data, '*');
       else settingsFrame.contentWindow.postMessage(e.data, '*');
     } else if (e.data?.type === 'settings:ready') {
