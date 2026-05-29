@@ -54,6 +54,14 @@
     return selectedPath.slice(0, idx) === dirPath;
   };
 
+  const expandAncestors = path => {
+    if (!path) return;
+    const parts = path.split('/');
+    for (let i = 1; i < parts.length; i++) {
+      expanded.add(parts.slice(0, i).join('/'));
+    }
+  };
+
   const renderNode = (node, parentPath, depth) => {
     const ul = document.createElement('ul');
     ul.className = depth === 0 ? 'root' : 'children';
@@ -115,11 +123,16 @@
     return ul;
   };
 
-  const render = () => {
+  const render = ({ revealSelected = false } = {}) => {
     const tree = buildTree(fileNames);
     const newRoot = renderNode(tree, '', 0);
     newRoot.id = 'files';
     document.getElementById('files').replaceWith(newRoot);
+    if (revealSelected) {
+      requestAnimationFrame(() => {
+        document.querySelector('.row.file.selected')?.scrollIntoView({ block: 'nearest' });
+      });
+    }
   };
 
   addEventListener('message', e => {
@@ -128,7 +141,8 @@
       render();
     } else if (e.data?.type === 'vfs:selected') {
       selectedPath = e.data.name;
-      render();
+      expandAncestors(selectedPath);
+      render({ revealSelected: true });
     }
   });
   const setFocused = v => document.body.classList.toggle('focused', v);

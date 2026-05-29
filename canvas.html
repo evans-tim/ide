@@ -333,6 +333,10 @@
     activeFileHistory.push(name);
   }
 
+  function notifyActiveFileSelected() {
+    if (activeFileName) parent.postMessage({ type: 'vfs:select', name: activeFileName }, '*');
+  }
+
   function renderTabs() {
     const counts = new Map();
     for (const tab of fileTabs) {
@@ -417,7 +421,7 @@
     document.body.classList.remove('empty');
     setFromContent(tab.content);
     renderTabs();
-    parent.postMessage({ type: 'vfs:select', name: tab.name }, '*');
+    notifyActiveFileSelected();
   }
 
   function openFileTab(name, content) {
@@ -426,7 +430,7 @@
     let tab = fileTabs.find(fileTab => fileTab.name === name);
     if (tab && name === activeFileName) {
       renderTabs();
-      parent.postMessage({ type: 'vfs:select', name: tab.name }, '*');
+      notifyActiveFileSelected();
       return;
     }
 
@@ -759,7 +763,10 @@
   });
 
   const setFocused = v => document.body.classList.toggle('focused', v);
-  view.addEventListener('focus', () => setFocused(true));
+  view.addEventListener('focus', () => {
+    setFocused(true);
+    notifyActiveFileSelected();
+  });
   view.addEventListener('blur', () => setFocused(false));
   setFocused(document.hasFocus());
 

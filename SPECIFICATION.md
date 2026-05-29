@@ -66,6 +66,7 @@
 - Clicking a file row selects and opens the file.
 - Opening a file displays its contents in the canvas pane.
 - The selected file row uses the relevant Cursor list-selection style, and distinguishes focused vs. unfocused states.
+- When a filename tab selects a file, every collapsed ancestor directory of that file expands before the selected file row is highlighted, so the highlighted row is visible in the file tree.
 - When the left pane is focused, the selected file row additionally shows a slightly darker 1px top and bottom border; when the left pane is unfocused, the selection highlight remains but the borders are absent.
 - Hovering a file row uses the relevant Cursor list-selection style without top and bottom border.
 - A directory row displays a caret icon followed by the directory name.
