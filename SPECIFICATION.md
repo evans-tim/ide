@@ -70,7 +70,11 @@
 - When the left pane is focused, the selected file row additionally shows a slightly darker 1px top and bottom border; when the left pane is unfocused, the selection highlight remains but the borders are absent.
 - Hovering a file row uses the relevant Cursor list-selection style without top and bottom border.
 - A directory row displays a caret icon followed by the directory name.
-- Clicking a directory row toggles it between collapsed and expanded.
+- Clicking a directory row selects that directory row and toggles it between collapsed and expanded.
+- The selected directory row uses the relevant Cursor list-selection style, and distinguishes focused vs. unfocused states.
+- When the left pane is focused, the selected directory row additionally shows a slightly darker 1px top and bottom border; when the left pane is unfocused, the selection highlight remains but the borders are absent.
+- When focus leaves the left pane because a non-row target receives focus, the selected directory row remains highlighted but loses its focused top and bottom borders.
+- When focus leaves the left pane because another file tree row, filename tab, or canvas region selects a different file tree row, the prior selected directory row is no longer highlighted and the newly selected row receives the selection state.
 - An expanded directory row uses a downward caret.
 - A collapsed directory row uses a right-facing caret.
 - An expanded directory shows its direct child file rows and directory rows.

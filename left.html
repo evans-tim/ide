@@ -21,6 +21,7 @@
 <script>
   let fileNames = [];
   let selectedPath = null;
+  let selectedType = null;
   const expanded = new Set();
   const ROW_PAD_LEFT = 12;
   const GUIDE_ICON_MARGIN = 5;
@@ -85,7 +86,10 @@
       const label = document.createElement('span');
       label.textContent = name;
       row.appendChild(label);
+      if (selectedType === 'dir' && selectedPath === childPath) row.classList.add('selected');
       row.onclick = () => {
+        selectedPath = childPath;
+        selectedType = 'dir';
         if (expanded.has(childPath)) expanded.delete(childPath);
         else expanded.add(childPath);
         render();
@@ -111,9 +115,10 @@
       const label = document.createElement('span');
       label.textContent = name;
       row.appendChild(label);
-      if (selectedPath === childPath) row.classList.add('selected');
+      if (selectedType === 'file' && selectedPath === childPath) row.classList.add('selected');
       row.onclick = () => {
         selectedPath = childPath;
+        selectedType = 'file';
         parent.postMessage({ type: 'vfs:open', name: childPath }, '*');
         render();
       };
@@ -141,6 +146,7 @@
       render();
     } else if (e.data?.type === 'vfs:selected') {
       selectedPath = e.data.name;
+      selectedType = selectedPath ? 'file' : null;
       expandAncestors(selectedPath);
       render({ revealSelected: true });
     }
