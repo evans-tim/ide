@@ -32,7 +32,10 @@
 
 # VFS
 
-- Mount to a real dir
+- Mount to the server's current working directory by default
+- Add Settings directory chooser
+- Reload file tree from selected mounted directory
+- (NOT IMPLEMENTED) Preserve file tabs and chat tabs per mounted directory
 
 # Settings
 

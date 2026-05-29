@@ -84,28 +84,47 @@
 - Clicking a dropdown option changes the dropdown trigger text to that option and closes the popup.
 
 **Virtual file system**
-- Flat set of text files, no directories.
-- Owned by the root; panes never access it directly.
+- The root owns the mounted workspace directory.
+- By default, the mounted workspace directory is the current working directory where the server process was started.
+- The VFS exposes files from the current mounted workspace directory.
+- File paths are relative to the current mounted workspace directory.
+- Panes never access the mounted workspace directory or VFS directly.
+- Changing the mounted workspace directory replaces the active VFS contents with the files from the newly mounted directory.
+- Changing the mounted workspace directory clears the current file-tree selection state.
+- Changing the mounted workspace directory collapses every directory in the file tree.
+- Changing the mounted workspace directory closes every open filename tab and leaves the canvas pane on a blank canvas.
+- Changing the mounted workspace directory closes every open agent chat tab and leaves the right panel closed.
+- (NOT IMPLEMENTED) File tabs should be saved and restored per mounted workspace directory.
+- (NOT IMPLEMENTED) Agent chat tabs should be saved and restored per mounted workspace directory.
 
 **Inter-pane communication**
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
 - Settings theme changes route through the root before root-owned theme tokens change.
+- Settings directory changes route through the root before the mounted workspace directory changes.
 
 **Settings**
-- The Settings page displays the theme selector as a single rounded setting row.
-- The setting row background follows the active theme and appears as a light neutral gray in light mode.
-- The setting row's left side displays `Theme` as the title and `Select application color scheme` as the subtitle.
-- The setting row title uses the strongest foreground text color for the active theme.
-- The setting row subtitle uses a slightly deemphasized foreground color for the active theme.
-- The setting row's right side displays the theme dropdown trigger.
+- The Settings page displays each setting as a rounded setting row.
+- Each setting row background follows the active theme and appears as a light neutral gray in light mode.
+- Each setting row's left side displays the setting title and subtitle.
+- Each setting row title uses the strongest foreground text color for the active theme.
+- Each setting row subtitle uses a slightly deemphasized foreground color for the active theme.
+- The theme setting row's left side displays `Theme` as the title and `Select application color scheme` as the subtitle.
+- The theme setting row's right side displays the theme dropdown trigger.
 - The theme dropdown remains the control that changes the active application color scheme.
+- The directory setting row's left side displays `Directory` as the title and `Select the directory for the current workspace` as the subtitle.
+- The directory setting row's right side displays a directory button.
+- The directory button behaves like a general purpose button.
+- The directory button text is the current mounted workspace directory path.
+- When the current mounted workspace directory path exceeds the directory button's available text area, the path is truncated on the left with an ellipsis so the end of the path remains visible.
+- Clicking the directory button opens a directory chooser.
+- Choosing a directory from the directory chooser changes the mounted workspace directory to that directory.
 
 
 # File Tree
 **File browsing**
 - The left pane lists every file in the VFS as a file tree.
-- Directories are inferred from slash-delimited file paths; the VFS remains a flat set of text files.
+- Directories are inferred from slash-delimited file paths relative to the current mounted workspace directory.
 - A file row displays the file name.
 - A file row displays a file-type icon immediately to the left of the file name.
 - File-type icons and directory caret icons render at the same square size.
@@ -325,12 +344,13 @@
 - `editor.wordSeparators` defines the characters that delimit words.
 
 **Settings page**
-- `settings.html` contains one dropdown.
-- The dropdown example has 100px of margin around it.
-- The dropdown contains exactly two options: `light` and `dark`.
+- `settings.html` contains a theme dropdown and a directory button.
+- The Settings controls have 100px of margin around them.
+- The theme dropdown contains exactly two options: `light` and `dark`.
 - Changing the dropdown value changes the active root-owned theme setting.
 - Changing the active theme immediately updates root-owned theme tokens and propagates the resulting styles to all iframes.
 - `settings.html` displays the dropdown trigger with the current theme value as its selected text.
+- `settings.html` displays the directory button with the current mounted workspace directory path as its text.
 
 **Canvas editing**
 - Normal click positions the caret by splitting each hit character at its horizontal midpoint: clicking the left half places the caret before that character, clicking the right half places it after that character, and clicking past end-of-line places caret at line end.
