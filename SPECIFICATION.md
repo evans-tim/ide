@@ -67,6 +67,7 @@
 - A dropdown trigger displays its selected text left-aligned and `chevron-up-down.svg` right-aligned.
 - Dropdown trigger text that exceeds the available text area is truncated with an ellipsis.
 - Clicking a dropdown trigger focuses it and displays the focused border without changing the trigger's layout box.
+- A dropdown trigger's default, hover, and focus outlines use low-contrast theme-appropriate gray colors; hover and focus are only slightly lighter than the default outline.
 - Opening or closing a dropdown causes no layout shift.
 - Clicking a focused dropdown trigger opens a popup below it.
 - The dropdown popup is a rounded-corner div with 200px width and a 1px outline/border.
@@ -90,6 +91,15 @@
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
 - Settings theme changes route through the root before root-owned theme tokens change.
+
+**Settings**
+- The Settings page displays the theme selector as a single rounded setting row.
+- The setting row background follows the active theme and appears as a light neutral gray in light mode.
+- The setting row's left side displays `Theme` as the title and `Select application color scheme` as the subtitle.
+- The setting row title uses the strongest foreground text color for the active theme.
+- The setting row subtitle uses a slightly deemphasized foreground color for the active theme.
+- The setting row's right side displays the theme dropdown trigger.
+- The theme dropdown remains the control that changes the active application color scheme.
 
 
 # File Tree

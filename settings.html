@@ -12,7 +12,7 @@
   .general-purpose-button {
     margin: 1px;
     padding: 2px 4px;
-    border: 1px solid #d0d0d0;
+    border: 1px solid var(--button-border-color, var(--dropdown-border, #d0d0d0));
     border-radius: 3px;
     background: transparent;
     color: inherit;
@@ -20,23 +20,25 @@
   }
 
   .general-purpose-button:hover {
-    border-color: #b8b8b8;
+    border-color: var(--button-hover-border-color, #b8b8b8);
     cursor: pointer;
   }
 
   .general-purpose-button:focus {
     margin: 0;
-    border: 2px solid #b8b8b8;
+    border: 2px solid var(--button-focus-border-color, #b8b8b8);
     outline: none;
   }
 
   .dropdown {
     position: relative;
     display: inline-block;
-    margin: 100px;
   }
 
   .dropdown-trigger {
+    --button-border-color: var(--dropdown-border, #d0d0d0);
+    --button-hover-border-color: color-mix(in srgb, var(--dropdown-border, #d0d0d0) 80%, var(--dropdown-foreground, currentColor));
+    --button-focus-border-color: color-mix(in srgb, var(--dropdown-border, #d0d0d0) 75%, var(--dropdown-foreground, currentColor));
     width: 150px;
     box-sizing: border-box;
     display: inline-flex;
@@ -48,8 +50,8 @@
 
   .dropdown-trigger:focus {
     margin: 1px;
-    border: 1px solid #b8b8b8;
-    box-shadow: 0 0 0 1px #b8b8b8;
+    border: 1px solid var(--button-focus-border-color);
+    box-shadow: 0 0 0 1px var(--button-focus-border-color);
   }
 
   .dropdown-label {
@@ -95,15 +97,42 @@
     color: var(--list-hoverForeground, #000);
     cursor: pointer;
   }
+
+  .setting-row {
+    margin: 8px;
+    padding: 14px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--sideBar-background, #f4f4f4);
+  }
+
+  .setting-title {
+    color: var(--editor-foreground, #000);
+  }
+
+  .setting-subtitle {
+    margin-top: 3px;
+    color: var(--descriptionForeground, #555);
+    font-size: 12px;
+  }
 </style>
-<div class="dropdown" id="theme">
-  <button class="general-purpose-button dropdown-trigger" id="theme-trigger" type="button">
-    <span class="dropdown-label" id="theme-label">light</span>
-    <span class="dropdown-icon" aria-hidden="true"></span>
-  </button>
-  <div class="dropdown-popup" id="theme-popup" hidden>
-    <div class="dropdown-option" data-value="light">light</div>
-    <div class="dropdown-option" data-value="dark">dark</div>
+<div class="setting-row">
+  <div>
+    <div class="setting-title">Theme</div>
+    <div class="setting-subtitle">Select application color scheme</div>
+  </div>
+  <div class="dropdown" id="theme">
+    <button class="general-purpose-button dropdown-trigger" id="theme-trigger" type="button">
+      <span class="dropdown-label" id="theme-label">light</span>
+      <span class="dropdown-icon" aria-hidden="true"></span>
+    </button>
+    <div class="dropdown-popup" id="theme-popup" hidden>
+      <div class="dropdown-option" data-value="light">light</div>
+      <div class="dropdown-option" data-value="dark">dark</div>
+    </div>
   </div>
 </div>
 <script>
