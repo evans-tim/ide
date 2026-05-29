@@ -55,6 +55,11 @@
 - The left pane lists every file in the VFS as a file tree.
 - Directories are inferred from slash-delimited file paths; the VFS remains a flat set of text files.
 - A file row displays the file name.
+- A file row displays a file-type icon immediately to the left of the file name.
+- A `.txt` file row uses `file-type-text.svg`.
+- A `.md` file row uses `file-type-text.svg`.
+- A `.js` file row uses `file-type-js.svg`.
+- Any other or unknown file type uses `question.svg`.
 - Clicking a file row selects and opens the file.
 - Opening a file displays its contents in the canvas pane.
 - The selected file row uses the relevant Cursor list-selection style, and distinguishes focused vs. unfocused states.
