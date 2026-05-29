@@ -113,7 +113,9 @@
 - The newly-created tab becomes the active tab immediately.
 - The button group div containing the `add.svg` control has a left border separating it from the scrollable tab list.
 - When the tab list grows until it reaches the button group border, the tab list scrolls horizontally instead of shrinking the button group.
-- The tab list's horizontal scrollbar appears only while horizontal overflow exists.
+- The tab list's horizontal scrollbar appears only while horizontal overflow exists and the mouse is inside the scrollable tab list area.
+- The tab list's horizontal scrollbar is hidden when the mouse is inside the button group area or anywhere outside the scrollable tab list area.
+- The tab list's horizontal scrollbar visibility changes animate over 0.2s instead of switching instantly.
 - The tab list's horizontal scrollbar has no visible gutter; only the thumb is visible.
 - The tab list's horizontal scrollbar thumb is flush with the bottom edge of the tab group.
 - The tab list's horizontal scrollbar thumb is 3px tall with square edges.
@@ -216,7 +218,9 @@
 - The placeholder button group does not shrink when the filename tab list overflows.
 - Placeholder buttons do not perform any file action until their behavior is separately specified.
 - When the filename tab list grows until it reaches the placeholder button group border, the filename tab list scrolls horizontally instead of shrinking the placeholder button group.
-- The filename tab list's horizontal scrollbar appears only while horizontal overflow exists.
+- The filename tab list's horizontal scrollbar appears only while horizontal overflow exists and the mouse is inside the scrollable filename tab list area.
+- The filename tab list's horizontal scrollbar is hidden when the mouse is inside the placeholder button group area or anywhere outside the scrollable filename tab list area.
+- The filename tab list's horizontal scrollbar visibility changes animate over 0.2s instead of switching instantly.
 - The filename tab list's horizontal scrollbar has no visible gutter; only the thumb is visible.
 - The filename tab list's horizontal scrollbar thumb is flush with the bottom edge of the tab group.
 - The filename tab list's horizontal scrollbar thumb is 3px tall with square edges.

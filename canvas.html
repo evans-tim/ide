@@ -47,15 +47,21 @@
   }
   .tabs::-webkit-scrollbar { display: none; }
   .tabScrollbar {
-    display: none;
     position: absolute;
     left: 0;
     right: 0;
     bottom: 0;
     height: 4px;
+    opacity: 0;
     pointer-events: none;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0s linear 0.2s;
   }
-  .tabArea.hasOverflow .tabScrollbar { display: block; }
+  .tabArea.hasOverflow:hover .tabScrollbar {
+    opacity: 1;
+    visibility: visible;
+    transition: opacity 0.2s;
+  }
   .tabScrollbarThumb {
     position: absolute;
     bottom: 0;
