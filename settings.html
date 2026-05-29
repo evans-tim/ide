@@ -29,19 +29,119 @@
     border: 2px solid #b8b8b8;
     outline: none;
   }
+
+  .dropdown {
+    position: relative;
+    display: inline-block;
+    margin: 100px;
+  }
+
+  .dropdown-trigger {
+    width: 150px;
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    text-align: left;
+  }
+
+  .dropdown-trigger:focus {
+    margin: 1px;
+    border: 1px solid #b8b8b8;
+    box-shadow: 0 0 0 1px #b8b8b8;
+  }
+
+  .dropdown-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .dropdown-icon {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    background: currentColor;
+    mask: url("icons/chevron-up-down.svg") center / contain no-repeat;
+  }
+
+  .dropdown-popup {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    z-index: 1;
+    width: 200px;
+    box-sizing: border-box;
+    border: 1px solid var(--dropdown-border, #d0d0d0);
+    border-radius: 4px;
+    background: var(--dropdown-background, #fff);
+  }
+
+  .dropdown-popup[hidden] {
+    display: none;
+  }
+
+  .dropdown-option {
+    padding: 2px 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--list-deemphasizedForeground, #555);
+  }
+
+  .dropdown-option:hover {
+    color: var(--list-hoverForeground, #000);
+    cursor: pointer;
+  }
 </style>
-<button class="general-purpose-button" type="button">Theme</button>
-<select id="theme">
-  <option>light</option>
-  <option>dark</option>
-</select>
+<div class="dropdown" id="theme">
+  <button class="general-purpose-button dropdown-trigger" id="theme-trigger" type="button">
+    <span class="dropdown-label" id="theme-label">light</span>
+    <span class="dropdown-icon" aria-hidden="true"></span>
+  </button>
+  <div class="dropdown-popup" id="theme-popup" hidden>
+    <div class="dropdown-option" data-value="light">light</div>
+    <div class="dropdown-option" data-value="dark">dark</div>
+  </div>
+</div>
 <script>
   const theme = document.getElementById('theme');
-  const sendTheme = () => parent.postMessage({ type: 'settings:theme', value: theme.value }, '*');
-  theme.addEventListener('change', sendTheme);
+  const trigger = document.getElementById('theme-trigger');
+  const label = document.getElementById('theme-label');
+  const popup = document.getElementById('theme-popup');
+
+  const setTheme = value => {
+    if (value !== 'light' && value !== 'dark') return;
+    label.textContent = value;
+  };
+
+  const closeDropdown = () => {
+    popup.hidden = true;
+    trigger.blur();
+  };
+
+  trigger.addEventListener('click', () => {
+    popup.hidden = false;
+  });
+
+  popup.addEventListener('click', event => {
+    const option = event.target.closest('.dropdown-option');
+    if (!option) return;
+    setTheme(option.dataset.value);
+    parent.postMessage({ type: 'settings:theme', value: option.dataset.value }, '*');
+    popup.hidden = true;
+  });
+
+  document.addEventListener('click', event => {
+    if (theme.contains(event.target)) return;
+    closeDropdown();
+  });
+
   addEventListener('message', event => {
     if (event.data?.type !== 'settings:theme') return;
-    if (event.data.value === 'light' || event.data.value === 'dark') theme.value = event.data.value;
+    setTheme(event.data.value);
   });
   parent.postMessage({ type: 'settings:ready' }, '*');
 </script>

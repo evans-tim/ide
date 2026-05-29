@@ -62,6 +62,26 @@
 - Focusing a general purpose button makes its border thicker while preserving the same border darkness used by hover.
 - A general purpose button reserves enough space for its focused border so focusing the button causes no layout shift.
 
+**Dropdown**
+- A dropdown trigger behaves like a general purpose button with fixed 150px width.
+- A dropdown trigger displays its selected text left-aligned and `chevron-up-down.svg` right-aligned.
+- Dropdown trigger text that exceeds the available text area is truncated with an ellipsis.
+- Clicking a dropdown trigger focuses it and displays the focused border without changing the trigger's layout box.
+- Opening or closing a dropdown causes no layout shift.
+- Clicking a focused dropdown trigger opens a popup below it.
+- The dropdown popup is a rounded-corner div with 200px width and a 1px outline/border.
+- The dropdown popup background and border follow the active theme's dropdown colors.
+- The dropdown popup's right edge aligns with the dropdown trigger's right edge.
+- The dropdown popup sits 4px below the dropdown trigger.
+- The dropdown popup lists every selectable item for the dropdown.
+- Each dropdown option displays its text with overflow truncated by an ellipsis.
+- Each dropdown option uses the active theme's deemphasized list text color by default and hover list text color on hover.
+- Each dropdown option uses 2px vertical padding and 4px horizontal padding.
+- Dropdown options have no borders.
+- Hovering any dropdown option uses the pointer cursor.
+- Clicking outside the open dropdown popup closes the popup and removes focus from the dropdown trigger.
+- Clicking a dropdown option changes the dropdown trigger text to that option and closes the popup.
+
 **Virtual file system**
 - Flat set of text files, no directories.
 - Owned by the root; panes never access it directly.
@@ -296,10 +316,11 @@
 
 **Settings page**
 - `settings.html` contains one dropdown.
+- The dropdown example has 100px of margin around it.
 - The dropdown contains exactly two options: `light` and `dark`.
 - Changing the dropdown value changes the active root-owned theme setting.
 - Changing the active theme immediately updates root-owned theme tokens and propagates the resulting styles to all iframes.
-- `settings.html` displays a general purpose button with the text `Theme`.
+- `settings.html` displays the dropdown trigger with the current theme value as its selected text.
 
 **Canvas editing**
 - Normal click positions the caret by splitting each hit character at its horizontal midpoint: clicking the left half places the caret before that character, clicking the right half places it after that character, and clicking past end-of-line places caret at line end.
