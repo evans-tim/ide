@@ -8,7 +8,29 @@
     background: var(--editor-background, #fff);
     color: var(--editor-foreground, #000);
   }
+
+  .general-purpose-button {
+    margin: 1px;
+    padding: 2px 4px;
+    border: 1px solid #d0d0d0;
+    border-radius: 3px;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+  }
+
+  .general-purpose-button:hover {
+    border-color: #b8b8b8;
+    cursor: pointer;
+  }
+
+  .general-purpose-button:focus {
+    margin: 0;
+    border: 2px solid #b8b8b8;
+    outline: none;
+  }
 </style>
+<button class="general-purpose-button" type="button">Theme</button>
 <select id="theme">
   <option>light</option>
   <option>dark</option>

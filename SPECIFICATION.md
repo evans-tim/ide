@@ -54,6 +54,14 @@
 - Default font size is 13px.
 - Font choices are propagated as root-owned tokens so panes can apply the correct stack locally.
 
+**General purpose button**
+- A general purpose button displays unstyled text inside its border.
+- A general purpose button has a 1px light gray border and subtly rounded corners.
+- A general purpose button's border wraps its text with 2px of vertical padding and 4px of horizontal padding.
+- Hovering a general purpose button makes its border slightly darker and uses the pointer cursor.
+- Focusing a general purpose button makes its border thicker while preserving the same border darkness used by hover.
+- A general purpose button reserves enough space for its focused border so focusing the button causes no layout shift.
+
 **Virtual file system**
 - Flat set of text files, no directories.
 - Owned by the root; panes never access it directly.
@@ -291,6 +299,7 @@
 - The dropdown contains exactly two options: `light` and `dark`.
 - Changing the dropdown value changes the active root-owned theme setting.
 - Changing the active theme immediately updates root-owned theme tokens and propagates the resulting styles to all iframes.
+- `settings.html` displays a general purpose button with the text `Theme`.
 
 **Canvas editing**
 - Normal click positions the caret by splitting each hit character at its horizontal midpoint: clicking the left half places the caret before that character, clicking the right half places it after that character, and clicking past end-of-line places caret at line end.
