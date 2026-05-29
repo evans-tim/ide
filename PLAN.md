@@ -33,3 +33,11 @@
 # VFS
 
 - Mount to a real dir
+
+# Settings
+
+- Settings icon at righthandmost side in main topbar
+- Opens settings iframe in the canvas pane as a new tab.  
+- Settings dropdown sends selected number 0-9 to righthand side of main bottom bar
+- Change theme
+- Change mounted dir

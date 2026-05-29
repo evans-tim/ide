@@ -1,8 +1,13 @@
 **Layout**
 - Top bar and bottom status bar span full viewport width.
 - Main top bar height is 32px.
+- Main top bar contains a `settings-gear.svg` control at the righthandmost side.
+- Clicking the main top bar settings control opens the Settings canvas tab.
+- If the Settings canvas tab is already open and inactive, clicking the settings control makes it the active canvas tab.
+- If the Settings canvas tab is already the active canvas tab, clicking the settings control is a no-op.
 - Left + right sidebars: span between top and status bars; x-precedence over bottom panel.
 - Bottom panel: spans center column only (under center pane).
+- The main bottom status bar displays the current Settings dropdown number at its righthand side.
 
 **Keyboard panel toggles**
 - Cmd+I opens the right panel when it is closed.
@@ -48,6 +53,7 @@
 **Inter-pane communication**
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
+- Settings value changes route through the root before the main bottom status bar displays the selected value.
 
 
 # File Tree
@@ -238,6 +244,12 @@
 
 **Filename tabs**
 - Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.
+- The Settings tab behaves like a canvas tab and contains `settings.svg`, the title `Settings`, and its adjacent `close.svg` icon.
+- The Settings tab opens `settings.html` in the canvas pane as a separate iframe.
+- The Settings tab is unique; opening Settings while the tab already exists selects the existing tab and does not create a duplicate.
+- Selecting the Settings tab does not change the currently selected file.
+- Selecting the Settings tab does not change the file-tree highlight; the previously highlighted file row remains highlighted because it remains the current selected file.
+- Closing the Settings tab returns canvas tab selection according to the same most-recently-active rule used by filename tabs.
 - If two or more open filename tabs have the same file name from different directories, each conflicting tab displays the file name followed by a space and then its immediate parent directory name.
 - The parent directory name in a conflicting filename tab uses a smaller font than the file name.
 - The parent directory name participates in the same tab-width limit and may be fully or partially hidden by ellipsis.
@@ -265,6 +277,12 @@
 - Renders editable text contents.
 - Gutter on the left displays line numbers, one per content line, right-aligned.
 - `editor.wordSeparators` defines the characters that delimit words.
+
+**Settings page**
+- `settings.html` contains one dropdown.
+- The dropdown contains numeric options `0` through `9`.
+- Changing the dropdown value updates the value displayed at the righthand side of the main bottom status bar.
+- The displayed bottom-bar value is exactly the currently selected dropdown number and no additional label is shown.
 
 **Canvas editing**
 - Normal click positions the caret by splitting each hit character at its horizontal midpoint: clicking the left half places the caret before that character, clicking the right half places it after that character, and clicking past end-of-line places caret at line end.

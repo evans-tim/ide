@@ -1,0 +1,29 @@
+<!doctype html>
+<title>Settings</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif);
+    background: var(--editor-background, #fff);
+    color: var(--editor-foreground, #000);
+  }
+</style>
+<select id="setting">
+  <option>0</option>
+  <option>1</option>
+  <option>2</option>
+  <option>3</option>
+  <option>4</option>
+  <option>5</option>
+  <option>6</option>
+  <option>7</option>
+  <option>8</option>
+  <option>9</option>
+</select>
+<script>
+  const setting = document.getElementById('setting');
+  const sendValue = () => parent.postMessage({ type: 'settings:value', value: setting.value }, '*');
+  setting.addEventListener('change', sendValue);
+  sendValue();
+</script>

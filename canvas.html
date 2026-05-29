@@ -137,6 +137,9 @@
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
   .topbarControl img { width: 12px; height: 12px; display: block; }
   .editor { flex: 1; min-height: 0; background: var(--editor-background); }
+  .settingsFrame { display: none; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
+  body.settings .settingsFrame { display: block; }
+  body.settings .scroller, body.settings #top-shadow, body.settings #gutter-highlight { display: none; }
   .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; }
   #top-shadow { position: fixed; top: 32px; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
   body.scrolled #top-shadow { opacity: 1; }
@@ -158,7 +161,7 @@
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><img src="icons/add.svg" alt=""></button><button class="topbarControl" type="button" aria-label="Placeholder"><img src="icons/close.svg" alt=""></button></div></div>
-<div class="editor"><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
+<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
@@ -166,11 +169,15 @@
   let lines = [''];
   let cur = { line: 0, col: 0 };
   let fileTabs = [];
+  let settingsTabOpen = false;
+  let activeTabName = null;
   let activeFileName = null;
-  let activeFileHistory = [];
+  let activeTabHistory = [];
+  const SETTINGS_TAB_NAME = '__settings__';
   const tabsEl = document.querySelector('.tabs');
   const tabArea = document.querySelector('.tabArea');
   const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
+  const settingsFrame = document.getElementById('settingsFrame');
   const view = document.getElementById('view');
   const gutter = document.getElementById('gutter');
   const scroller = document.getElementById('scroller');
@@ -305,6 +312,10 @@
     return fileTabs.find(tab => tab.name === activeFileName);
   }
 
+  function activeEditableFileTab() {
+    return activeTabName === SETTINGS_TAB_NAME ? null : fileTabs.find(tab => tab.name === activeTabName);
+  }
+
   function baseName(path) {
     return path.split('/').pop();
   }
@@ -323,14 +334,19 @@
   }
 
   function saveActiveFileContent() {
-    const tab = activeFileTab();
+    const tab = activeEditableFileTab();
     if (tab) tab.content = lines.join('\n');
   }
 
   function markFileActive(name) {
     activeFileName = name;
-    activeFileHistory = activeFileHistory.filter(fileName => fileName !== name);
-    activeFileHistory.push(name);
+    markTabActive(name);
+  }
+
+  function markTabActive(name) {
+    activeTabName = name;
+    activeTabHistory = activeTabHistory.filter(tabName => tabName !== name);
+    activeTabHistory.push(name);
   }
 
   function notifyActiveFileSelected() {
@@ -344,22 +360,25 @@
       counts.set(name, (counts.get(name) || 0) + 1);
     }
 
-    tabsEl.replaceChildren(...fileTabs.map(tab => {
+    const allTabs = settingsTabOpen
+      ? [...fileTabs, { name: SETTINGS_TAB_NAME, settings: true }]
+      : fileTabs;
+    tabsEl.replaceChildren(...allTabs.map(tab => {
       const tabEl = document.createElement('div');
-      tabEl.className = tab.name === activeFileName ? 'tab active' : 'tab';
+      tabEl.className = tab.name === activeTabName ? 'tab active' : 'tab';
 
       const icon = document.createElement('img');
       icon.className = 'tabIcon';
-      icon.src = fileIconFor(tab.name);
+      icon.src = tab.settings ? 'icons/settings.svg' : fileIconFor(tab.name);
       icon.alt = '';
 
       const title = document.createElement('span');
       title.className = 'tabTitle';
       const name = document.createElement('span');
-      name.textContent = baseName(tab.name);
+      name.textContent = tab.settings ? 'Settings' : baseName(tab.name);
       title.append(name);
 
-      if (counts.get(baseName(tab.name)) > 1) {
+      if (!tab.settings && counts.get(baseName(tab.name)) > 1) {
         const dir = document.createElement('span');
         dir.className = 'tabDir';
         dir.textContent = ' ' + parentDirName(tab.name);
@@ -373,10 +392,10 @@
       close.innerHTML = '<img src="icons/close.svg" alt="">';
 
       tabEl.append(icon, title, close);
-      tabEl.addEventListener('click', () => switchFileTab(tab.name));
+      tabEl.addEventListener('click', () => switchTab(tab.name));
       close.addEventListener('click', event => {
         event.stopPropagation();
-        closeFileTab(tab.name);
+        closeTab(tab.name);
       });
       return tabEl;
     }));
@@ -400,8 +419,10 @@
   }
 
   function renderBlankCanvas() {
+    activeTabName = null;
     activeFileName = null;
     document.body.classList.add('empty');
+    document.body.classList.remove('settings');
     document.body.classList.remove('scrolled');
     lines = [''];
     cur = { line: 0, col: 0 };
@@ -412,13 +433,22 @@
   }
 
   function renderActiveFile() {
-    const tab = activeFileTab();
+    if (activeTabName === SETTINGS_TAB_NAME) {
+      document.body.classList.remove('empty');
+      document.body.classList.add('settings');
+      document.body.classList.remove('scrolled');
+      renderTabs();
+      return;
+    }
+
+    const tab = activeEditableFileTab();
     if (!tab) {
       renderBlankCanvas();
       return;
     }
 
     document.body.classList.remove('empty');
+    document.body.classList.remove('settings');
     setFromContent(tab.content);
     renderTabs();
     notifyActiveFileSelected();
@@ -428,7 +458,7 @@
     saveActiveFileContent();
 
     let tab = fileTabs.find(fileTab => fileTab.name === name);
-    if (tab && name === activeFileName) {
+    if (tab && name === activeTabName) {
       renderTabs();
       notifyActiveFileSelected();
       return;
@@ -436,7 +466,7 @@
 
     if (!tab) {
       tab = { name, content };
-      const activeIndex = fileTabs.findIndex(fileTab => fileTab.name === activeFileName);
+      const activeIndex = fileTabs.findIndex(fileTab => fileTab.name === activeTabName);
       fileTabs.splice(activeIndex >= 0 ? activeIndex + 1 : 0, 0, tab);
     }
 
@@ -444,30 +474,54 @@
     renderActiveFile();
   }
 
-  function switchFileTab(name) {
-    if (name === activeFileName) return;
+  function openSettingsTab() {
+    if (settingsTabOpen && activeTabName === SETTINGS_TAB_NAME) return;
     saveActiveFileContent();
-    markFileActive(name);
+    settingsTabOpen = true;
+    markTabActive(SETTINGS_TAB_NAME);
     renderActiveFile();
   }
 
-  function closeFileTab(name) {
+  function switchTab(name) {
+    if (name === activeTabName) return;
     saveActiveFileContent();
-    const index = fileTabs.findIndex(tab => tab.name === name);
-    if (index === -1) return;
+    if (name === SETTINGS_TAB_NAME) markTabActive(name);
+    else markFileActive(name);
+    renderActiveFile();
+  }
 
-    fileTabs.splice(index, 1);
-    activeFileHistory = activeFileHistory.filter(fileName => fileName !== name);
+  function closeTab(name) {
+    saveActiveFileContent();
+    if (name === SETTINGS_TAB_NAME) {
+      if (!settingsTabOpen) return;
+      settingsTabOpen = false;
+    } else {
+      const index = fileTabs.findIndex(tab => tab.name === name);
+      if (index === -1) return;
+      fileTabs.splice(index, 1);
+      if (name === activeFileName) {
+        activeFileName = null;
+        parent.postMessage({ type: 'vfs:select', name: null }, '*');
+      }
+    }
 
-    if (fileTabs.length === 0) {
-      activeFileHistory = [];
+    activeTabHistory = activeTabHistory.filter(tabName => tabName !== name);
+    const remainingTabNames = [
+      ...fileTabs.map(tab => tab.name),
+      ...(settingsTabOpen ? [SETTINGS_TAB_NAME] : [])
+    ];
+
+    if (remainingTabNames.length === 0) {
+      activeTabHistory = [];
       renderBlankCanvas();
       parent.postMessage({ type: 'vfs:select', name: null }, '*');
       return;
     }
 
-    if (name === activeFileName) {
-      markFileActive(activeFileHistory[activeFileHistory.length - 1] || fileTabs[fileTabs.length - 1].name);
+    if (name === activeTabName) {
+      const next = [...activeTabHistory].reverse().find(tabName => remainingTabNames.includes(tabName)) || remainingTabNames[remainingTabNames.length - 1];
+      if (next === SETTINGS_TAB_NAME) markTabActive(next);
+      else markFileActive(next);
     }
 
     renderActiveFile();
@@ -593,6 +647,8 @@
 
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:opened') openFileTab(e.data.name, e.data.content);
+    else if (e.data?.type === 'settings:open') openSettingsTab();
+    else if (e.data?.type === 'settings:value') parent.postMessage(e.data, '*');
   });
 
   document.addEventListener('pointerdown', e => {
