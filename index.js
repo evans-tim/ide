@@ -1,6 +1,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const pty = require('node-pty');
+const { WebSocketServer } = require('ws');
 
 let mountedDir = process.cwd();
 
@@ -43,7 +45,7 @@ const filePath = name => {
   return full;
 };
 
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   if (req.url === '/api/workspace' && req.method === 'GET') {
     sendJson(res, 200, { directory: mountedDir });
     return;
@@ -91,4 +93,29 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream' });
     res.end(data);
   });
-}).listen(process.env.PORT, () => console.log(`http://localhost:${process.env.PORT}`));
+});
+
+const wss = new WebSocketServer({ server, path: '/terminal' });
+wss.on('connection', ws => {
+  const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
+  const term = pty.spawn(shell, [], {
+    name: 'xterm-color',
+    cols: 80,
+    rows: 24,
+    cwd: mountedDir,
+    env: { ...process.env },
+  });
+  term.onData(data => {
+    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ type: 'data', data }));
+  });
+  term.onExit(() => ws.close());
+  ws.on('message', raw => {
+    let msg;
+    try { msg = JSON.parse(raw.toString()); } catch { return; }
+    if (msg.type === 'data') term.write(msg.data);
+    else if (msg.type === 'resize') term.resize(msg.cols, msg.rows);
+  });
+  ws.on('close', () => term.kill());
+});
+
+server.listen(process.env.PORT, () => console.log(`http://localhost:${process.env.PORT}`));

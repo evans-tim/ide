@@ -405,3 +405,19 @@
 **Scroll affordance**
 - When the canvas is not scrolled to the very top, a subtle shadow appears along the top border spanning the full canvas width.
 - The shadow is absent at scroll position zero.
+
+
+# Lower Panel
+
+**Bottom panel terminal**
+- The bottom panel hosts a terminal that connects to a real shell process running on the server.
+- Opening the bottom panel with no existing terminal spawns one new terminal session.
+- A terminal session is backed by a server-side shell process running inside a pseudo-terminal.
+- The terminal renders shell output, including colors and cursor movement, faithfully.
+- Keystrokes typed into the focused terminal are sent to its shell process.
+- Output produced by the shell process streams to the terminal live as it is produced.
+- Ctrl+C and other control signals typed into the terminal are delivered to the shell process.
+- Resizing the terminal region resizes the underlying shell process's view accordingly.
+- The terminal session's working directory defaults to the current mounted workspace directory.
+- Closing a terminal session terminates its underlying shell process.
+- A terminal session ending on the server (its shell process exits) marks that terminal as exited.

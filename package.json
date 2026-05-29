@@ -10,6 +10,8 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@chenglou/pretext": "^0.0.7"
+    "@chenglou/pretext": "^0.0.7",
+    "node-pty": "^1.1.0",
+    "ws": "^8.21.0"
   }
 }

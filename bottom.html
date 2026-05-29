@@ -1,4 +1,67 @@
 <!doctype html>
 <title>Bottom</title>
-<style>html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--panel-background); color: var(--panel-foreground); }</style>
-bottom
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+<style>
+  html, body { margin: 0; height: 100%; background: var(--panel-background); color: var(--panel-foreground); }
+  #term { position: absolute; inset: 0; padding: 4px; box-sizing: border-box; }
+</style>
+<div id="term"></div>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+<script>
+  const term = new Terminal({
+    fontFamily: getComputedStyle(document.documentElement).getPropertyValue('--ide-font-editor').trim() || 'monospace',
+    fontSize: 13,
+  });
+  const fit = new FitAddon.FitAddon();
+  term.loadAddon(fit);
+  term.open(document.getElementById('term'));
+  fit.fit();
+
+  const applyTheme = () => {
+    const css = getComputedStyle(document.documentElement);
+    const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
+    term.options.theme = {
+      background: v('--terminal-background', v('--panel-background', '#1e1e1e')),
+      foreground: v('--terminal-foreground', v('--panel-foreground', '#cccccc')),
+      cursor: v('--terminalCursor-foreground', v('--panel-foreground', '#cccccc')),
+      selectionBackground: v('--terminal-selectionBackground', v('--editor-selectionBackground', '#264f78')),
+      black: v('--terminal-ansiBlack', '#000000'),
+      red: v('--terminal-ansiRed', '#cd3131'),
+      green: v('--terminal-ansiGreen', '#0dbc79'),
+      yellow: v('--terminal-ansiYellow', '#e5e510'),
+      blue: v('--terminal-ansiBlue', '#2472c8'),
+      magenta: v('--terminal-ansiMagenta', '#bc3fbc'),
+      cyan: v('--terminal-ansiCyan', '#11a8cd'),
+      white: v('--terminal-ansiWhite', '#e5e5e5'),
+      brightBlack: v('--terminal-ansiBrightBlack', '#666666'),
+      brightRed: v('--terminal-ansiBrightRed', '#f14c4c'),
+      brightGreen: v('--terminal-ansiBrightGreen', '#23d18b'),
+      brightYellow: v('--terminal-ansiBrightYellow', '#f5f543'),
+      brightBlue: v('--terminal-ansiBrightBlue', '#3b8eea'),
+      brightMagenta: v('--terminal-ansiBrightMagenta', '#d670d6'),
+      brightCyan: v('--terminal-ansiBrightCyan', '#29b8db'),
+      brightWhite: v('--terminal-ansiBrightWhite', '#e5e5e5'),
+    };
+  };
+  applyTheme();
+  addEventListener('message', e => {
+    if (e.data?.type === 'settings:theme') requestAnimationFrame(applyTheme);
+  });
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/terminal`);
+  const send = msg => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg)); };
+
+  ws.onopen = () => send({ type: 'resize', cols: term.cols, rows: term.rows });
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    if (msg.type === 'data') term.write(msg.data);
+  };
+  ws.onclose = () => term.write('\r\n[process exited]\r\n');
+
+  term.onData(data => send({ type: 'data', data }));
+
+  const resize = () => { fit.fit(); send({ type: 'resize', cols: term.cols, rows: term.rows }); };
+  new ResizeObserver(resize).observe(document.getElementById('term'));
+</script>
