@@ -2,26 +2,80 @@
 <title>Bottom</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
 <style>
-  html, body { margin: 0; height: 100%; background: var(--panel-background); color: var(--panel-foreground); }
-  #term { position: absolute; inset: 0; padding: 4px; box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--terminal-background, var(--panel-background)); color: var(--panel-foreground); font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); }
+  body { display: flex; flex-direction: column; }
+  .topbar {
+    box-sizing: border-box;
+    height: 32px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    background: var(--terminal-background, var(--panel-background));
+  }
+  .topbarControl {
+    width: 20px;
+    height: 20px;
+    margin-right: 6px;
+    margin-left: auto;
+    border: 0;
+    border-radius: 5px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
+  .topbarControl .icon { width: 12px; height: 12px; display: block; background: currentColor; -webkit-mask: url(icons/add.svg) center / contain no-repeat; mask: url(icons/add.svg) center / contain no-repeat; }
+  .body { flex: 1; min-height: 0; display: flex; }
+  .terms { flex: 1; min-width: 0; position: relative; }
+  .termPane { position: absolute; inset: 0; padding: 4px; box-sizing: border-box; display: none; }
+  .termPane.active { display: block; }
+  .tabPane {
+    flex: none;
+    width: 200px;
+    box-sizing: border-box;
+    border-left: 1px solid var(--editorGroup-border);
+    overflow-y: auto;
+    padding: 4px 0;
+  }
+  .tab {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 2px 12px 2px 12px;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+  }
+  .tab:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
+  .tab.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
+  body.focused .tab.selected {
+    background: var(--list-activeSelectionBackground);
+    color: var(--list-activeSelectionForeground);
+    border-top-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black);
+    border-bottom-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black);
+  }
+  .tabIcon { width: 16px; height: 16px; flex: none; margin-right: 4px; background: currentColor; -webkit-mask: url(icons/terminal.svg) center / 14px 14px no-repeat; mask: url(icons/terminal.svg) center / 14px 14px no-repeat; }
+  .tabLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 </style>
-<div id="term"></div>
+<div class="topbar"><button class="topbarControl" id="add" type="button" aria-label="Add terminal"><span class="icon"></span></button></div>
+<div class="body">
+  <div class="terms" id="terms"></div>
+  <div class="tabPane" id="tabPane"></div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
 <script>
-  const term = new Terminal({
-    fontFamily: getComputedStyle(document.documentElement).getPropertyValue('--ide-font-editor').trim() || 'monospace',
-    fontSize: 13,
-  });
-  const fit = new FitAddon.FitAddon();
-  term.loadAddon(fit);
-  term.open(document.getElementById('term'));
-  fit.fit();
-
-  const applyTheme = () => {
+  const themeOptions = () => {
     const css = getComputedStyle(document.documentElement);
     const v = (name, fallback) => css.getPropertyValue(name).trim() || fallback;
-    term.options.theme = {
+    return {
       background: v('--terminal-background', v('--panel-background', '#1e1e1e')),
       foreground: v('--terminal-foreground', v('--panel-foreground', '#cccccc')),
       cursor: v('--terminalCursor-foreground', v('--panel-foreground', '#cccccc')),
@@ -44,24 +98,93 @@
       brightWhite: v('--terminal-ansiBrightWhite', '#e5e5e5'),
     };
   };
-  applyTheme();
+
+  const fontFamily = getComputedStyle(document.documentElement).getPropertyValue('--ide-font-editor').trim() || 'monospace';
+  const termsEl = document.getElementById('terms');
+  const tabPaneEl = document.getElementById('tabPane');
+  const sessions = new Map();
+  let selectedId = null;
+  let nextId = 1;
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const ws = new WebSocket(`${proto}://${location.host}/terminal`);
+  const queue = [];
+  const send = msg => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg)); else queue.push(msg); };
+  ws.onopen = () => { while (queue.length) ws.send(JSON.stringify(queue.shift())); };
+
+  const renderTabs = () => {
+    tabPaneEl.innerHTML = '';
+    for (const [id, s] of sessions) {
+      const tab = document.createElement('div');
+      tab.className = 'tab' + (id === selectedId ? ' selected' : '');
+      const icon = document.createElement('span');
+      icon.className = 'tabIcon';
+      tab.appendChild(icon);
+      const label = document.createElement('span');
+      label.className = 'tabLabel';
+      label.textContent = 'zsh';
+      tab.appendChild(label);
+      tab.onmousedown = () => { selectTerminal(id); };
+      tabPaneEl.appendChild(tab);
+    }
+  };
+
+  const selectTerminal = id => {
+    selectedId = id;
+    for (const [sid, s] of sessions) s.pane.classList.toggle('active', sid === id);
+    renderTabs();
+    const s = sessions.get(id);
+    if (s) { s.term.focus(); fitSession(s); }
+  };
+
+  const fitSession = s => {
+    if (s.pane.classList.contains('active')) {
+      s.fit.fit();
+      send({ type: 'resize', id: s.id, cols: s.term.cols, rows: s.term.rows });
+    }
+  };
+
+  const createTerminal = () => {
+    const id = nextId++;
+    const pane = document.createElement('div');
+    pane.className = 'termPane';
+    termsEl.appendChild(pane);
+    const term = new Terminal({ fontFamily, fontSize: 13, theme: themeOptions() });
+    const fit = new FitAddon.FitAddon();
+    term.loadAddon(fit);
+    term.open(pane);
+    const s = { id, term, fit, pane };
+    sessions.set(id, s);
+    send({ type: 'spawn', id });
+    term.onData(data => send({ type: 'data', id, data }));
+    new ResizeObserver(() => fitSession(s)).observe(pane);
+    selectTerminal(id);
+    fit.fit();
+    send({ type: 'resize', id, cols: term.cols, rows: term.rows });
+  };
+
+  ws.onmessage = e => {
+    const msg = JSON.parse(e.data);
+    const s = sessions.get(msg.id);
+    if (!s) return;
+    if (msg.type === 'data') s.term.write(msg.data);
+    else if (msg.type === 'exit') s.term.write('\r\n[process exited]\r\n');
+  };
+
+  document.getElementById('add').onclick = createTerminal;
+
+  const setFocused = v => document.body.classList.toggle('focused', v);
+  document.addEventListener('mousedown', event => {
+    if (!event.target.closest('.tab')) setFocused(false);
+  });
+  tabPaneEl.addEventListener('mousedown', event => {
+    if (event.target.closest('.tab')) setFocused(true);
+  });
+
+  const applyTheme = () => { for (const s of sessions.values()) s.term.options.theme = themeOptions(); };
   addEventListener('message', e => {
     if (e.data?.type === 'settings:theme') requestAnimationFrame(applyTheme);
   });
 
-  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
-  const ws = new WebSocket(`${proto}://${location.host}/terminal`);
-  const send = msg => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg)); };
-
-  ws.onopen = () => send({ type: 'resize', cols: term.cols, rows: term.rows });
-  ws.onmessage = e => {
-    const msg = JSON.parse(e.data);
-    if (msg.type === 'data') term.write(msg.data);
-  };
-  ws.onclose = () => term.write('\r\n[process exited]\r\n');
-
-  term.onData(data => send({ type: 'data', data }));
-
-  const resize = () => { fit.fit(); send({ type: 'resize', cols: term.cols, rows: term.rows }); };
-  new ResizeObserver(resize).observe(document.getElementById('term'));
+  createTerminal();
 </script>

@@ -421,3 +421,35 @@
 - The terminal session's working directory defaults to the current mounted workspace directory.
 - Closing a terminal session terminates its underlying shell process.
 - A terminal session ending on the server (its shell process exits) marks that terminal as exited.
+
+**Terminal topbar**
+- The terminal pane has a topbar equal in height to the main top bar.
+- The terminal topbar height is 32px.
+- The terminal topbar background matches the terminal background.
+- The terminal topbar has no bottom border.
+- The terminal topbar contains the `add.svg` icon right-aligned.
+- The `add.svg` icon renders at 12px by 12px.
+- Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
+- Hovering the add control uses the pointer cursor.
+- Clicking the `add.svg` control creates a new terminal session and its associated terminal tab at the end of the terminal tab list.
+- The newly-created terminal becomes the selected terminal immediately.
+- Creating a new terminal does not terminate or alter any existing terminal session.
+
+**Terminal layout**
+- The terminal pane is split into a terminal output area on the left and a terminal tab pane on the right.
+- The terminal tab pane is right-aligned and has a 1px left border.
+- The terminal tab pane width is forced to 200px and does not shrink or grow with the terminal pane size.
+- The terminal output area fills the remaining width of the terminal pane to the left of the terminal tab pane.
+- The terminal output area renders only the currently selected terminal's session.
+
+**Terminal tabs**
+- The terminal tab pane lists one terminal tab per terminal session.
+- Each terminal tab displays `terminal.svg` immediately to the left of the label `zsh`.
+- The `terminal.svg` icon renders at the same square size as the file tree row icons.
+- Terminal tabs use the same icon-to-label spacing as file tree rows.
+- Clicking a terminal tab selects its terminal session and displays that session in the terminal output area.
+- The selected terminal tab uses the relevant Cursor list-selection style, matching the file tree row highlight, and distinguishes focused vs. unfocused states.
+- When a terminal tab is clicked directly, the selected terminal tab additionally shows a slightly darker 1px top and bottom border, matching the focused file tree row behavior.
+- When focus leaves the terminal tab button because a non-tab target receives focus, the selected terminal tab remains highlighted but loses its focused top and bottom borders.
+- Hovering a terminal tab uses the relevant Cursor list-selection style without top and bottom border and uses the pointer cursor.
+- Terminal tab label text that exceeds the available tab width is truncated with an ellipsis.

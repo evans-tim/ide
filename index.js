@@ -98,24 +98,29 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server, path: '/terminal' });
 wss.on('connection', ws => {
   const shell = process.platform === 'win32' ? 'powershell.exe' : (process.env.SHELL || '/bin/zsh');
-  const term = pty.spawn(shell, [], {
-    name: 'xterm-color',
-    cols: 80,
-    rows: 24,
-    cwd: mountedDir,
-    env: { ...process.env },
-  });
-  term.onData(data => {
-    if (ws.readyState === ws.OPEN) ws.send(JSON.stringify({ type: 'data', data }));
-  });
-  term.onExit(() => ws.close());
+  const sessions = new Map();
+  const send = msg => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg)); };
+  const spawnSession = id => {
+    const term = pty.spawn(shell, [], {
+      name: 'xterm-color',
+      cols: 80,
+      rows: 24,
+      cwd: mountedDir,
+      env: { ...process.env },
+    });
+    sessions.set(id, term);
+    term.onData(data => send({ type: 'data', id, data }));
+    term.onExit(() => { sessions.delete(id); send({ type: 'exit', id }); });
+  };
   ws.on('message', raw => {
     let msg;
     try { msg = JSON.parse(raw.toString()); } catch { return; }
-    if (msg.type === 'data') term.write(msg.data);
-    else if (msg.type === 'resize') term.resize(msg.cols, msg.rows);
+    if (msg.type === 'spawn') spawnSession(msg.id);
+    else if (msg.type === 'data') sessions.get(msg.id)?.write(msg.data);
+    else if (msg.type === 'resize') sessions.get(msg.id)?.resize(msg.cols, msg.rows);
+    else if (msg.type === 'kill') { sessions.get(msg.id)?.kill(); sessions.delete(msg.id); }
   });
-  ws.on('close', () => term.kill());
+  ws.on('close', () => { for (const term of sessions.values()) term.kill(); sessions.clear(); });
 });
 
 server.listen(process.env.PORT, () => console.log(`http://localhost:${process.env.PORT}`));
