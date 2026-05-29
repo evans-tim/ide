@@ -1,6 +1,6 @@
 # Left Panel
 - Make filetree focus/selection for canvas tab focus  
-- Add file specific icons
+- (DONE) Add file specific icons
 - Make filetree focus/selection for directory focus 
 - Edit/Save files
 
