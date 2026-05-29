@@ -5,7 +5,7 @@
 - Edit/Save files
 
 # Canvas
-- Add canvas topbar for filename tabs
+- Add canvas topbar with filename tabs, overflow scrolling, placeholder button group, and blank-canvas empty state
 - file preview
 - md parser and preview
 - edit visualizer and accept/reject

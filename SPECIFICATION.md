@@ -207,6 +207,49 @@
 
 
 # Canvas
+**Canvas topbar**
+- Canvas has a topbar equal in height to the main top bar.
+- Canvas topbar height is 32px.
+- Canvas topbar background matches the main top bar background.
+- Canvas topbar contains a scrollable filename tab list on the left and a right-aligned placeholder button group on the right.
+- The placeholder button group has a left border separating it from the scrollable filename tab list.
+- The placeholder button group does not shrink when the filename tab list overflows.
+- Placeholder buttons do not perform any file action until their behavior is separately specified.
+- When the filename tab list grows until it reaches the placeholder button group border, the filename tab list scrolls horizontally instead of shrinking the placeholder button group.
+- The filename tab list's horizontal scrollbar appears only while horizontal overflow exists.
+- The filename tab list's horizontal scrollbar has no visible gutter; only the thumb is visible.
+- The filename tab list's horizontal scrollbar thumb is flush with the bottom edge of the tab group.
+- The filename tab list's horizontal scrollbar thumb is 3px tall with square edges.
+- The filename tab list's horizontal scrollbar has a 4px mouse hit area.
+- The filename tab list's horizontal scrollbar uses the same base color as the canvas scrollbar.
+- Hovering the filename tab list's horizontal scrollbar thumb makes it slightly darker.
+- Dragging the filename tab list's horizontal scrollbar thumb scrolls the filename tab list horizontally.
+- Wheel scrolling the filename tab list has no momentum; motion stops as soon as scroll input stops.
+
+**Filename tabs**
+- Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.
+- If two or more open filename tabs have the same file name from different directories, each conflicting tab displays the file name followed by a space and then its immediate parent directory name.
+- The parent directory name in a conflicting filename tab uses a smaller font than the file name.
+- The parent directory name participates in the same tab-width limit and may be fully or partially hidden by ellipsis.
+- The active filename tab background matches the canvas background, not the canvas topbar background.
+- The active filename tab has a 1px border on its left, right, and bottom edges; its bottom border matches the canvas background so switching tabs causes no 1px layout shift.
+- Inactive filename tab backgrounds match the canvas topbar background.
+- Inactive filename tabs have a 1px border on their left, right, and bottom edges.
+- Each filename tab grows only as wide as needed for its file name and controls, up to a maximum width of 200px.
+- Filename text that exceeds the available tab width is truncated with an ellipsis.
+- Opening a file that is not already open in the filename tabs creates a new filename tab immediately to the right of the currently active filename tab.
+- Opening a file when no filename tab is active creates a new filename tab at the start of the filename tab list.
+- Opening a file that already has a filename tab selects the existing filename tab and does not create a duplicate.
+- The newly-created or selected filename tab becomes the active filename tab immediately.
+- The active filename tab is scrolled into view when it is created, selected from the file tree, or selected by closing another tab.
+- Switching filename tabs displays the selected tab's file contents in the canvas.
+- Clicking a filename tab's `close.svg` icon closes that filename tab.
+- Closing an inactive filename tab does not change the active filename tab.
+- Closing the active filename tab selects the most recently active remaining filename tab.
+- Closing the active filename tab when it is the last remaining filename tab leaves the canvas pane open and displays a blank canvas.
+- The blank canvas background matches the main topbar background.
+- The blank canvas displays no file contents, caret, selection, line numbers, or gutter.
+
 **Canvas**
 - Center pane; renders the contents of the currently opened file.
 - Renders editable text contents.
