@@ -9,21 +9,17 @@
     color: var(--editor-foreground, #000);
   }
 </style>
-<select id="setting">
-  <option>0</option>
-  <option>1</option>
-  <option>2</option>
-  <option>3</option>
-  <option>4</option>
-  <option>5</option>
-  <option>6</option>
-  <option>7</option>
-  <option>8</option>
-  <option>9</option>
+<select id="theme">
+  <option>light</option>
+  <option>dark</option>
 </select>
 <script>
-  const setting = document.getElementById('setting');
-  const sendValue = () => parent.postMessage({ type: 'settings:value', value: setting.value }, '*');
-  setting.addEventListener('change', sendValue);
-  sendValue();
+  const theme = document.getElementById('theme');
+  const sendTheme = () => parent.postMessage({ type: 'settings:theme', value: theme.value }, '*');
+  theme.addEventListener('change', sendTheme);
+  addEventListener('message', event => {
+    if (event.data?.type !== 'settings:theme') return;
+    if (event.data.value === 'light' || event.data.value === 'dark') theme.value = event.data.value;
+  });
+  parent.postMessage({ type: 'settings:ready' }, '*');
 </script>

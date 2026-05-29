@@ -27,7 +27,8 @@
   #bottomBar { grid-row: 5; grid-column: 1 / 6; background: var(--statusBar-background, var(--sideBar-background)); border-top: 1px solid var(--editorGroup-border); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; box-sizing: border-box; }
   .topbarControl { width: 20px; height: 20px; border: 0; border-radius: 5px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; color: inherit; cursor: pointer; }
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
-  .topbarControl img { width: 16px; height: 16px; display: block; }
+  .iconMask { display: block; flex: none; background: currentColor; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+  .settingsGearIcon { width: 16px; height: 16px; -webkit-mask-image: url("icons/settings-gear.svg"); mask-image: url("icons/settings-gear.svg"); }
   #leftWrap, #rightWrap, #bottomWrap, #canvasWrap { min-width: 0; min-height: 0; overflow: hidden; position: relative; }
   #leftWrap   { grid-row: 2 / 5; grid-column: 1; }
   #rightWrap  { grid-row: 2 / 5; grid-column: 5; }
@@ -35,8 +36,8 @@
   #bottomWrap { grid-row: 4; grid-column: 3; }
   iframe.pane { position: absolute; inset: 0; width: 100%; height: 100%; display: block; border: 0; }
 
-  .gutter { background: var(--editorGroup-border); position: relative; z-index: 1; }
-  .gutter::before { content: ""; position: absolute; background: var(--focusBorder); opacity: 0; transition: opacity 0.15s ease-out; }
+  .gutter { background: color-mix(in srgb, var(--editor-background) 88%, var(--editor-foreground)); position: relative; z-index: 1; }
+  .gutter::before { content: ""; position: absolute; background: var(--editorWidget-resizeBorder, var(--activityBarBadge-background)); opacity: 0; transition: opacity 0.15s ease-out; }
   .gutter:hover::before, .gutter.dragging::before { opacity: 1; transition: opacity 0.10s ease-in 0.2s; }
   #gL, #gR { grid-row: 2 / 5; cursor: col-resize; }
   #gL { grid-column: 2; } #gR { grid-column: 4; }
@@ -45,7 +46,7 @@
   #gB::before { left: 0; right: 0; top: -1px; bottom: -1px; }
   body.dragging iframe.pane { pointer-events: none; }
 </style>
-<div id="topBar"><button id="settingsButton" class="topbarControl" type="button" aria-label="Settings"><img src="icons/settings-gear.svg" alt=""></button></div>
+<div id="topBar"><button id="settingsButton" class="topbarControl" type="button" aria-label="Settings"><span class="iconMask settingsGearIcon" aria-hidden="true"></span></button></div>
 <div id="leftWrap"><iframe class="pane" src="left.html"></iframe></div>
 <div id="gL" class="gutter"></div>
 <div id="canvasWrap"><iframe class="pane" src="canvas.html"></iframe></div>
@@ -53,41 +54,67 @@
 <div id="bottomWrap"><iframe class="pane" src="bottom.html"></iframe></div>
 <div id="gR" class="gutter"></div>
 <div id="rightWrap"><iframe class="pane" src="right.html"></iframe></div>
-<div id="bottomBar"><span id="settingsValue">0</span></div>
+<div id="bottomBar"></div>
 <script>
   const root = document.documentElement;
   const savedSize = { lw: null, rw: null, bh: null };
   const canvasFrame = document.querySelector('#canvasWrap iframe');
   const rightFrame = document.querySelector('#rightWrap iframe');
   const settingsButton = document.getElementById('settingsButton');
-  const settingsValue = document.getElementById('settingsValue');
 
+  const themeFiles = {
+    light: 'cursor-light-theme.json',
+    dark: 'cursor-dark-midnight-theme.json'
+  };
+  let activeTheme = 'light';
   let themeCss = '';
+  let themeRequest = 0;
   const injectTheme = doc => {
-    if (!themeCss || !doc) return;
+    if (!themeCss || !doc || !doc.head) return;
     let s = doc.getElementById('__theme');
     if (!s) { s = doc.createElement('style'); s.id = '__theme'; doc.head.appendChild(s); }
     s.textContent = themeCss;
-  };
-  fetch('cursor-light-theme.json').then(r => r.json()).then(theme => {
-    const decls = Object.entries(theme.colors).map(([k, v]) => `--${k.replace(/\./g, '-')}:${v};`).join('');
-    const fonts = getComputedStyle(root);
-    const fontDecls = [
-      `--ide-font-ui:${fonts.getPropertyValue('--ide-font-ui').trim()}`,
-      `--ide-font-editor:${fonts.getPropertyValue('--ide-font-editor').trim()}`,
-      `--ide-font-size:${fonts.getPropertyValue('--ide-font-size').trim()}`,
-      `--ide-line-height:${fonts.getPropertyValue('--ide-line-height').trim()}`
-    ].join(';');
-    themeCss = `:root{${fontDecls};${decls}}`;
-    for (const [k, v] of Object.entries(theme.colors)) {
-      root.style.setProperty('--' + k.replace(/\./g, '-'), v);
+    for (const f of doc.querySelectorAll('iframe')) {
+      f.contentWindow?.postMessage({ type: 'settings:theme', value: activeTheme }, '*');
+      try {
+        injectTheme(f.contentDocument);
+      } catch {
+      }
+      f.addEventListener('load', () => injectTheme(f.contentDocument), { once: true });
     }
-    for (const f of panes()) injectTheme(f.contentDocument);
-  });
+  };
+  const sendTheme = target => target.postMessage({ type: 'settings:theme', value: activeTheme }, '*');
+  const broadcastTheme = () => {
+    for (const f of panes()) sendTheme(f.contentWindow);
+  };
+  const applyTheme = name => {
+    if (!themeFiles[name]) return;
+    activeTheme = name;
+    const request = ++themeRequest;
+    fetch(themeFiles[name]).then(r => r.json()).then(theme => {
+      if (request !== themeRequest) return;
+      const decls = Object.entries(theme.colors).map(([k, v]) => `--${k.replace(/\./g, '-')}:${v};`).join('');
+      const fonts = getComputedStyle(root);
+      const fontDecls = [
+        `--ide-font-ui:${fonts.getPropertyValue('--ide-font-ui').trim()}`,
+        `--ide-font-editor:${fonts.getPropertyValue('--ide-font-editor').trim()}`,
+        `--ide-font-size:${fonts.getPropertyValue('--ide-font-size').trim()}`,
+        `--ide-line-height:${fonts.getPropertyValue('--ide-line-height').trim()}`
+      ].join(';');
+      themeCss = `:root{${fontDecls};${decls}}`;
+      for (const [k, v] of Object.entries(theme.colors)) {
+        root.style.setProperty('--' + k.replace(/\./g, '-'), v);
+      }
+      for (const f of panes()) injectTheme(f.contentDocument);
+      broadcastTheme();
+    });
+  };
+  applyTheme(activeTheme);
   const panes = () => [...document.querySelectorAll('iframe.pane')];
   for (const f of panes()) {
     f.addEventListener('load', () => {
       injectTheme(f.contentDocument);
+      sendTheme(f.contentWindow);
       f.contentDocument.addEventListener('keydown', handleKeydown);
     });
   }
@@ -121,8 +148,10 @@
       openFile(m.name, e.source);
     } else if (m.type === 'vfs:select') {
       broadcast({ type: 'vfs:selected', name: m.name }, e.source);
-    } else if (m.type === 'settings:value') {
-      settingsValue.textContent = m.value;
+    } else if (m.type === 'settings:theme') {
+      applyTheme(m.value);
+    } else if (m.type === 'settings:ready') {
+      sendTheme(e.source);
     } else if (m.type === 'right:close') {
       closePanel('rw', 'gr');
     }

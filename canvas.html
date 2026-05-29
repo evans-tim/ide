@@ -96,11 +96,24 @@
     background: var(--editor-background);
     border-bottom-color: var(--editor-background);
   }
-  .tabIcon {
-    width: 16px;
-    height: 16px;
+  .iconMask {
+    display: block;
     flex: none;
+    background: currentColor;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
   }
+  .tabIcon { width: 16px; height: 16px; }
+  .textFileIcon { -webkit-mask-image: url("icons/file-type-text.svg"); mask-image: url("icons/file-type-text.svg"); }
+  .jsFileIcon { -webkit-mask-image: url("icons/file-type-js.svg"); mask-image: url("icons/file-type-js.svg"); }
+  .unknownFileIcon { -webkit-mask-image: url("icons/question.svg"); mask-image: url("icons/question.svg"); }
+  .settingsTabIcon { -webkit-mask-image: url("icons/settings.svg"); mask-image: url("icons/settings.svg"); }
+  .addIcon { width: 12px; height: 12px; -webkit-mask-image: url("icons/add.svg"); mask-image: url("icons/add.svg"); }
+  .closeIcon { width: 12px; height: 12px; -webkit-mask-image: url("icons/close.svg"); mask-image: url("icons/close.svg"); }
   .tabTitle {
     flex: 1;
     min-width: 0;
@@ -135,7 +148,6 @@
     cursor: pointer;
   }
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
-  .topbarControl img { width: 12px; height: 12px; display: block; }
   .editor { flex: 1; min-height: 0; background: var(--editor-background); }
   .settingsFrame { display: none; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
   body.settings .settingsFrame { display: block; }
@@ -160,7 +172,7 @@
   body.empty .wrap, body.empty #top-shadow, body.empty #gutter-highlight { display: none; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
-<div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><img src="icons/add.svg" alt=""></button><button class="topbarControl" type="button" aria-label="Placeholder"><img src="icons/close.svg" alt=""></button></div></div>
+<div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask addIcon" aria-hidden="true"></span></button><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask closeIcon" aria-hidden="true"></span></button></div></div>
 <div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
@@ -325,12 +337,12 @@
     return parts.length > 1 ? parts[parts.length - 2] : '';
   }
 
-  function fileIconFor(path) {
+  function fileIconClassFor(path) {
     const name = baseName(path);
     const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
-    if (ext === '.txt' || ext === '.md') return 'icons/file-type-text.svg';
-    if (ext === '.js') return 'icons/file-type-js.svg';
-    return 'icons/question.svg';
+    if (ext === '.txt' || ext === '.md') return 'textFileIcon';
+    if (ext === '.js') return 'jsFileIcon';
+    return 'unknownFileIcon';
   }
 
   function saveActiveFileContent() {
@@ -367,10 +379,9 @@
       const tabEl = document.createElement('div');
       tabEl.className = tab.name === activeTabName ? 'tab active' : 'tab';
 
-      const icon = document.createElement('img');
-      icon.className = 'tabIcon';
-      icon.src = tab.settings ? 'icons/settings.svg' : fileIconFor(tab.name);
-      icon.alt = '';
+      const icon = document.createElement('span');
+      icon.className = `iconMask tabIcon ${tab.settings ? 'settingsTabIcon' : fileIconClassFor(tab.name)}`;
+      icon.setAttribute('aria-hidden', 'true');
 
       const title = document.createElement('span');
       title.className = 'tabTitle';
@@ -389,7 +400,7 @@
       close.className = 'topbarControl closeControl';
       close.type = 'button';
       close.setAttribute('aria-label', 'Close');
-      close.innerHTML = '<img src="icons/close.svg" alt="">';
+      close.innerHTML = '<span class="iconMask closeIcon" aria-hidden="true"></span>';
 
       tabEl.append(icon, title, close);
       tabEl.addEventListener('click', () => switchTab(tab.name));
@@ -648,7 +659,12 @@
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:opened') openFileTab(e.data.name, e.data.content);
     else if (e.data?.type === 'settings:open') openSettingsTab();
-    else if (e.data?.type === 'settings:value') parent.postMessage(e.data, '*');
+    else if (e.data?.type === 'settings:theme') {
+      if (e.source === settingsFrame.contentWindow) parent.postMessage(e.data, '*');
+      else settingsFrame.contentWindow.postMessage(e.data, '*');
+    } else if (e.data?.type === 'settings:ready') {
+      parent.postMessage(e.data, '*');
+    }
   });
 
   document.addEventListener('pointerdown', e => {

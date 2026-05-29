@@ -7,7 +7,7 @@
 - If the Settings canvas tab is already the active canvas tab, clicking the settings control is a no-op.
 - Left + right sidebars: span between top and status bars; x-precedence over bottom panel.
 - Bottom panel: spans center column only (under center pane).
-- The main bottom status bar displays the current Settings dropdown number at its righthand side.
+- The main bottom status bar does not display the Settings theme dropdown value.
 
 **Keyboard panel toggles**
 - Cmd+I opens the right panel when it is closed.
@@ -19,6 +19,7 @@
 
 **Dividers**
 - 2px visible between panes.
+- Divider color is derived from theme tokens and remains visible in both light and dark themes.
 - ±1px invisible hit area around each divider.
 - Drag-to-resize each region.
 - Mousedown captures cursor-to-divider offset; drag applies offset so divider tracks cursor without snapping when grab originates anywhere within hit area.
@@ -33,12 +34,19 @@
 - Panes do not intercept pointer events while a divider drag is active.
 
 **Divider hover affordance**
+- Hovering or dragging a divider displays a theme-token accent highlight that remains visible in both light and dark themes.
 - Fade-in: 0.1s ease-in, 0.2s delay.
 - Fade-out: 0.15s ease-out, no delay.
 
 **Theming**
 - Single source of truth: Cursor theme tokens are owned by the root and propagated to every pane.
+- The root owns the active theme setting.
+- The active theme setting is selected from exactly two values: `light` and `dark`.
+- When the active theme is `light`, root-owned theme tokens are loaded from `cursor-light-theme.json`.
+- When the active theme is `dark`, root-owned theme tokens are loaded from `cursor-dark-midnight-theme.json`.
+- Theme token changes propagate to every iframe-backed pane, including the file tree, canvas, Settings page, right panel, and any bottom panel documents.
 - Each pane owns its own visual styling using theme tokens; the root does not style pane interiors.
+- Monochrome UI icons render as masks over `currentColor`, so icon color follows the active theme and parent control state.
 
 **Fonts**
 - Canvas text and line numbers use the editor monospace font stack: `Menlo, Monaco, "Courier New", monospace`.
@@ -53,7 +61,7 @@
 **Inter-pane communication**
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.
-- Settings value changes route through the root before the main bottom status bar displays the selected value.
+- Settings theme changes route through the root before root-owned theme tokens change.
 
 
 # File Tree
@@ -280,9 +288,9 @@
 
 **Settings page**
 - `settings.html` contains one dropdown.
-- The dropdown contains numeric options `0` through `9`.
-- Changing the dropdown value updates the value displayed at the righthand side of the main bottom status bar.
-- The displayed bottom-bar value is exactly the currently selected dropdown number and no additional label is shown.
+- The dropdown contains exactly two options: `light` and `dark`.
+- Changing the dropdown value changes the active root-owned theme setting.
+- Changing the active theme immediately updates root-owned theme tokens and propagates the resulting styles to all iframes.
 
 **Canvas editing**
 - Normal click positions the caret by splitting each hit character at its horizontal midpoint: clicking the left half places the caret before that character, clicking the right half places it after that character, and clicking past end-of-line places caret at line end.
