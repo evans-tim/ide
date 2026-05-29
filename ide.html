@@ -113,6 +113,8 @@
       e.source.postMessage({ type: 'vfs:files', files: Object.keys(vfs) }, '*');
     } else if (m.type === 'vfs:open') {
       openFile(m.name, e.source);
+    } else if (m.type === 'vfs:select') {
+      broadcast({ type: 'vfs:selected', name: m.name }, e.source);
     } else if (m.type === 'right:close') {
       closePanel('rw', 'gr');
     }

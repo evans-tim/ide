@@ -14,11 +14,125 @@
     font-size: var(--ide-font-size, 13px);
     line-height: var(--ide-line-height, 18px);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
   }
   html { overflow: hidden; }
   html, body { cursor: default; }
+  .topbar {
+    box-sizing: border-box;
+    height: 32px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    font-family: var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif);
+    line-height: normal;
+    background: var(--titleBar-activeBackground, var(--sideBar-background));
+    border-bottom: 1px solid var(--editorGroup-border);
+  }
+  .tabArea {
+    flex: 1;
+    position: relative;
+    height: 32px;
+    min-width: 0;
+  }
+  .tabs {
+    height: 32px;
+    display: flex;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    overscroll-behavior: none;
+    scrollbar-width: none;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tabScrollbar {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 4px;
+    pointer-events: none;
+  }
+  .tabArea.hasOverflow .tabScrollbar { display: block; }
+  .tabScrollbarThumb {
+    position: absolute;
+    bottom: 0;
+    height: 3px;
+    border-radius: 0;
+    background: var(--scrollbarSlider-background, #c1c1c1);
+    pointer-events: auto;
+  }
+  .tabScrollbarThumb:hover {
+    background: var(--scrollbarSlider-hoverBackground, #a8a8a8);
+  }
+  .tab {
+    box-sizing: border-box;
+    flex: none;
+    max-width: 200px;
+    min-width: 0;
+    height: 32px;
+    margin-bottom: -1px;
+    padding: 0 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-left: 1px solid var(--editorGroup-border);
+    border-right: 1px solid var(--editorGroup-border);
+    border-bottom: 1px solid var(--editorGroup-border);
+    background: var(--titleBar-activeBackground, var(--sideBar-background));
+    font-family: var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif);
+    cursor: pointer;
+  }
+  .tab:not(.active) { color: var(--tab-inactiveForeground); }
+  .tab.active {
+    background: var(--editor-background);
+    border-bottom-color: var(--editor-background);
+  }
+  .tabIcon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+  }
+  .tabTitle {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .tabDir {
+    font-size: 11px;
+  }
+  .buttonGroup {
+    box-sizing: border-box;
+    flex: none;
+    height: 32px;
+    padding: 0 12px 0 6px;
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    border-left: 1px solid var(--editorGroup-border);
+  }
+  .topbarControl {
+    width: 20px;
+    height: 20px;
+    border: 0;
+    border-radius: 5px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
+  .topbarControl img { width: 12px; height: 12px; display: block; }
+  .editor { flex: 1; min-height: 0; background: var(--editor-background); }
   .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; }
-  #top-shadow { position: fixed; top: 0; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
+  #top-shadow { position: fixed; top: 32px; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
   body.scrolled #top-shadow { opacity: 1; }
   .wrap { display: flex; min-height: 100%; cursor: text; }
   .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
@@ -32,15 +146,25 @@
   body:not(.focused) .selection { background: transparent; color: inherit; }
   .cursor { position: absolute; top: 0; width: 1px; background: var(--editor-foreground, #000); animation: blink 1s step-end infinite; height: var(--ide-line-height, 18px); }
   body:not(.focused) .cursor { display: none; }
+  body.empty .editor { background: var(--titleBar-activeBackground, var(--sideBar-background)); }
+  body.empty .scroller { overflow: hidden; }
+  body.empty .wrap, body.empty #top-shadow, body.empty #gutter-highlight { display: none; }
   @keyframes blink { 50% { opacity: 0; } }
 </style>
-<div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div>
+<div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><img src="icons/add.svg" alt=""></button><button class="topbarControl" type="button" aria-label="Placeholder"><img src="icons/close.svg" alt=""></button></div></div>
+<div class="editor"><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
   const LINE_HEIGHT = layout(prepare('M', FONT), 10000, 18).height;
   let lines = [''];
   let cur = { line: 0, col: 0 };
+  let fileTabs = [];
+  let activeFileName = null;
+  let activeFileHistory = [];
+  const tabsEl = document.querySelector('.tabs');
+  const tabArea = document.querySelector('.tabArea');
+  const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
   const view = document.getElementById('view');
   const gutter = document.getElementById('gutter');
   const scroller = document.getElementById('scroller');
@@ -171,6 +295,174 @@
     render();
   }
 
+  function activeFileTab() {
+    return fileTabs.find(tab => tab.name === activeFileName);
+  }
+
+  function baseName(path) {
+    return path.split('/').pop();
+  }
+
+  function parentDirName(path) {
+    const parts = path.split('/');
+    return parts.length > 1 ? parts[parts.length - 2] : '';
+  }
+
+  function fileIconFor(path) {
+    const name = baseName(path);
+    const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
+    if (ext === '.txt' || ext === '.md') return 'icons/file-type-text.svg';
+    if (ext === '.js') return 'icons/file-type-js.svg';
+    return 'icons/question.svg';
+  }
+
+  function saveActiveFileContent() {
+    const tab = activeFileTab();
+    if (tab) tab.content = lines.join('\n');
+  }
+
+  function markFileActive(name) {
+    activeFileName = name;
+    activeFileHistory = activeFileHistory.filter(fileName => fileName !== name);
+    activeFileHistory.push(name);
+  }
+
+  function renderTabs() {
+    const counts = new Map();
+    for (const tab of fileTabs) {
+      const name = baseName(tab.name);
+      counts.set(name, (counts.get(name) || 0) + 1);
+    }
+
+    tabsEl.replaceChildren(...fileTabs.map(tab => {
+      const tabEl = document.createElement('div');
+      tabEl.className = tab.name === activeFileName ? 'tab active' : 'tab';
+
+      const icon = document.createElement('img');
+      icon.className = 'tabIcon';
+      icon.src = fileIconFor(tab.name);
+      icon.alt = '';
+
+      const title = document.createElement('span');
+      title.className = 'tabTitle';
+      const name = document.createElement('span');
+      name.textContent = baseName(tab.name);
+      title.append(name);
+
+      if (counts.get(baseName(tab.name)) > 1) {
+        const dir = document.createElement('span');
+        dir.className = 'tabDir';
+        dir.textContent = ' ' + parentDirName(tab.name);
+        title.append(dir);
+      }
+
+      const close = document.createElement('button');
+      close.className = 'topbarControl closeControl';
+      close.type = 'button';
+      close.setAttribute('aria-label', 'Close');
+      close.innerHTML = '<img src="icons/close.svg" alt="">';
+
+      tabEl.append(icon, title, close);
+      tabEl.addEventListener('click', () => switchFileTab(tab.name));
+      close.addEventListener('click', event => {
+        event.stopPropagation();
+        closeFileTab(tab.name);
+      });
+      return tabEl;
+    }));
+
+    requestAnimationFrame(() => {
+      updateTabScrollbar();
+      const activeTabEl = tabsEl.querySelector('.tab.active');
+      if (activeTabEl) activeTabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    });
+  }
+
+  function updateTabScrollbar() {
+    const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+    const hasOverflow = maxScroll > 0;
+    tabArea.classList.toggle('hasOverflow', hasOverflow);
+    if (!hasOverflow) return;
+    const thumbWidth = Math.max(16, tabsEl.clientWidth * tabsEl.clientWidth / tabsEl.scrollWidth);
+    const thumbLeft = tabsEl.scrollLeft * (tabsEl.clientWidth - thumbWidth) / maxScroll;
+    tabScrollbarThumb.style.width = thumbWidth + 'px';
+    tabScrollbarThumb.style.transform = `translateX(${thumbLeft}px)`;
+  }
+
+  function renderBlankCanvas() {
+    activeFileName = null;
+    document.body.classList.add('empty');
+    document.body.classList.remove('scrolled');
+    lines = [''];
+    cur = { line: 0, col: 0 };
+    sel = null;
+    gutter.textContent = '';
+    view.replaceChildren();
+    renderTabs();
+  }
+
+  function renderActiveFile() {
+    const tab = activeFileTab();
+    if (!tab) {
+      renderBlankCanvas();
+      return;
+    }
+
+    document.body.classList.remove('empty');
+    setFromContent(tab.content);
+    renderTabs();
+    parent.postMessage({ type: 'vfs:select', name: tab.name }, '*');
+  }
+
+  function openFileTab(name, content) {
+    saveActiveFileContent();
+
+    let tab = fileTabs.find(fileTab => fileTab.name === name);
+    if (tab && name === activeFileName) {
+      renderTabs();
+      parent.postMessage({ type: 'vfs:select', name: tab.name }, '*');
+      return;
+    }
+
+    if (!tab) {
+      tab = { name, content };
+      const activeIndex = fileTabs.findIndex(fileTab => fileTab.name === activeFileName);
+      fileTabs.splice(activeIndex >= 0 ? activeIndex + 1 : 0, 0, tab);
+    }
+
+    markFileActive(name);
+    renderActiveFile();
+  }
+
+  function switchFileTab(name) {
+    if (name === activeFileName) return;
+    saveActiveFileContent();
+    markFileActive(name);
+    renderActiveFile();
+  }
+
+  function closeFileTab(name) {
+    saveActiveFileContent();
+    const index = fileTabs.findIndex(tab => tab.name === name);
+    if (index === -1) return;
+
+    fileTabs.splice(index, 1);
+    activeFileHistory = activeFileHistory.filter(fileName => fileName !== name);
+
+    if (fileTabs.length === 0) {
+      activeFileHistory = [];
+      renderBlankCanvas();
+      parent.postMessage({ type: 'vfs:select', name: null }, '*');
+      return;
+    }
+
+    if (name === activeFileName) {
+      markFileActive(activeFileHistory[activeFileHistory.length - 1] || fileTabs[fileTabs.length - 1].name);
+    }
+
+    renderActiveFile();
+  }
+
   function positionFromEvent(e, mode = 'caret') {
     const padTop = parseFloat(getComputedStyle(view).paddingTop) || 0;
     const viewRect = view.getBoundingClientRect();
@@ -290,10 +582,12 @@
   }
 
   addEventListener('message', e => {
-    if (e.data?.type === 'vfs:opened') setFromContent(e.data.content);
+    if (e.data?.type === 'vfs:opened') openFileTab(e.data.name, e.data.content);
   });
 
   document.addEventListener('pointerdown', e => {
+    if (closestTarget(e.target, '.topbar')) return;
+    if (document.body.classList.contains('empty')) return;
     if (closestTarget(e.target, '.gutter')) return;
     const start = positionFromEvent(e);
     if (!start) return;
@@ -357,6 +651,8 @@
   });
 
   document.addEventListener('dblclick', e => {
+    if (closestTarget(e.target, '.topbar')) return;
+    if (document.body.classList.contains('empty')) return;
     if (closestTarget(e.target, '.gutter')) return;
     const pos = positionFromEvent(e, 'character');
     if (!pos) return;
@@ -370,6 +666,7 @@
   });
 
   view.addEventListener('keydown', async e => {
+    if (document.body.classList.contains('empty')) return;
     if (e.metaKey && e.key.toLowerCase() === 'a') {
       const start = { line: 0, col: 0 };
       const end = { line: lines.length - 1, col: lines[lines.length - 1].length };
@@ -460,5 +757,33 @@
   view.addEventListener('blur', () => setFocused(false));
   setFocused(document.hasFocus());
 
-  render();
+  tabsEl.addEventListener('scroll', updateTabScrollbar);
+  tabsEl.addEventListener('wheel', event => {
+    if (tabsEl.scrollWidth <= tabsEl.clientWidth) return;
+    event.preventDefault();
+    tabsEl.scrollLeft += event.deltaX || event.deltaY;
+  }, { passive: false });
+  tabScrollbarThumb.addEventListener('mousedown', event => {
+    event.preventDefault();
+    const maxScroll = tabsEl.scrollWidth - tabsEl.clientWidth;
+    const thumbWidth = tabScrollbarThumb.getBoundingClientRect().width;
+    const maxThumbLeft = tabsEl.clientWidth - thumbWidth;
+    if (maxScroll <= 0 || maxThumbLeft <= 0) return;
+    const startX = event.clientX;
+    const startScrollLeft = tabsEl.scrollLeft;
+    const move = moveEvent => {
+      tabsEl.scrollLeft = startScrollLeft + (moveEvent.clientX - startX) * maxScroll / maxThumbLeft;
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      document.body.style.userSelect = '';
+    };
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
+  addEventListener('resize', updateTabScrollbar);
+
+  renderBlankCanvas();
 </script>

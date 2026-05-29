@@ -126,6 +126,9 @@
     if (e.data?.type === 'vfs:files') {
       fileNames = e.data.files;
       render();
+    } else if (e.data?.type === 'vfs:selected') {
+      selectedPath = e.data.name;
+      render();
     }
   });
   const setFocused = v => document.body.classList.toggle('focused', v);
