@@ -75,6 +75,7 @@
 - When the left pane is focused, the selected directory row additionally shows a slightly darker 1px top and bottom border; when the left pane is unfocused, the selection highlight remains but the borders are absent.
 - When focus leaves the left pane because a non-row target receives focus, the selected directory row remains highlighted but loses its focused top and bottom borders.
 - When focus leaves the left pane because another file tree row, filename tab, or canvas region selects a different file tree row, the prior selected directory row is no longer highlighted and the newly selected row receives the selection state.
+- Clicking inside the left pane outside any file tree row clears the file tree selection state, so no file or directory row remains focused or highlighted, even when the previously selected row represents the currently opened file.
 - An expanded directory row uses a downward caret.
 - A collapsed directory row uses a right-facing caret.
 - An expanded directory shows its direct child file rows and directory rows.

@@ -151,10 +151,18 @@
       render({ revealSelected: true });
     }
   });
+  const clearSelection = () => {
+    selectedPath = null;
+    selectedType = null;
+    render();
+  };
   const setFocused = v => document.body.classList.toggle('focused', v);
   addEventListener('focus', () => setFocused(true));
   addEventListener('blur', () => setFocused(false));
-  document.addEventListener('mousedown', () => setFocused(true));
+  document.addEventListener('mousedown', event => {
+    setFocused(true);
+    if (!event.target.closest('.row')) clearSelection();
+  });
   setFocused(document.hasFocus());
 
   document.documentElement.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
