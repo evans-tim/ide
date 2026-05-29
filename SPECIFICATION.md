@@ -56,6 +56,9 @@
 - Directories are inferred from slash-delimited file paths; the VFS remains a flat set of text files.
 - A file row displays the file name.
 - A file row displays a file-type icon immediately to the left of the file name.
+- File-type icons and directory caret icons render at the same square size.
+- File rows and directory rows use the same icon-to-label spacing, so a caret + directory name pair occupies the same rhythm as a file icon + file name pair.
+- The row icon begins very close to its indent guide, with about 5px horizontal margin between the guide and the icon's left edge.
 - A `.txt` file row uses `file-type-text.svg`.
 - A `.md` file row uses `file-type-text.svg`.
 - A `.js` file row uses `file-type-js.svg`.
@@ -72,7 +75,8 @@
 - An expanded directory shows its direct child file rows and directory rows.
 - Each directory's expanded/collapsed state is stored in memory; directories are collapsed by default until expanded.
 - An expanded directory has a 1px vertical indent guide alongside its child rows.
-- Each indent guide aligns horizontally with the left edge of its parent directory row's caret.
+- Each indent guide aligns horizontally with the left edge of its parent directory row's caret icon.
+- Child row icons start just to the right of their parent indent guide, preserving the same approximately 5px guide-to-icon margin at every depth.
 - When the mouse is inside the left pane, indent guides are visible for all expanded directories.
 - When the mouse is outside the left pane, only indent guides for the single parent directory immediately containing the selected file are visible.
 - Indent guides for directories containing the selected file are slightly darker than hover-only indent guides.

@@ -9,9 +9,8 @@
   .row:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   .row.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .row.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black), inset 0 -1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); }
-  .caret { display: inline-block; width: 16px; height: 16px; flex: none; background: currentColor; opacity: 0.7; -webkit-mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; }
+  .caret { display: inline-block; width: 16px; height: 16px; flex: none; margin-right: 4px; background: currentColor; opacity: 0.7; -webkit-mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; }
   .caret.expanded { -webkit-mask-image: url(icons/chevron-down.svg); mask-image: url(icons/chevron-down.svg); }
-  .file .caret { visibility: hidden; }
   .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
@@ -23,9 +22,9 @@
   let fileNames = [];
   let selectedPath = null;
   const expanded = new Set();
-  const INDENT = 12;
   const ROW_PAD_LEFT = 12;
-  const CARET_W = 16;
+  const GUIDE_ICON_MARGIN = 5;
+  const rowIconLeft = depth => ROW_PAD_LEFT + depth * GUIDE_ICON_MARGIN;
   const fileIconFor = name => {
     const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
     if (ext === '.txt' || ext === '.md') return 'icons/file-type-text.svg';
@@ -61,11 +60,7 @@
     if (depth > 0) {
       const guide = document.createElement('div');
       guide.className = 'guide ' + (isImmediateParent(parentPath) ? 'on-selected' : 'dim');
-      // guide aligns with parent directory caret's left edge.
-      // parent row's left padding = ROW_PAD_LEFT + (depth - 1) * INDENT
-      // caret is the first child, so caret left edge is at that offset.
-      const left = ROW_PAD_LEFT + (depth - 1) * INDENT;
-      guide.style.left = left + 'px';
+      guide.style.left = rowIconLeft(depth - 1) + 'px';
       ul.appendChild(guide);
     }
     const dirNames = [...node.dirs.keys()].sort();
@@ -74,7 +69,7 @@
       const li = document.createElement('li');
       const row = document.createElement('div');
       row.className = 'row dir';
-      row.style.paddingLeft = (ROW_PAD_LEFT + depth * INDENT) + 'px';
+      row.style.paddingLeft = rowIconLeft(depth) + 'px';
       const caret = document.createElement('span');
       caret.className = 'caret';
       if (expanded.has(childPath)) caret.classList.add('expanded');
@@ -99,10 +94,7 @@
       const li = document.createElement('li');
       const row = document.createElement('div');
       row.className = 'row file';
-      row.style.paddingLeft = (ROW_PAD_LEFT + depth * INDENT) + 'px';
-      const caret = document.createElement('span');
-      caret.className = 'caret';
-      row.appendChild(caret);
+      row.style.paddingLeft = rowIconLeft(depth) + 'px';
       const icon = document.createElement('img');
       icon.className = 'file-icon';
       icon.src = fileIconFor(name);
