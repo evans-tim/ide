@@ -297,11 +297,11 @@
 - (DONE) A file mention span displays the file's file-type icon followed by the file name.
 - (DONE) The mention span file name text uses color `rgb(111, 144, 155)` (or the relevant theme token when available).
 - (DONE) The mention span background uses color `rgb(235, 239, 240)` (or the relevant theme token when available) and has rounded corners.
-- (5) Hovering anywhere on the mention span uses the pointer cursor.
-- (5) Hovering the mention span makes the entire span slightly brighter.
-- (5) Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
-- (5) Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
-- (5) Clicking the close icon removes the mention span from the composer.
+- (DONE) Hovering anywhere on the mention span uses the pointer cursor.
+- (DONE) Hovering the mention span makes the entire span slightly brighter (filter: brightness(1.02)).
+- (DONE) Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
+- (DONE) Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
+- (DONE) Clicking the close icon removes the mention span from the composer.
 - (6) Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
 - (DONE) Pressing Backspace when the text cursor is immediately after a mention span removes that span.
 - (7) Hovering the mention span shows a tooltip div directly above it.

@@ -277,6 +277,24 @@
     user-select: none;
   }
   .mention .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
+  .mention:hover { cursor: pointer; filter: brightness(1.02)}
+  .mention .mentionClose {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    display: none;
+    background: var(--cursor-text-cyan-primary, rgb(111, 144, 155));
+    -webkit-mask-image: url("icons/close.svg");
+    mask-image: url("icons/close.svg");
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+  }
+  .mention:hover .fileIcon { display: none; }
+  .mention:hover .mentionClose { display: block; }
   .promptFooter {
     position: absolute;
     left: 0;
@@ -390,10 +408,23 @@
     icon.textContent = glyph.char;
     icon.style.color = glyph.color;
 
+    const closeEl = document.createElement('span');
+    closeEl.className = 'mentionClose';
+    closeEl.setAttribute('aria-hidden', 'true');
+    closeEl.addEventListener('mousedown', event => {
+      event.preventDefault();
+      event.stopPropagation();
+      const next = span.nextSibling;
+      span.remove();
+      if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u00a0') next.remove();
+      activeTab().draft = editor.innerHTML;
+      editor.focus();
+    });
+
     const nameEl = document.createElement('span');
     nameEl.textContent = path.split('/').pop();
 
-    span.append(icon, nameEl);
+    span.append(icon, closeEl, nameEl);
     return span;
   }
 
