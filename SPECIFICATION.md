@@ -128,6 +128,7 @@
 - The left pane lists every file in the VFS as a file tree.
 - Directories are inferred from slash-delimited file paths relative to the current mounted workspace directory.
 - A file row displays the file name.
+- File-tree row label text that exceeds the available left-pane width is truncated with a trailing ellipsis, with truncation beginning exactly at the left pane's right border (no reserved right padding).
 - A file row displays a file-type icon immediately to the left of the file name.
 - File-type icons are glyphs from the Seti icon font (`seti.woff`); each glyph is selected by file extension using the mapping in `vs-seti-icon-theme.json`.
 - A file-type icon glyph is rendered in the per-extension color defined by the active theme variant in `vs-seti-icon-theme.json` (the light-variant color in light theme, the dark-variant color in dark theme).

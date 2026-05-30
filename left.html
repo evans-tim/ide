@@ -5,13 +5,14 @@
   ul { list-style: none; margin: 0; padding: 0; }
   ul.root { padding: 4px 0; }
   ul.children { position: relative; }
-  .row { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; box-sizing: border-box; padding-top: 2px; padding-bottom: 2px; padding-right: 12px; }
+  .row { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; box-sizing: border-box; padding-top: 2px; padding-bottom: 2px; padding-right: 0; }
   .row:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   .row.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .row.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black), inset 0 -1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); }
   .caret { display: inline-block; width: 16px; height: 16px; flex: none; margin-right: 4px; background: currentColor; opacity: 0.7; -webkit-mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; }
   .caret.expanded { -webkit-mask-image: url(icons/chevron-down.svg); mask-image: url(icons/chevron-down.svg); }
   @font-face { font-family: "seti"; src: url(icons/seti.woff) format("woff"); }
+  .row > span:last-child { overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
