@@ -273,54 +273,54 @@
 
 
 **File mention autocomplete**
-- (DONE) Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.
-- (DONE) The autocomplete div's left edge stays aligned with the left of the `@` character even as a longer refinement sequence is typed after it.
-- (DONE) Each autocomplete item lays out its filename and parent path with the following ellipsis priority when there is not enough room: the filename is shown first; if the filename alone does not fit, the filename is truncated with an ellipsis and the parent path is not displayed; if the filename fits, the parent path is shown and truncated with an ellipsis only when it does not fit.
-- (DONE) The autocomplete div stays left-aligned with the left edge of the `@` character even as a longer refinement sequence is typed after it.
-- (DONE) Within each autocomplete item, the file name is truncated with a trailing ellipsis when there is not enough room, and the file name truncates before the parent path string is reduced.
-- (DONE) Within each autocomplete item, the parent path string is truncated with a trailing ellipsis when there is not enough room for the path string.
-- (DONE) The autocomplete div is 200px wide and casts a shadow on its left, bottom, and right edges.
-- (DONE) By default the autocomplete div lists every currently open tab as a selectable item.
-- (DONE) The first item in the list is highlighted with an emphasized background color by default and rounded corners
-- (DONE) Each item has a 2px margin on all sides.
-- (DONE) Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
-- (DONE) Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
-- (DONE) Moving the highlight to an item by hover removes the emphasized background from any other item.
-- (DONE) Clicking an item, or pressing Enter while it is highlighted, selects that item.
-- (DONE) Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
-- (DONE) After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
-- (DONE) Typing characters directly after `@` refines the list to file names in the workspace that start with that exact character sequence (prefix match, no fuzzy matching).
-- (DONE) When no workspace file name starts with the typed sequence, the autocomplete div does not show and the `@` plus the typed sequence remain as ordinary composer text.
-- (DONE) Pressing space after a sequence beginning with `@` leaves the `@` and the sequence as ordinary composer text and inserts no mention span.
+- Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.
+- The autocomplete div's left edge stays aligned with the left of the `@` character even as a longer refinement sequence is typed after it.
+- Each autocomplete item lays out its filename and parent path with the following ellipsis priority when there is not enough room: the filename is shown first; if the filename alone does not fit, the filename is truncated with an ellipsis and the parent path is not displayed; if the filename fits, the parent path is shown and truncated with an ellipsis only when it does not fit.
+- The autocomplete div stays left-aligned with the left edge of the `@` character even as a longer refinement sequence is typed after it.
+- Within each autocomplete item, the file name is truncated with a trailing ellipsis when there is not enough room, and the file name truncates before the parent path string is reduced.
+- Within each autocomplete item, the parent path string is truncated with a trailing ellipsis when there is not enough room for the path string.
+- The autocomplete div is 200px wide and casts a shadow on its left, bottom, and right edges.
+- By default the autocomplete div lists every currently open tab as a selectable item.
+- The first item in the list is highlighted with an emphasized background color by default and rounded corners
+- Each item has a 2px margin on all sides.
+- Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
+- Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
+- Moving the highlight to an item by hover removes the emphasized background from any other item.
+- Clicking an item, or pressing Enter while it is highlighted, selects that item.
+- Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
+- After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
+- Typing characters directly after `@` refines the list to file names in the workspace that start with that exact character sequence (prefix match, no fuzzy matching).
+- When no workspace file name starts with the typed sequence, the autocomplete div does not show and the `@` plus the typed sequence remain as ordinary composer text.
+- Pressing space after a sequence beginning with `@` leaves the `@` and the sequence as ordinary composer text and inserts no mention span.
 
 **File mention span**
-- (DONE) A file mention span displays the file's file-type icon followed by the file name.
-- (DONE) The mention span file name text uses color `rgb(111, 144, 155)` (or the relevant theme token when available).
-- (DONE) The mention span background uses color `rgb(235, 239, 240)` (or the relevant theme token when available) and has rounded corners.
-- (DONE) Hovering anywhere on the mention span uses the pointer cursor.
-- (DONE) Hovering the mention span makes the entire span slightly brighter (filter: brightness(1.02)).
-- (DONE) Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
-- (DONE) Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
-- (DONE) Clicking the close icon removes the mention span (and tooltip) from the composer.
-- (DONE) Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
-- (DONE) Pressing Backspace when the text cursor is immediately after a mention span removes that span (and tooltip).
-- (DONE) Hovering the mention span shows a tooltip div directly above it.
-- (DONE) The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
-- (DONE) The tooltip text is left-aligned and the tooltip is left-aligned flush with the span's left edge.
-- (DONE) The tooltip has 4px of padding on all sides around its text.
-- (DONE) The bottom edge of the tooltip is exactly flush with the top edge of the mention span.
-- (DONE) The tooltip has a 1px border and slightly rounded corners, matching the mention span's corner rounding.
-- (DONE) The tooltip has a slight shadow on all edges.
-- (DONE) The tooltip renders above all other content (including the topbar) and is never clipped by the composer's bounds.
+- A file mention span displays the file's file-type icon followed by the file name.
+- The mention span file name text uses color `rgb(111, 144, 155)` (or the relevant theme token when available).
+- The mention span background uses color `rgb(235, 239, 240)` (or the relevant theme token when available) and has rounded corners.
+- Hovering anywhere on the mention span uses the pointer cursor.
+- Hovering the mention span makes the entire span slightly brighter (filter: brightness(1.02)).
+- Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
+- Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
+- Clicking the close icon removes the mention span (and tooltip) from the composer.
+- Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
+- Pressing Backspace when the text cursor is immediately after a mention span removes that span (and tooltip).
+- Hovering the mention span shows a tooltip div directly above it.
+- The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
+- The tooltip text is left-aligned and the tooltip is left-aligned flush with the span's left edge.
+- The tooltip has 4px of padding on all sides around its text.
+- The bottom edge of the tooltip is exactly flush with the top edge of the mention span.
+- The tooltip has a 1px border and slightly rounded corners, matching the mention span's corner rounding.
+- The tooltip has a slight shadow on all edges.
+- The tooltip renders above all other content (including the topbar) and is never clipped by the composer's bounds.
 
 **File mention persistence across composer/message states**
-- (DONE) Mentions are preserved in the per-tab composer draft when switching tabs and restored verbatim, including their icon, file name, background, hover, tooltip, click-to-open, and close behaviors.
-- (DONE) Submitting a prompt that contains mentions renders each mention as the same inline mention span inside the resulting submitted user message panel, in its original position within the surrounding text.
-- (DONE) A mention span inside a submitted user message panel retains its background, rounded corners, file name color, but DISABLES the hover-brighten, hover icon swap to `close.svg`, tooltip, and click-to-open behavior. It should have cursor: default on hover that overrides the cursor: pointer of the entire user message panel, but clicking on it should still open the user message panel edit mode (composer).
-- (DONE) Removing a mention via its close icon is not offered inside a submitted user message panel while it is in its non-editing display state, because submitted panels show no per-message editing affordances until clicked. All pointer related behavior should be disabled when the mention is in the user message panel. 
-- (DONE) Clicking a submitted user message panel to edit it converts it into an in-place prompt composer that still contains the mention spans at their original positions, with full mention behavior (including close-to-remove) restored.
-- (DONE) Backspace-to-remove and close-icon-to-remove apply to mentions inside the in-place prompt composer exactly as they do in the bottom prompt composer.
-- (DONE) Re-submitting an in-place prompt composer preserves the remaining mentions in the resulting submitted user message panel.
+- Mentions are preserved in the per-tab composer draft when switching tabs and restored verbatim, including their icon, file name, background, hover, tooltip, click-to-open, and close behaviors.
+- Submitting a prompt that contains mentions renders each mention as the same inline mention span inside the resulting submitted user message panel, in its original position within the surrounding text.
+- A mention span inside a submitted user message panel retains its background, rounded corners, file name color, but DISABLES the hover-brighten, hover icon swap to `close.svg`, tooltip, and click-to-open behavior. It should have cursor: default on hover that overrides the cursor: pointer of the entire user message panel, but clicking on it should still open the user message panel edit mode (composer).
+- Removing a mention via its close icon is not offered inside a submitted user message panel while it is in its non-editing display state, because submitted panels show no per-message editing affordances until clicked. All pointer related behavior should be disabled when the mention is in the user message panel. 
+- Clicking a submitted user message panel to edit it converts it into an in-place prompt composer that still contains the mention spans at their original positions, with full mention behavior (including close-to-remove) restored.
+- Backspace-to-remove and close-icon-to-remove apply to mentions inside the in-place prompt composer exactly as they do in the bottom prompt composer.
+- Re-submitting an in-place prompt composer preserves the remaining mentions in the resulting submitted user message panel.
 
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
