@@ -542,33 +542,13 @@
 
   function createCommandSpan(title, options = {}) {
     const { removable = true } = options;
-    const command = commandByTitle(title);
     const span = document.createElement('span');
     span.className = removable ? 'command' : 'command command-readonly';
     span.contentEditable = 'false';
     span.dataset.title = title;
     span.textContent = '/' + title;
 
-    if (removable && command) {
-      const preview = document.createElement('div');
-      preview.className = 'commandPreview';
-      const previewTitle = document.createElement('div');
-      previewTitle.className = 'commandTitle';
-      previewTitle.textContent = title;
-      const previewBody = document.createElement('div');
-      previewBody.className = 'commandBody';
-      previewBody.textContent = command.body;
-      preview.append(previewTitle, previewBody);
-      document.body.append(preview);
-      span._preview = preview;
-
-      span.addEventListener('mouseenter', () => {
-        const rect = span.getBoundingClientRect();
-        preview.style.display = 'block';
-        preview.style.left = rect.right + 4 + 'px';
-        preview.style.top = (rect.top + rect.height / 2 - preview.offsetHeight / 2) + 'px';
-      });
-      span.addEventListener('mouseleave', () => { preview.style.display = 'none'; });
+    if (removable) {
       span.addEventListener('click', event => { event.preventDefault(); });
     }
     return span;
@@ -1051,9 +1031,6 @@
     const tab = activeTab();
     if (!tab) return;
     for (const tooltip of document.querySelectorAll('.mentionTooltip')) tooltip.remove();
-    for (const preview of document.querySelectorAll('.command + .commandPreview, .commandPreview')) {
-      if (preview !== commandItemPreview) preview.remove();
-    }
     renderTabs();
     renderConversation(tab);
     editor.innerHTML = tab.draft || '';
@@ -1211,11 +1188,6 @@
     for (const tooltip of document.querySelectorAll('.mentionTooltip')) {
       const owner = [...document.querySelectorAll('.editor .mention')].find(span => span._tooltip === tooltip);
       if (!owner) tooltip.remove();
-    }
-    for (const preview of document.querySelectorAll('.commandPreview')) {
-      if (preview === commandItemPreview) continue;
-      const owner = [...document.querySelectorAll('.editor .command')].find(span => span._preview === preview);
-      if (!owner) preview.remove();
     }
   }
 

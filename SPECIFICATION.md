@@ -350,10 +350,10 @@
 - Clicking the command span anywhere is a no-op.
 - The command span has no close icon and cannot be removed by clicking; it can only be removed by Backspace.
 - Pressing Backspace when the text cursor is immediately after a command span removes that span.
-- Hovering the command span shows the same body-preview modal described for the autocomplete item: vertically centered against the span, same width as the autocomplete div, rounded corners, command title in the upper-left in the strongest foreground theme token, full command body text on a new line, and height grown to fit the full body.
+- Hovering the command span shows no body-preview modal; the body-preview modal appears only on the autocomplete items while typing the command.
 
 **Slash command persistence across composer/message states**
-- Command spans are preserved in the per-tab composer draft when switching tabs and restored verbatim, including their background, hover-brighten, body-preview modal, no-op click, and Backspace-to-remove behaviors.
+- Command spans are preserved in the per-tab composer draft when switching tabs and restored verbatim, including their background, hover-brighten, no-op click, and Backspace-to-remove behaviors.
 - Submitting a prompt that contains command spans renders each command span in the resulting submitted user message panel, in its original position within the surrounding text.
 - A command span inside a submitted user message panel retains its background, rounded corners, and title color, but disables hover-brighten, the body-preview modal, and pointer behavior, matching the file mention span's submitted-panel behavior.
 - Clicking a submitted user message panel to edit it restores full command span behavior at the original positions within the in-place prompt composer.
