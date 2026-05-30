@@ -318,9 +318,9 @@
 - (DONE) Submitting a prompt that contains mentions renders each mention as the same inline mention span inside the resulting submitted user message panel, in its original position within the surrounding text.
 - (DONE) A mention span inside a submitted user message panel retains its background, rounded corners, file name color, but DISABLES the hover-brighten, hover icon swap to `close.svg`, tooltip, and click-to-open behavior. It should have cursor: default on hover that overrides the cursor: pointer of the entire user message panel, but clicking on it should still open the user message panel edit mode (composer).
 - (DONE) Removing a mention via its close icon is not offered inside a submitted user message panel while it is in its non-editing display state, because submitted panels show no per-message editing affordances until clicked. All pointer related behavior should be disabled when the mention is in the user message panel. 
-- (9) Clicking a submitted user message panel to edit it converts it into an in-place prompt composer that still contains the mention spans at their original positions, with full mention behavior (including close-to-remove) restored.
-- (9) Backspace-to-remove and close-icon-to-remove apply to mentions inside the in-place prompt composer exactly as they do in the bottom prompt composer.
-- (9) Re-submitting an in-place prompt composer preserves the remaining mentions in the resulting submitted user message panel.
+- (DONE) Clicking a submitted user message panel to edit it converts it into an in-place prompt composer that still contains the mention spans at their original positions, with full mention behavior (including close-to-remove) restored.
+- (DONE) Backspace-to-remove and close-icon-to-remove apply to mentions inside the in-place prompt composer exactly as they do in the bottom prompt composer.
+- (DONE) Re-submitting an in-place prompt composer preserves the remaining mentions in the resulting submitted user message panel.
 
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.

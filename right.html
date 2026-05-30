@@ -381,6 +381,7 @@
   const sendButton = document.querySelector('.send');
   const sendIcon = sendButton.querySelector('img');
   const mentionMenu = document.querySelector('.mentionMenu');
+  let activeEditor = editor;
 
   let openTabNames = [];
   let workspaceFiles = [];
@@ -486,9 +487,9 @@
     }
   }
 
-  function editorText() {
+  function editorText(editorEl = editor) {
     let text = '';
-    for (const node of editor.childNodes) {
+    for (const node of editorEl.childNodes) {
       if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
       else if (node.classList && node.classList.contains('mention')) text += '@' + node.dataset.path;
       else if (node.nodeName === 'BR') text += '\n';
@@ -590,7 +591,7 @@
     const range = selection.getRangeAt(0);
     if (!range.collapsed) return null;
     const node = range.startContainer;
-    if (node.nodeType !== Node.TEXT_NODE || !editor.contains(node)) return null;
+    if (node.nodeType !== Node.TEXT_NODE || !activeEditor.contains(node)) return null;
     const text = node.textContent.slice(0, range.startOffset);
     const at = text.lastIndexOf('@');
     if (at === -1) return null;
@@ -609,7 +610,7 @@
     range.setEnd(match.node, match.end);
     range.deleteContents();
 
-    const span = createMentionSpan(path);
+    const span = createMentionSpan(path, activeEditorOptions());
     range.insertNode(span);
 
     const after = document.createTextNode('\u00a0');
@@ -622,8 +623,19 @@
     selection.removeAllRanges();
     selection.addRange(caret);
 
-    editor.focus();
-    activeTab().draft = editor.innerHTML;
+    activeEditor.focus();
+    persistActiveEditor();
+  }
+
+  function activeEditorOptions() {
+    return { removable: true, hostEditor: activeEditor, onChange: persistActiveEditor };
+  }
+
+  function persistActiveEditor() {
+    const tab = activeTab();
+    if (!tab) return;
+    if (activeEditor === editor) tab.draft = editor.innerHTML;
+    else if (tab.editingTurnIndex !== null) tab.editingDraft = activeEditor.innerHTML;
   }
 
   const tabs = [createTab(1)];
@@ -693,18 +705,13 @@
     const prompt = document.createElement('div');
     prompt.className = 'prompt editPrompt';
 
-    const editTextarea = document.createElement('textarea');
-    editTextarea.value = tab.editingDraft;
-    editTextarea.addEventListener('input', () => {
-      tab.editingDraft = editTextarea.value;
-      resizeEditComposer(editTextarea);
-    });
-    editTextarea.addEventListener('keydown', event => {
-      if (event.key === 'Enter' && !event.shiftKey) {
-        event.preventDefault();
-        submitEditedTurn(tab, index);
-      }
-    });
+    const editEditor = document.createElement('div');
+    editEditor.className = 'editor';
+    editEditor.contentEditable = 'true';
+    editEditor.innerHTML = tab.editingDraft || '';
+    rehydrateMentions(editEditor, { removable: true, hostEditor: editEditor, onChange: () => { tab.editingDraft = editEditor.innerHTML; } });
+    editEditor.addEventListener('input', () => resizeEditComposer(editEditor));
+    attachComposerEditor(editEditor, () => submitEditedTurn(tab, index));
 
     const footer = document.createElement('div');
     footer.className = 'promptFooter';
@@ -717,39 +724,49 @@
     button.addEventListener('click', () => submitEditedTurn(tab, index));
 
     footer.append(button);
-    prompt.append(editTextarea, footer);
+    prompt.append(editEditor, footer);
     prompt.addEventListener('focusout', event => {
       if (prompt.contains(event.relatedTarget)) return;
+      if (mentionMenu.contains(event.relatedTarget)) return;
       if (tab.editingTurnIndex !== index) return;
       cancelEditTurn(tab);
     });
-    requestAnimationFrame(() => resizeEditComposer(editTextarea));
+    requestAnimationFrame(() => resizeEditComposer(editEditor));
     return prompt;
   }
 
-  function resizeEditComposer(editTextarea) {
+  function resizeEditComposer(editEditor) {
     const maxTextAreaHeight = 92;
-    editTextarea.style.height = 'auto';
-    const textAreaHeight = Math.min(editTextarea.scrollHeight, maxTextAreaHeight);
-    editTextarea.style.height = textAreaHeight + 'px';
-    editTextarea.style.overflowY = editTextarea.scrollHeight > maxTextAreaHeight ? 'auto' : 'hidden';
-    editTextarea.parentElement.style.height = textAreaHeight + 28 + 'px';
+    editEditor.style.height = 'auto';
+    const textAreaHeight = Math.min(editEditor.scrollHeight, maxTextAreaHeight);
+    editEditor.style.height = textAreaHeight + 'px';
+    editEditor.style.overflowY = editEditor.scrollHeight > maxTextAreaHeight ? 'auto' : 'hidden';
+    editEditor.parentElement.style.height = textAreaHeight + 28 + 'px';
   }
 
   function editTurn(tab, index) {
+    const turn = tab.turns[index];
     tab.editingTurnIndex = index;
-    tab.editingDraft = tab.turns[index].text;
+    tab.editingDraft = turn.html != null ? turn.html : escapeHtml(turn.text);
     renderActiveTab();
-    const editTextarea = messages.querySelector('.editPrompt textarea');
-    if (editTextarea) {
-      editTextarea.focus();
-      editTextarea.setSelectionRange(editTextarea.value.length, editTextarea.value.length);
+    const editEditor = messages.querySelector('.editPrompt .editor');
+    if (editEditor) {
+      activeEditor = editEditor;
+      editEditor.focus();
+      const range = document.createRange();
+      range.selectNodeContents(editEditor);
+      range.collapse(false);
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
     }
   }
 
   function cancelEditTurn(tab) {
     tab.editingTurnIndex = null;
     tab.editingDraft = '';
+    activeEditor = editor;
+    closeMentionMenu();
     renderActiveTab();
   }
 
@@ -854,14 +871,18 @@
   }
 
   function submitEditedTurn(tab, index) {
-    const text = tab.editingDraft;
+    const editEditor = messages.querySelector('.editPrompt .editor');
+    if (!editEditor) return;
+    const text = editorText(editEditor);
     if (!text.trim()) return;
+    const html = editEditor.innerHTML;
 
     for (const turn of tab.turns.slice(index)) clearTurnTimers(turn);
     tab.turns.splice(index + 1);
 
     const turn = tab.turns[index];
     turn.text = text;
+    turn.html = html;
     turn.responseText = 'Planning next moves';
     turn.responseTokens = [];
     turn.responding = true;
@@ -869,6 +890,8 @@
     turn.streamTimer = null;
     tab.editingTurnIndex = null;
     tab.editingDraft = '';
+    activeEditor = editor;
+    closeMentionMenu();
 
     setChatTitleFromPrompt(tab, text);
     startTurnResponse(tab, turn);
@@ -984,33 +1007,37 @@
 
   function cleanupOrphanedTooltips() {
     for (const tooltip of document.querySelectorAll('.mentionTooltip')) {
-      const owner = [...editor.querySelectorAll('.mention')].find(span => span._tooltip === tooltip);
+      const owner = [...document.querySelectorAll('.editor .mention')].find(span => span._tooltip === tooltip);
       if (!owner) tooltip.remove();
     }
   }
 
-  editor.addEventListener('input', () => {
-    cleanupOrphanedTooltips();
-    activeTab().draft = editor.innerHTML;
-    const match = findMentionQuery();
-    if (match) openMentionMenu(match.query);
-    else closeMentionMenu();
-  });
-
-  editor.addEventListener('keydown', (event) => {
-    const menuOpen = mentionMenu.style.display === 'block';
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      if (menuOpen) {
-        const highlighted = mentionMenu.querySelector('.mentionItem.highlighted');
-        if (highlighted) selectMention(highlighted.dataset.path);
-        return;
+  function attachComposerEditor(editorEl, onSubmit) {
+    editorEl.addEventListener('focus', () => { activeEditor = editorEl; });
+    editorEl.addEventListener('input', () => {
+      cleanupOrphanedTooltips();
+      persistActiveEditor();
+      const match = findMentionQuery();
+      if (match) openMentionMenu(match.query);
+      else closeMentionMenu();
+    });
+    editorEl.addEventListener('keydown', (event) => {
+      const menuOpen = mentionMenu.style.display === 'block';
+      if (event.key === 'Enter' && !event.shiftKey) {
+        event.preventDefault();
+        if (menuOpen) {
+          const highlighted = mentionMenu.querySelector('.mentionItem.highlighted');
+          if (highlighted) selectMention(highlighted.dataset.path);
+          return;
+        }
+        onSubmit();
+      } else if (event.key === 'Escape' && menuOpen) {
+        closeMentionMenu();
       }
-      submitChat();
-    } else if (event.key === 'Escape' && menuOpen) {
-      closeMentionMenu();
-    }
-  });
+    });
+  }
+
+  attachComposerEditor(editor, submitChat);
 
   tabsEl.addEventListener('scroll', updateTabScrollbar);
   tabsEl.addEventListener('wheel', event => {
