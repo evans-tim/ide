@@ -272,6 +272,39 @@
 - Clicking the upward arrow send control submits the chat.
 
 
+**File mention autocomplete**
+- Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.
+- The autocomplete div is 200px wide and casts a shadow on its left, bottom, and right edges.
+- By default the autocomplete div lists every currently open tab as a selectable item.
+- The first item in the list is highlighted with an emphasized background color by default.
+- Each item has a 2px margin on all sides.
+- Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
+- Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
+- Moving the highlight to an item by hover removes the emphasized background from any other item.
+- Clicking an item, or pressing Enter while it is highlighted, selects that item.
+- Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
+- After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
+- Typing characters directly after `@` refines the list to file names in the workspace that start with that exact character sequence (prefix match, no fuzzy matching).
+- When no workspace file name starts with the typed sequence, the autocomplete div does not show and the `@` plus the typed sequence remain as ordinary composer text.
+- Pressing space after a sequence beginning with `@` leaves the `@` and the sequence as ordinary composer text and inserts no mention span.
+
+**File mention span**
+- A file mention span displays the file's file-type icon followed by the file name.
+- The mention span file name text uses color `rgb(111, 144, 155)` (or the relevant theme token when available).
+- The mention span background uses color `rgb(235, 239, 240)` (or the relevant theme token when available) and has rounded corners.
+- Hovering anywhere on the mention span uses the pointer cursor.
+- Hovering the mention span makes the entire span slightly brighter.
+- Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
+- Clicking the close icon removes the mention span from the composer.
+- Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
+- Pressing Backspace when the text cursor is immediately after a mention span removes that span.
+- Hovering the mention span shows a tooltip div directly above it.
+- The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
+- The tooltip text is left-aligned and the tooltip is left-aligned flush with the span's left edge.
+- The tooltip has 4px of padding on all sides around its text.
+- The bottom edge of the tooltip is exactly flush with the top edge of the mention span.
+- The tooltip has a slight bottom shadow.
+
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
 - Submitting the chat calls the active chat's title function.
