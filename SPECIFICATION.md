@@ -430,6 +430,7 @@
 - The terminal topbar has no bottom border.
 - The terminal topbar contains the `add.svg` icon right-aligned.
 - The `add.svg` icon renders at 12px by 12px.
+- The `add.svg` (plus) icon in the terminal topbar renders as a mask over `currentColor` so its color follows the active theme; in dark theme it uses the dark-theme foreground color and remains visible against the terminal background.
 - Hovering the add control shows a 20px by 20px rounded square background using a slightly darker gray, matching the list highlight color.
 - Hovering the add control uses the pointer cursor.
 - Clicking the `add.svg` control creates a new terminal session and its associated terminal tab at the end of the terminal tab list.
@@ -439,8 +440,9 @@
 **Terminal topbar tabs**
 - The terminal topbar contains two tabs, `Problems` and `Terminal`, left-aligned.
 - Exactly one of the two tabs is the active tab at any time.
-- The active tab has a slightly gray background with rounded corners and black text.
-- The inactive tab has no background; its text is grayed out and becomes slightly darker on hover.
+- The active tab has a slightly gray background with rounded corners and theme-appropriate strong foreground text, derived from theme tokens so it remains legible in both light and dark themes.
+- The active `Problems` and `Terminal` tab background and text colors are derived from theme tokens; in dark theme the background is a slightly lighter neutral than the terminal background and the text uses the strongest dark-theme foreground color.
+- The inactive tab has no background; its text uses the theme's deemphasized foreground color and becomes slightly closer to the strong foreground color on hover, in both light and dark themes.
 - Clicking a tab makes it the active tab.
 - When the `Terminal` tab is active, the terminal pane displays the full terminal layout, including the terminal output area and the terminal tab pane.
 - When the `Problems` tab is active, the terminal pane displays only the text `No problems have been detected in the workspace.`, left-aligned and top-aligned.
@@ -459,6 +461,7 @@
 - Terminal tabs use the same icon-to-label spacing as file tree rows.
 - Clicking a terminal tab selects its terminal session and displays that session in the terminal output area.
 - The selected terminal tab uses the relevant Cursor list-selection style, matching the file tree row highlight, and distinguishes focused vs. unfocused states.
+- A non-selected (inactive) terminal tab in the terminal tab pane uses theme-token colors so its label and icon remain legible in both light and dark themes; in dark theme inactive tab text uses the dark-theme foreground color rather than a fixed light-theme color.
 - When a terminal tab is clicked directly, the selected terminal tab additionally shows a slightly darker 1px top and bottom border, matching the focused file tree row behavior.
 - When focus leaves the terminal tab button because a non-tab target receives focus, the selected terminal tab remains highlighted but loses its focused top and bottom borders.
 - Hovering a terminal tab uses the relevant Cursor list-selection style without top and bottom border and uses the pointer cursor.

@@ -2,7 +2,7 @@
 <title>Bottom</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
 <style>
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--terminal-background, var(--panel-background)); color: var(--panel-foreground); font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--terminal-background, var(--panel-background)); color: var(--terminal-foreground, var(--panel-foreground)); font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); }
   body { display: flex; flex-direction: column; }
   .xterm-viewport { overflow-x: hidden !important; overscroll-behavior: none; }
   .xterm-viewport::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
@@ -26,13 +26,13 @@
     margin-left: 6px;
     font: inherit;
     cursor: pointer;
-    color: var(--panel-foreground);
+    color: var(--terminal-foreground, var(--panel-foreground));
     opacity: 0.6;
   }
   .topbarTab:hover { opacity: 0.8; }
   .topbarTab.active {
     background: var(--list-inactiveSelectionBackground);
-    color: black;
+    color: var(--list-inactiveSelectionForeground, var(--panel-foreground));
     opacity: 1;
   }
   .topbarControl {
@@ -47,7 +47,7 @@
     align-items: center;
     justify-content: center;
     background: transparent;
-    color: inherit;
+    color: var(--terminal-foreground, var(--panel-foreground));
     cursor: pointer;
   }
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
@@ -81,6 +81,7 @@
     padding: 2px 12px 2px 12px;
     border-top: 1px solid transparent;
     border-bottom: 1px solid transparent;
+    color: var(--terminal-foreground, var(--panel-foreground));
   }
   .tab:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   .tab.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
