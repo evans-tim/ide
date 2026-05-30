@@ -92,6 +92,8 @@
     cursor: pointer;
   }
   .tab:not(.active) { color: var(--tab-inactiveForeground); }
+  .tab:not(.active):hover { background: var(--list-inactiveSelectionBackground); }
+  .tab:not(.active):not(.dirty):not(:hover) .closeControl { visibility: hidden; }
   .tab.active {
     background: var(--editor-background);
     border-bottom-color: var(--editor-background);

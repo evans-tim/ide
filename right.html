@@ -82,7 +82,9 @@
   }
   .tabTitle { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .tab:not(.active) { color: var(--tab-inactiveForeground); }
+  .tab:not(.active):hover { background: var(--list-inactiveSelectionBackground); }
   .tab .topbarControl { flex: none; }
+  .tab:not(.active):not(:hover) .closeControl { visibility: hidden; }
   .tab.active {
     background: var(--editor-background);
     border-bottom-color: var(--editor-background);

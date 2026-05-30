@@ -183,6 +183,8 @@
 
 **Tabs**
 - Each tab contains the `chat.svg` icon, its title text, and its adjacent `close.svg` icon.
+- A tab's `close.svg` icon is hidden unless that tab is hovered or is the active tab; on inactive non-hovered tabs the close icon's space is preserved so revealing it causes no layout shift.
+- Hovering an inactive tab gives it a slightly emphasized background relative to its default inactive tab background.
 - While a tab has a submission running, its `chat.svg` icon is replaced by `spinner.svg`.
 - The active tab background matches the main right panel background, not the right panel topbar background.
 - The active tab has a 1px border on its left, right, and bottom edges; its bottom border matches the main right panel background so switching tabs causes no 1px layout shift.
@@ -311,6 +313,8 @@
 
 **Filename tabs**
 - Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.
+- A filename tab's `close.svg` icon is hidden unless that tab is hovered or is the active tab; on inactive non-hovered tabs the close icon's space is preserved so revealing it causes no layout shift.
+- Hovering an inactive filename tab gives it a slightly emphasized background relative to its default inactive tab background.
 - A filename tab's file-type icon is resolved and rendered identically to a file tree row's file-type icon: the same Seti icon font glyph (selected by the exact-name, extension, then VS Code language priority order with the default file glyph fallback), at the same square size, in the same per-extension active-theme variant color.
 - A filename tab's file-type icon is nudged down 1px relative to its flex-centered position so it vertically aligns with the tab's file name the way VS Code aligns the tab icon and label.
 - The Settings tab behaves like a canvas tab and contains `settings.svg`, the title `Settings`, and its adjacent `close.svg` icon.
