@@ -424,6 +424,11 @@
     const nameEl = document.createElement('span');
     nameEl.textContent = path.split('/').pop();
 
+    span.addEventListener('click', event => {
+      if (event.target === closeEl) return;
+      parent.postMessage({ type: 'vfs:open', name: path }, '*');
+    });
+
     span.append(icon, closeEl, nameEl);
     return span;
   }

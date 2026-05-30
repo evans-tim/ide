@@ -302,7 +302,7 @@
 - (DONE) Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
 - (DONE) Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
 - (DONE) Clicking the close icon removes the mention span from the composer.
-- (6) Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
+- (DONE) Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
 - (DONE) Pressing Backspace when the text cursor is immediately after a mention span removes that span.
 - (7) Hovering the mention span shows a tooltip div directly above it.
 - (7) The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
