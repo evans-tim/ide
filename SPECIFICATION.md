@@ -6,6 +6,8 @@
 - If the Settings canvas tab is already open and inactive, clicking the settings control makes it the active canvas tab.
 - If the Settings canvas tab is already the active canvas tab, clicking the settings control is a no-op.
 - Left + right sidebars: span between top and status bars; x-precedence over bottom panel.
+- The left panel defaults to 15% of the viewport width.
+- The right panel defaults to 20% of the viewport width.
 - Bottom panel: spans center column only (under center pane).
 - The main bottom status bar does not display the Settings theme dropdown value.
 

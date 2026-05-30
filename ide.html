@@ -12,7 +12,7 @@
     position: fixed; inset: 0;
     display: grid;
     grid-template-columns:
-      minmax(0, var(--lw, 20%)) var(--gl, 2px)
+      minmax(0, var(--lw, 15%)) var(--gl, 2px)
       minmax(0, 1fr) var(--gr, 2px)
       minmax(0, var(--rw, 20%));
     grid-template-rows:
@@ -208,7 +208,7 @@
   const GUTTER = 2, MIN = 32;
   const isClosed = name => root.style.getPropertyValue(`--${name}`) === '0px';
   const openPanel = (name, gutter) => {
-    root.style.setProperty(`--${name}`, savedSize[name] || '20%');
+    root.style.setProperty(`--${name}`, savedSize[name] || (name === 'lw' ? '15%' : '20%'));
     root.style.setProperty(`--${gutter}`, px(GUTTER));
   };
   const closePanel = (name, gutter) => {
