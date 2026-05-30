@@ -301,15 +301,17 @@
 - (DONE) Hovering the mention span makes the entire span slightly brighter (filter: brightness(1.02)).
 - (DONE) Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
 - (DONE) Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
-- (DONE) Clicking the close icon removes the mention span from the composer.
+- (DONE) Clicking the close icon removes the mention span (and tooltip) from the composer.
 - (DONE) Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
-- (DONE) Pressing Backspace when the text cursor is immediately after a mention span removes that span.
-- (7) Hovering the mention span shows a tooltip div directly above it.
-- (7) The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
-- (7) The tooltip text is left-aligned and the tooltip is left-aligned flush with the span's left edge.
-- (7) The tooltip has 4px of padding on all sides around its text.
-- (7) The bottom edge of the tooltip is exactly flush with the top edge of the mention span.
-- (7) The tooltip has a slight bottom shadow.
+- (DONE) Pressing Backspace when the text cursor is immediately after a mention span removes that span (and tooltip).
+- (DONE) Hovering the mention span shows a tooltip div directly above it.
+- (DONE) The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
+- (DONE) The tooltip text is left-aligned and the tooltip is left-aligned flush with the span's left edge.
+- (DONE) The tooltip has 4px of padding on all sides around its text.
+- (DONE) The bottom edge of the tooltip is exactly flush with the top edge of the mention span.
+- (DONE) The tooltip has a 1px border and slightly rounded corners, matching the mention span's corner rounding.
+- (DONE) The tooltip has a slight shadow on all edges.
+- (DONE) The tooltip renders above all other content (including the topbar) and is never clipped by the composer's bounds.
 
 **File mention persistence across composer/message states**
 - (8) A mention is a structured token, not plain text; the file path it references is preserved wherever its containing text is preserved.

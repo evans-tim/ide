@@ -266,6 +266,7 @@
   textarea::-webkit-scrollbar-thumb, .editor::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, rgba(121, 121, 121, 0.4)); background-clip: padding-box; border: 2px solid transparent; border-radius: 6px; }
   textarea::-webkit-scrollbar-thumb:hover, .editor::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7)); background-clip: padding-box; }
   .mention {
+    position: relative;
     display: inline-flex;
     align-items: center;
     gap: 3px;
@@ -295,6 +296,21 @@
   }
   .mention:hover .fileIcon { display: none; }
   .mention:hover .mentionClose { display: block; }
+  .mentionTooltip {
+    display: none;
+    position: fixed;
+    padding: 4px;
+    white-space: nowrap;
+    text-align: left;
+    z-index: 100;
+    color: var(--foreground, var(--editor-foreground));
+    background: var(--editorHoverWidget-background, var(--editor-background));
+    border: 1px solid var(--editorHoverWidget-border, var(--editorGroup-border));
+    border-radius: 4px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.12);
+    user-select: none;
+    pointer-events: none;
+  }
   .promptFooter {
     position: absolute;
     left: 0;
@@ -416,6 +432,7 @@
       event.stopPropagation();
       const next = span.nextSibling;
       span.remove();
+      tooltip.remove();
       if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u00a0') next.remove();
       activeTab().draft = editor.innerHTML;
       editor.focus();
@@ -423,6 +440,20 @@
 
     const nameEl = document.createElement('span');
     nameEl.textContent = path.split('/').pop();
+
+    const tooltip = document.createElement('div');
+    tooltip.className = 'mentionTooltip';
+    tooltip.textContent = path;
+    document.body.append(tooltip);
+    span._tooltip = tooltip;
+
+    span.addEventListener('mouseenter', () => {
+      const rect = span.getBoundingClientRect();
+      tooltip.style.display = 'block';
+      tooltip.style.left = rect.left + 'px';
+      tooltip.style.top = (rect.top - tooltip.offsetHeight) + 'px';
+    });
+    span.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
     span.addEventListener('click', event => {
       if (event.target === closeEl) return;
@@ -924,7 +955,15 @@
     startTurnResponse(tab, turn);
   }
 
+  function cleanupOrphanedTooltips() {
+    for (const tooltip of document.querySelectorAll('.mentionTooltip')) {
+      const owner = [...editor.querySelectorAll('.mention')].find(span => span._tooltip === tooltip);
+      if (!owner) tooltip.remove();
+    }
+  }
+
   editor.addEventListener('input', () => {
+    cleanupOrphanedTooltips();
     activeTab().draft = editor.innerHTML;
     const match = findMentionQuery();
     if (match) openMentionMenu(match.query);
