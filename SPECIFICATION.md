@@ -389,7 +389,28 @@
 - When there is no selection, the caret's line is highlighted using the same Cursor list-selection style as the file list, distinguishing focused vs. unfocused canvas.
 - When there is no selection, the caret-line highlight is continuous from the start of the editable area to the canvas's right edge, including through the vertical scroll gutter.
 - When the canvas is not focused, the caret and any text selection are not rendered, but the line highlight remains.
-- Edits are in-memory only; not persisted to the VFS.
+
+**Unsaved changes (dirty state)**
+- A filename tab is dirty when its in-memory file contents differ from the contents persisted in the VFS, having pending unsaved changes.
+- The first edit made to an open file's contents in the canvas marks that file's filename tab dirty.
+- A dirty filename tab displays a solid filled circle in place of its `close.svg` icon, occupying the exact position of the close icon.
+- Hovering a dirty filename tab's solid circle reveals the `close.svg` icon in its place.
+- Clicking the revealed `close.svg` icon on a dirty filename tab opens the unsaved-changes confirmation popup instead of immediately closing the tab.
+- Closing a non-dirty filename tab follows the existing close-tab logic with no popup.
+
+**Unsaved-changes confirmation popup**
+- The popup asks `Do you want to save the changes you made to {filename}?` where `{filename}` is the dirty tab's file name.
+- The popup displays the secondary line `Your changes will be lost if you don't save them.`
+- The popup offers three actions: `Save`, `Don't Save`, and `Cancel`.
+- Choosing `Save` closes the popup, writes the in-memory changes to the VFS, then closes the filename tab following the existing close-tab logic.
+- Choosing `Don't Save` closes the popup, then closes the filename tab following the existing close-tab logic, discarding the unsaved changes.
+- Choosing `Cancel` closes the popup and makes no other change; the filename tab remains open and dirty.
+
+**Saving**
+- Pressing Cmd+S while the canvas is focused on a dirty file writes the in-memory changes to the VFS.
+- After a successful save, the file's contents are persisted and the filename tab's solid circle is removed, restoring the standard `close.svg` icon and indicating no pending unsaved changes.
+- Making a new edit to the file's contents after saving marks the filename tab dirty again, re-displaying the solid circle.
+- Writes to the VFS are routed through the root; panes never access the VFS directly.
 
 **Gutter sizing**
 - Reserves width for 3 digits by default; grows only when line count requires more digits.

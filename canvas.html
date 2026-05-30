@@ -113,6 +113,12 @@
   .settingsTabIcon { -webkit-mask-image: url("icons/settings.svg"); mask-image: url("icons/settings.svg"); }
   .addIcon { width: 12px; height: 12px; -webkit-mask-image: url("icons/add.svg"); mask-image: url("icons/add.svg"); }
   .closeIcon { width: 12px; height: 12px; -webkit-mask-image: url("icons/close.svg"); mask-image: url("icons/close.svg"); }
+  .dirtyDot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .tab.dirty .closeControl .closeIcon { display: none; }
+  .tab.dirty .closeControl:hover .closeIcon { display: block; }
+  .tab.dirty .closeControl:hover .dirtyDot { display: none; }
+  .closeControl .dirtyDot { display: none; }
+  .tab.dirty .closeControl .dirtyDot { display: block; }
   .tabTitle {
     flex: 1;
     min-width: 0;
@@ -172,6 +178,17 @@
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask addIcon" aria-hidden="true"></span></button><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask closeIcon" aria-hidden="true"></span></button></div></div>
+<div id="confirmOverlay" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; font-family: var(--ide-font-ui, -apple-system, BlinkMacSystemFont, sans-serif);">
+  <div style="background: var(--editorWidget-background, var(--editor-background)); color: var(--foreground, var(--editor-foreground)); border:1px solid var(--editorGroup-border); border-radius:6px; padding:16px; width:360px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
+    <div id="confirmTitle" style="font-weight:600; margin-bottom:8px;"></div>
+    <div style="margin-bottom:16px; opacity:0.85;">Your changes will be lost if you don't save them.</div>
+    <div style="display:flex; justify-content:flex-end; gap:8px;">
+      <button id="confirmSave" type="button">Save</button>
+      <button id="confirmDontSave" type="button">Don't Save</button>
+      <button id="confirmCancel" type="button">Cancel</button>
+    </div>
+  </div>
+</div>
 <div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
@@ -367,6 +384,26 @@
     if (tab) tab.content = lines.join('\n');
   }
 
+  function isDirty(tab) {
+    return !tab.settings && tab.content !== tab.savedContent;
+  }
+
+  function syncDirtyState() {
+    const tab = activeEditableFileTab();
+    if (!tab) return;
+    tab.content = lines.join('\n');
+    const tabEl = tabsEl.querySelector('.tab.active');
+    if (tabEl) tabEl.classList.toggle('dirty', isDirty(tab));
+  }
+
+  function persistTab(tab) {
+    tab.content = lines.join('\n');
+    tab.savedContent = tab.content;
+    parent.postMessage({ type: 'vfs:save', name: tab.name, content: tab.content }, '*');
+    const tabEl = tabsEl.querySelector('.tab.active');
+    if (tabEl) tabEl.classList.remove('dirty');
+  }
+
   function markFileActive(name) {
     activeFileName = name;
     markTabActive(name);
@@ -395,6 +432,7 @@
     tabsEl.replaceChildren(...allTabs.map(tab => {
       const tabEl = document.createElement('div');
       tabEl.className = tab.name === activeTabName ? 'tab active' : 'tab';
+      if (isDirty(tab)) tabEl.classList.add('dirty');
 
       const icon = document.createElement('span');
       icon.setAttribute('aria-hidden', 'true');
@@ -424,13 +462,13 @@
       close.className = 'topbarControl closeControl';
       close.type = 'button';
       close.setAttribute('aria-label', 'Close');
-      close.innerHTML = '<span class="iconMask closeIcon" aria-hidden="true"></span>';
+      close.innerHTML = '<span class="iconMask closeIcon" aria-hidden="true"></span><span class="dirtyDot" aria-hidden="true"></span>';
 
       tabEl.append(icon, title, close);
       tabEl.addEventListener('click', () => switchTab(tab.name));
       close.addEventListener('click', event => {
         event.stopPropagation();
-        closeTab(tab.name);
+        requestTabClose(tab.name);
       });
       return tabEl;
     }));
@@ -509,7 +547,7 @@
     }
 
     if (!tab) {
-      tab = { name, content };
+      tab = { name, content, savedContent: content };
       const activeIndex = fileTabs.findIndex(fileTab => fileTab.name === activeTabName);
       fileTabs.splice(activeIndex >= 0 ? activeIndex + 1 : 0, 0, tab);
     }
@@ -569,6 +607,37 @@
     }
 
     renderActiveFile();
+  }
+
+  const confirmOverlay = document.getElementById('confirmOverlay');
+  const confirmTitle = document.getElementById('confirmTitle');
+
+  function requestTabClose(name) {
+    const tab = fileTabs.find(fileTab => fileTab.name === name);
+    if (!tab || !isDirty(tab)) {
+      closeTab(name);
+      return;
+    }
+    confirmTitle.textContent = `Do you want to save the changes you made to ${baseName(tab.name)}?`;
+    confirmOverlay.style.display = 'flex';
+    const cleanup = () => {
+      confirmOverlay.style.display = 'none';
+      document.getElementById('confirmSave').onclick = null;
+      document.getElementById('confirmDontSave').onclick = null;
+      document.getElementById('confirmCancel').onclick = null;
+    };
+    document.getElementById('confirmSave').onclick = () => {
+      cleanup();
+      tab.savedContent = tab.content;
+      parent.postMessage({ type: 'vfs:save', name: tab.name, content: tab.content }, '*');
+      closeTab(name);
+    };
+    document.getElementById('confirmDontSave').onclick = () => {
+      cleanup();
+      tab.savedContent = tab.content;
+      closeTab(name);
+    };
+    document.getElementById('confirmCancel').onclick = cleanup;
   }
 
   function positionFromEvent(e, mode = 'caret') {
@@ -707,6 +776,8 @@
   });
 
   document.addEventListener('pointerdown', e => {
+    if (closestTarget(e.target, '#confirmOverlay')) return;
+    if (confirmOverlay.style.display !== 'none') return;
     if (closestTarget(e.target, '.topbar')) return;
     if (document.body.classList.contains('empty')) return;
     if (closestTarget(e.target, '.gutter')) return;
@@ -788,6 +859,12 @@
 
   view.addEventListener('keydown', async e => {
     if (document.body.classList.contains('empty')) return;
+    if (e.metaKey && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      const tab = activeEditableFileTab();
+      if (tab) persistTab(tab);
+      return;
+    }
     if (e.metaKey && e.key.toLowerCase() === 'a') {
       const start = { line: 0, col: 0 };
       const end = { line: lines.length - 1, col: lines[lines.length - 1].length };
@@ -871,6 +948,7 @@
       return;
     }
     render();
+    syncDirtyState();
   });
 
   const setFocused = v => document.body.classList.toggle('focused', v);

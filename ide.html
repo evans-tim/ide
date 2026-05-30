@@ -181,11 +181,26 @@
     const data = await res.json();
     broadcast({ type: 'vfs:opened', name, content: data.content ?? '' }, from);
   };
+  const saveFile = async (name, content, from) => {
+    if (browserVfs) {
+      browserVfs[name] = content;
+      from.postMessage({ type: 'vfs:saved', name }, '*');
+      return;
+    }
+    const res = await fetch('/api/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ path: name, content })
+    });
+    if (res.ok) from.postMessage({ type: 'vfs:saved', name }, '*');
+  };
   addEventListener('message', e => {
     const m = e.data;
     if (!m || typeof m !== 'object') return;
     if (m.type === 'vfs:list') {
       sendFiles(e.source);
+    } else if (m.type === 'vfs:save') {
+      saveFile(m.name, m.content, e.source);
     } else if (m.type === 'vfs:open') {
       openFile(m.name, e.source);
     } else if (m.type === 'vfs:select') {

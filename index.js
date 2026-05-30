@@ -71,6 +71,16 @@ const server = http.createServer((req, res) => {
     });
     return;
   }
+  if (req.url === '/api/save' && req.method === 'POST') {
+    readBody(req).then(body => {
+      const { path: name, content } = JSON.parse(body);
+      const full = filePath(name);
+      if (!full) throw new Error('Invalid path');
+      fs.writeFileSync(full, content, 'utf8');
+      sendJson(res, 200, { ok: true });
+    }).catch(err => sendJson(res, 400, { error: err.message }));
+    return;
+  }
   if (req.url === '/api/mount' && req.method === 'POST') {
     readBody(req).then(body => {
       const next = path.resolve(JSON.parse(body).path);
