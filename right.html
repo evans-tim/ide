@@ -278,7 +278,10 @@
     user-select: none;
   }
   .mention .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
-  .mention:hover { cursor: pointer; filter: brightness(1.02)}
+  .mention:not(.mention-readonly):hover { cursor: pointer; filter: brightness(1.02)}
+  .mention-readonly { cursor: default; }
+  .mention-readonly:hover { filter: none; }
+  .mention-readonly .mentionClose { pointer-events: none; }
   .mention .mentionClose {
     width: 16px;
     height: 16px;
@@ -294,8 +297,8 @@
     -webkit-mask-size: contain;
     mask-size: contain;
   }
-  .mention:hover .fileIcon { display: none; }
-  .mention:hover .mentionClose { display: block; }
+  .mention:not(.mention-readonly):hover .fileIcon { display: none; }
+  .mention:not(.mention-readonly):hover .mentionClose { display: block; }
   .mentionTooltip {
     display: none;
     position: fixed;
@@ -406,12 +409,19 @@
     return { char: String.fromCodePoint(parseInt(def.fontCharacter.replace(/\\/g, ''), 16)), color: def.fontColor };
   }
 
+  function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function parentPathOf(path) {
     const idx = path.lastIndexOf('/');
     return idx >= 0 ? path.slice(0, idx) : '';
   }
 
-  function createMentionSpan(path) {
+  function createMentionSpan(path, options = {}) {
+    const { removable = true, hostEditor = editor, onChange = null } = options;
     const span = document.createElement('span');
     span.className = 'mention';
     span.contentEditable = 'false';
@@ -427,16 +437,18 @@
     const closeEl = document.createElement('span');
     closeEl.className = 'mentionClose';
     closeEl.setAttribute('aria-hidden', 'true');
-    closeEl.addEventListener('mousedown', event => {
-      event.preventDefault();
-      event.stopPropagation();
-      const next = span.nextSibling;
-      span.remove();
-      tooltip.remove();
-      if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u00a0') next.remove();
-      activeTab().draft = editor.innerHTML;
-      editor.focus();
-    });
+    if (removable) {
+      closeEl.addEventListener('mousedown', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const next = span.nextSibling;
+        span.remove();
+        tooltip.remove();
+        if (next && next.nodeType === Node.TEXT_NODE && next.textContent === '\u00a0') next.remove();
+        if (onChange) onChange();
+        if (hostEditor) hostEditor.focus();
+      });
+    }
 
     const nameEl = document.createElement('span');
     nameEl.textContent = path.split('/').pop();
@@ -447,21 +459,31 @@
     document.body.append(tooltip);
     span._tooltip = tooltip;
 
-    span.addEventListener('mouseenter', () => {
-      const rect = span.getBoundingClientRect();
-      tooltip.style.display = 'block';
-      tooltip.style.left = rect.left + 'px';
-      tooltip.style.top = (rect.top - tooltip.offsetHeight) + 'px';
-    });
-    span.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+    if (removable) {
+      span.addEventListener('mouseenter', () => {
+        const rect = span.getBoundingClientRect();
+        tooltip.style.display = 'block';
+        tooltip.style.left = rect.left + 'px';
+        tooltip.style.top = (rect.top - tooltip.offsetHeight) + 'px';
+      });
+      span.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
 
-    span.addEventListener('click', event => {
-      if (event.target === closeEl) return;
-      parent.postMessage({ type: 'vfs:open', name: path }, '*');
-    });
+      span.addEventListener('click', event => {
+        if (event.target === closeEl) return;
+        parent.postMessage({ type: 'vfs:open', name: path }, '*');
+      });
+    }
 
+    if (!removable) span.classList.add('mention-readonly');
     span.append(icon, closeEl, nameEl);
     return span;
+  }
+
+  function rehydrateMentions(container, options = {}) {
+    for (const placeholder of [...container.querySelectorAll('.mention')]) {
+      const span = createMentionSpan(placeholder.dataset.path, options);
+      placeholder.replaceWith(span);
+    }
   }
 
   function editorText() {
@@ -650,9 +672,10 @@
     clearTimeout(turn.streamTimer);
   }
 
-  function createTurn(text) {
+  function createTurn(text, html) {
     return {
       text,
+      html: html != null ? html : escapeHtml(text),
       responseText: 'Planning next moves',
       responseTokens: [],
       responding: true,
@@ -771,7 +794,8 @@
       } else {
         message = document.createElement('div');
         message.className = turn.responding ? 'message responding' : 'message';
-        message.textContent = turn.text;
+        message.innerHTML = turn.html != null ? turn.html : escapeHtml(turn.text);
+        rehydrateMentions(message, { removable: false });
         message.addEventListener('mousedown', event => {
           if (tab.editingTurnIndex === null || tab.editingTurnIndex === index) return;
           event.preventDefault();
@@ -810,9 +834,11 @@
   function renderActiveTab() {
     const tab = activeTab();
     if (!tab) return;
+    for (const tooltip of document.querySelectorAll('.mentionTooltip')) tooltip.remove();
     renderTabs();
     renderConversation(tab);
     editor.innerHTML = tab.draft || '';
+    rehydrateMentions(editor, { removable: true, hostEditor: editor, onChange: () => { activeTab().draft = editor.innerHTML; } });
     document.body.classList.toggle('submitted', tab.turns.length > 0);
     setComposerState(Boolean(respondingTurn(tab)));
   }
@@ -946,11 +972,12 @@
     const text = editorText();
     if (!text.trim()) return;
 
+    const html = editor.innerHTML;
     setChatTitleFromPrompt(tab, text);
     tab.draft = '';
     editor.replaceChildren();
 
-    const turn = createTurn(text);
+    const turn = createTurn(text, html);
     tab.turns.push(turn);
     startTurnResponse(tab, turn);
   }
