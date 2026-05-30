@@ -31,8 +31,14 @@
   .topbarControl .icon { width: 12px; height: 12px; display: block; background: currentColor; -webkit-mask: url(icons/add.svg) center / contain no-repeat; mask: url(icons/add.svg) center / contain no-repeat; }
   .body { flex: 1; min-height: 0; display: flex; }
   .terms { flex: 1; min-width: 0; position: relative; }
-  .termPane { position: absolute; inset: 0; padding: 4px; box-sizing: border-box; display: none; }
-  .termPane.active { display: block; }
+  .group { position: absolute; inset: 0; display: none; }
+  .group.active { display: flex; }
+  .termPane { min-width: 0; position: relative; }
+  .termPaneInner { position: absolute; inset: 0; padding: 4px; box-sizing: border-box; }
+  .vgutter { flex: none; width: 2px; cursor: col-resize; position: relative; z-index: 1; background: color-mix(in srgb, var(--editor-background) 88%, var(--editor-foreground)); }
+  .vgutter::before { content: ""; position: absolute; top: 0; bottom: 0; left: -1px; right: -1px; background: var(--editorWidget-resizeBorder, var(--activityBarBadge-background)); opacity: 0; transition: opacity 0.15s ease-out; }
+  .vgutter:hover::before, .vgutter.dragging::before { opacity: 1; transition: opacity 0.10s ease-in 0.2s; }
+  body.dragging .termPaneInner { pointer-events: none; }
   .tabPane {
     flex: none;
     width: 200px;
@@ -61,8 +67,15 @@
     border-top-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black);
     border-bottom-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black);
   }
+  .tabPrefix { flex: none; white-space: pre; }
   .tabIcon { width: 16px; height: 16px; flex: none; margin-right: 4px; background: currentColor; -webkit-mask: url(icons/terminal.svg) center / 14px 14px no-repeat; mask: url(icons/terminal.svg) center / 14px 14px no-repeat; }
   .tabLabel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .tabControls { margin-left: auto; display: flex; flex: none; padding-left: 4px; }
+  .tabControl { width: 20px; height: 20px; border: 0; border-radius: 5px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; color: inherit; cursor: pointer; }
+  .tabControl:hover { background: var(--list-inactiveSelectionBackground); }
+  .tabControl .icon { width: 12px; height: 12px; display: block; background: currentColor; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+  .tabControl.split .icon { -webkit-mask-image: url(icons/split-horizontal.svg); mask-image: url(icons/split-horizontal.svg); }
+  .tabControl.trash .icon { -webkit-mask-image: url(icons/trash.svg); mask-image: url(icons/trash.svg); }
 </style>
 <div class="topbar"><button class="topbarControl" id="add" type="button" aria-label="Add terminal"><span class="icon"></span></button></div>
 <div class="body">
@@ -103,6 +116,7 @@
   const termsEl = document.getElementById('terms');
   const tabPaneEl = document.getElementById('tabPane');
   const sessions = new Map();
+  const groups = [];
   let selectedId = null;
   let nextId = 1;
 
@@ -112,55 +126,199 @@
   const send = msg => { if (ws.readyState === ws.OPEN) ws.send(JSON.stringify(msg)); else queue.push(msg); };
   ws.onopen = () => { while (queue.length) ws.send(JSON.stringify(queue.shift())); };
 
+  const groupOf = id => groups.find(g => g.members.includes(id));
+
+  const prefixFor = (group, id) => {
+    const n = group.members.length;
+    if (n < 2) return '';
+    const i = group.members.indexOf(id);
+    if (i === 0) return '\u250c ';
+    if (i === n - 1) return '\u2514 ';
+    return '\u251c ';
+  };
+
   const renderTabs = () => {
     tabPaneEl.innerHTML = '';
-    for (const [id, s] of sessions) {
-      const tab = document.createElement('div');
-      tab.className = 'tab' + (id === selectedId ? ' selected' : '');
-      const icon = document.createElement('span');
-      icon.className = 'tabIcon';
-      tab.appendChild(icon);
-      const label = document.createElement('span');
-      label.className = 'tabLabel';
-      label.textContent = 'zsh';
-      tab.appendChild(label);
-      tab.onmousedown = () => { selectTerminal(id); };
-      tabPaneEl.appendChild(tab);
+    for (const group of groups) {
+      for (const id of group.members) {
+        const s = sessions.get(id);
+        const tab = document.createElement('div');
+        tab.className = 'tab' + (id === selectedId ? ' selected' : '');
+        const prefix = prefixFor(group, id);
+        if (prefix) {
+          const pre = document.createElement('span');
+          pre.className = 'tabPrefix';
+          pre.textContent = prefix;
+          tab.appendChild(pre);
+        }
+        const icon = document.createElement('span');
+        icon.className = 'tabIcon';
+        tab.appendChild(icon);
+        const label = document.createElement('span');
+        label.className = 'tabLabel';
+        label.textContent = 'zsh';
+        tab.appendChild(label);
+        const controls = document.createElement('span');
+        controls.className = 'tabControls';
+        const split = document.createElement('button');
+        split.className = 'tabControl split';
+        split.type = 'button';
+        split.setAttribute('aria-label', 'Split terminal');
+        split.innerHTML = '<span class="icon"></span>';
+        split.onmousedown = e => { e.stopPropagation(); };
+        split.onclick = e => { e.stopPropagation(); splitTerminal(id); };
+        const trash = document.createElement('button');
+        trash.className = 'tabControl trash';
+        trash.type = 'button';
+        trash.setAttribute('aria-label', 'Kill terminal');
+        trash.innerHTML = '<span class="icon"></span>';
+        trash.onmousedown = e => { e.stopPropagation(); };
+        trash.onclick = e => { e.stopPropagation(); killTerminal(id); };
+        controls.appendChild(split);
+        controls.appendChild(trash);
+        tab.appendChild(controls);
+        tab.onmousedown = () => { selectTerminal(id); };
+        tabPaneEl.appendChild(tab);
+      }
     }
   };
 
+  const renderGroups = () => {
+    for (const group of groups) {
+      group.el.classList.toggle('active', group.members.includes(selectedId));
+      group.el.innerHTML = '';
+      group.members.forEach((id, i) => {
+        const s = sessions.get(id);
+        if (i > 0) {
+          const g = document.createElement('div');
+          g.className = 'vgutter';
+          attachVGutter(g, group, i);
+          group.el.appendChild(g);
+        }
+        s.pane.style.flex = group.sizes[i] + ' 1 0';
+        group.el.appendChild(s.pane);
+      });
+    }
+    fitAll();
+  };
+
+  const fitAll = () => { for (const s of sessions.values()) fitSession(s); };
+
   const selectTerminal = id => {
     selectedId = id;
-    for (const [sid, s] of sessions) s.pane.classList.toggle('active', sid === id);
+    renderGroups();
     renderTabs();
     const s = sessions.get(id);
     if (s) { s.term.focus(); fitSession(s); }
   };
 
   const fitSession = s => {
-    if (s.pane.classList.contains('active')) {
+    const group = groupOf(s.id);
+    if (group && group.el.classList.contains('active') && s.pane.offsetWidth > 0) {
       s.fit.fit();
       send({ type: 'resize', id: s.id, cols: s.term.cols, rows: s.term.rows });
     }
   };
 
-  const createTerminal = () => {
+  const makeSession = () => {
     const id = nextId++;
     const pane = document.createElement('div');
     pane.className = 'termPane';
-    termsEl.appendChild(pane);
+    const inner = document.createElement('div');
+    inner.className = 'termPaneInner';
+    pane.appendChild(inner);
     const term = new Terminal({ fontFamily, fontSize: 13, theme: themeOptions() });
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
-    term.open(pane);
+    term.open(inner);
     const s = { id, term, fit, pane };
     sessions.set(id, s);
     send({ type: 'spawn', id });
     term.onData(data => send({ type: 'data', id, data }));
-    new ResizeObserver(() => fitSession(s)).observe(pane);
-    selectTerminal(id);
-    fit.fit();
-    send({ type: 'resize', id, cols: term.cols, rows: term.rows });
+    pane.addEventListener('mousedown', () => selectTerminal(id));
+    new ResizeObserver(() => fitSession(s)).observe(inner);
+    return s;
+  };
+
+  const createTerminal = () => {
+    const s = makeSession();
+    const group = { members: [s.id], sizes: [1], el: document.createElement('div') };
+    group.el.className = 'group';
+    termsEl.appendChild(group.el);
+    groups.push(group);
+    selectTerminal(s.id);
+  };
+
+  const splitTerminal = id => {
+    const group = groupOf(id);
+    if (!group) return;
+    const s = makeSession();
+    const idx = group.members.indexOf(id) + 1;
+    group.members.splice(idx, 0, s.id);
+    group.sizes = group.members.map(() => 1);
+    selectTerminal(s.id);
+  };
+
+  const killTerminal = id => {
+    const group = groupOf(id);
+    const s = sessions.get(id);
+    if (!group || !s) return;
+    send({ type: 'kill', id });
+    s.term.dispose();
+    sessions.delete(id);
+    const idx = group.members.indexOf(id);
+    group.members.splice(idx, 1);
+    group.sizes = group.members.map(() => 1);
+    if (group.members.length === 0) {
+      group.el.remove();
+      groups.splice(groups.indexOf(group), 1);
+    }
+    if (selectedId === id) {
+      const next = group.members[Math.min(idx, group.members.length - 1)]
+        ?? groups[0]?.members[0] ?? null;
+      if (next != null) selectTerminal(next);
+      else { selectedId = null; renderTabs(); }
+    } else {
+      renderGroups();
+      renderTabs();
+    }
+  };
+
+  const attachVGutter = (el, group, beforeIndex) => {
+    el.addEventListener('mousedown', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      const leftPane = sessions.get(group.members[beforeIndex - 1]).pane;
+      const rightPane = sessions.get(group.members[beforeIndex]).pane;
+      const li = beforeIndex - 1, ri = beforeIndex;
+      const startX = e.clientX;
+      const startLeft = leftPane.offsetWidth, startRight = rightPane.offsetWidth;
+      const total = startLeft + startRight, totalFlex = group.sizes[li] + group.sizes[ri];
+      const move = ev => {
+        let newLeft = startLeft + (ev.clientX - startX);
+        newLeft = Math.max(40, Math.min(total - 40, newLeft));
+        const newRight = total - newLeft;
+        group.sizes[li] = totalFlex * (newLeft / total);
+        group.sizes[ri] = totalFlex * (newRight / total);
+        leftPane.style.flex = group.sizes[li] + ' 1 0';
+        rightPane.style.flex = group.sizes[ri] + ' 1 0';
+      };
+      const up = () => {
+        document.removeEventListener('mousemove', move);
+        document.removeEventListener('mouseup', up);
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        document.body.classList.remove('dragging');
+        el.classList.remove('dragging');
+        fitAll();
+      };
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      document.body.classList.add('dragging');
+      el.classList.add('dragging');
+      document.addEventListener('mousemove', move);
+      document.addEventListener('mouseup', up);
+    });
   };
 
   ws.onmessage = e => {
@@ -175,10 +333,7 @@
 
   const setFocused = v => document.body.classList.toggle('focused', v);
   document.addEventListener('mousedown', event => {
-    if (!event.target.closest('.tab')) setFocused(false);
-  });
-  tabPaneEl.addEventListener('mousedown', event => {
-    if (event.target.closest('.tab')) setFocused(true);
+    setFocused(!!event.target.closest('.tab') || !!event.target.closest('.termPane'));
   });
 
   const applyTheme = () => { for (const s of sessions.values()) s.term.options.theme = themeOptions(); };

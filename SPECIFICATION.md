@@ -453,3 +453,23 @@
 - When focus leaves the terminal tab button because a non-tab target receives focus, the selected terminal tab remains highlighted but loses its focused top and bottom borders.
 - Hovering a terminal tab uses the relevant Cursor list-selection style without top and bottom border and uses the pointer cursor.
 - Terminal tab label text that exceeds the available tab width is truncated with an ellipsis.
+- Each terminal tab displays the `split-horizontal.svg` icon followed by the `trash.svg` icon right-aligned after the `zsh` label.
+- Hovering the split control shows a rounded square background using a slightly darker gray, matching the list highlight color, and uses the pointer cursor.
+- Hovering the trash control shows a rounded square background using a slightly darker gray, matching the list highlight color, and uses the pointer cursor.
+- Clicking the trash control terminates that terminal's shell process and removes both its terminal tab and its terminal pane.
+- Clicking the split control splits the current terminal tab group equally in width, adding another terminal tab to that terminal tab group.
+
+**Terminal tab groups**
+- A terminal tab group is one or more terminals displayed side by side within equal-width vertical columns.
+- The terminal tab group fills the full width of the terminal output area (the full bottom panel width minus the 200px terminal tab pane).
+- When a terminal tab group contains a single terminal, that terminal's tab displays the `terminal.svg` icon with no prefix.
+- When a terminal tab group contains exactly two terminals, the left terminal's tab prepends `"┌ "` to its `terminal.svg` icon and the right terminal's tab prepends `"└ "` to its `terminal.svg` icon.
+- When a terminal tab group contains more than two terminals, the leftmost terminal's tab prepends `"┌ "`, the rightmost terminal's tab prepends `"└ "`, and every middle terminal's tab prepends `"├ "` to its `terminal.svg` icon.
+- Each terminal within a terminal tab group is separated from its neighbors by the same resizable border used between the main panels.
+- Dragging a terminal tab group border resizes the adjacent terminals, and each terminal re-renders its session to fit its resized width.
+
+**Terminal focus and selection**
+- Exactly one terminal session is the selected terminal at any time.
+- Clicking inside a terminal's output region makes that terminal the selected terminal, highlights its corresponding terminal tab in the terminal tab pane, and gives that terminal keyboard focus so its caret is ready to accept input.
+- Clicking a terminal tab selects that terminal's tab group, makes the terminal associated with that tab the selected terminal, highlights that tab, and gives that specific terminal keyboard focus so its caret is ready to accept input.
+- Selecting a terminal directs all subsequent keystrokes to that terminal's shell process until a different terminal becomes selected.
