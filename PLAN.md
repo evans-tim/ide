@@ -43,3 +43,9 @@
 - (DONE) Opens settings iframe in the canvas pane as a new tab.  
 - (DONE) Change theme
 - (DONE) Change mounted dir
+
+
+# Bugs
+
+- (BUG) when adding spaces at the end of a long line, it won't linewrap. 
+- (BUG) when double clicking on a word after ~1000 lines it will highlight the word 1 line above it. 
