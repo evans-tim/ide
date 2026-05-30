@@ -295,6 +295,7 @@
 - Hovering anywhere on the mention span uses the pointer cursor.
 - Hovering the mention span makes the entire span slightly brighter.
 - Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
+- Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
 - Clicking the close icon removes the mention span from the composer.
 - Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
 - Pressing Backspace when the text cursor is immediately after a mention span removes that span.
@@ -304,6 +305,16 @@
 - The tooltip has 4px of padding on all sides around its text.
 - The bottom edge of the tooltip is exactly flush with the top edge of the mention span.
 - The tooltip has a slight bottom shadow.
+
+**File mention persistence across composer/message states**
+- A mention is a structured token, not plain text; the file path it references is preserved wherever its containing text is preserved.
+- Mentions are preserved in the per-tab composer draft when switching tabs and restored verbatim, including their icon, file name, background, hover, tooltip, click-to-open, and close behaviors.
+- Submitting a prompt that contains mentions renders each mention as the same inline mention span inside the resulting submitted user message panel, in its original position within the surrounding text.
+- A mention span inside a submitted user message panel retains its background, rounded corners, file name color, hover-brighten, hover icon swap to `close.svg`, tooltip, and click-to-open behavior.
+- Removing a mention via its close icon is not offered inside a submitted user message panel while it is in its non-editing display state, because submitted panels show no per-message editing affordances until clicked.
+- Clicking a submitted user message panel to edit it converts it into an in-place prompt composer that still contains the mention spans at their original positions, with full mention behavior (including close-to-remove) restored.
+- Backspace-to-remove and close-icon-to-remove apply to mentions inside the in-place prompt composer exactly as they do in the bottom prompt composer.
+- Re-submitting an in-place prompt composer preserves the remaining mentions in the resulting submitted user message panel.
 
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
