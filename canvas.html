@@ -203,10 +203,11 @@
   body.settings .settingsFrame { display: block; }
   body.settings .scroller, body.settings #top-shadow, body.settings #gutter-highlight { display: none; }
   .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; }
-  #top-shadow { position: fixed; top: 32px; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
+  #top-shadow { position: fixed; top: 64px; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
   body.scrolled #top-shadow { opacity: 1; }
   .wrap { display: flex; min-height: 100%; cursor: text; }
-  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; white-space: pre; min-width: 3ch; cursor: default; }
+  .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; min-width: 3ch; cursor: default; }
+  .gutter .gline { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); }
   #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
   #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
   body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
@@ -349,7 +350,12 @@
 
   function render() {
     const range = selectionRange();
-    gutter.textContent = lines.map((_, i) => i + 1).join('\n');
+    gutter.replaceChildren(...lines.map((_, i) => {
+      const g = document.createElement('div');
+      g.className = 'gline';
+      g.textContent = i + 1;
+      return g;
+    }));
     view.innerHTML = '';
     lines.forEach((text, i) => {
       const div = document.createElement('div');

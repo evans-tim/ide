@@ -507,6 +507,7 @@
 
 **Scroll affordance**
 - When the canvas is not scrolled to the very top, a subtle shadow appears along the top border spanning the full canvas width.
+- The shadow appears below the canvas file breadcrumb bar, along the top border of the scrollable content region, not over the breadcrumb bar or canvas topbar.
 - The shadow is absent at scroll position zero.
 
 
