@@ -13,6 +13,7 @@
   .topbarBtn.deployBtn .icon { -webkit-mask: url(icons/deploy.svg) center / 16px 16px no-repeat; mask: url(icons/deploy.svg) center / 16px 16px no-repeat; }
   .topbarBtn.extensionsBtn .icon { -webkit-mask: url(icons/extensions.svg) center / 16px 16px no-repeat; mask: url(icons/extensions.svg) center / 16px 16px no-repeat; }
   #treeView { flex: 1; min-height: 0; overflow-y: overlay; overflow-x: hidden; overscroll-behavior: none; }
+  li { width: 100%; }
   #searchView, #deployView, #extensionsView { flex: 1; min-height: 0; overflow: hidden; padding: 8px 12px; display: none; }
   #treeView::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
   #treeView::-webkit-scrollbar-track { background: transparent; }
@@ -22,7 +23,7 @@
   ul { list-style: none; margin: 0; padding: 0; }
   ul.root { padding: 4px 0; }
   ul.children { position: relative; }
-  .row { cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; box-sizing: border-box; padding-top: 2px; padding-bottom: 2px; padding-right: 0; }
+  .row { cursor: pointer; white-space: nowrap; overflow: hidden; display: flex; align-items: center; box-sizing: border-box; width: 100%; padding-top: 2px; padding-bottom: 2px; padding-right: 0; }
   .row:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   .row.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .row.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black), inset 0 -1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); }
