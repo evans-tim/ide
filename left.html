@@ -3,12 +3,22 @@
 <style>
   html, body { margin: 0; height: 100%; font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); background: var(--sideBar-background); color: var(--sideBar-foreground); }
   html { overflow: hidden; }
-  body { overflow-y: overlay; overflow-x: hidden; overscroll-behavior: none; box-sizing: border-box; }
-  ::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
-  ::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
-  ::-webkit-scrollbar-corner { background: transparent; }
+  body { overflow: hidden; box-sizing: border-box; display: flex; flex-direction: column; }
+  .topbar { box-sizing: border-box; height: 32px; flex: none; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 0 6px; background: var(--sideBar-background); }
+  .topbarBtn { width: 28px; height: 24px; flex: none; border: 0; padding: 0; border-radius: 5px; background: transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; color: color-mix(in srgb, var(--sideBar-foreground) 70%, transparent); }
+  .topbarBtn:hover, .topbarBtn.active { background: var(--list-inactiveSelectionBackground); color: var(--sideBar-foreground); }
+  .topbarBtn .icon { width: 16px; height: 16px; flex: none; display: block; background: currentColor; }
+  .topbarBtn.filesBtn .icon { -webkit-mask: url(icons/files.svg) center / 16px 16px no-repeat; mask: url(icons/files.svg) center / 16px 16px no-repeat; }
+  .topbarBtn.searchBtn .icon { -webkit-mask: url(icons/search.svg) center / 16px 16px no-repeat; mask: url(icons/search.svg) center / 16px 16px no-repeat; }
+  .topbarBtn.deployBtn .icon { -webkit-mask: url(icons/deploy.svg) center / 16px 16px no-repeat; mask: url(icons/deploy.svg) center / 16px 16px no-repeat; }
+  .topbarBtn.extensionsBtn .icon { -webkit-mask: url(icons/extensions.svg) center / 16px 16px no-repeat; mask: url(icons/extensions.svg) center / 16px 16px no-repeat; }
+  #treeView { flex: 1; min-height: 0; overflow-y: overlay; overflow-x: hidden; overscroll-behavior: none; }
+  #searchView, #deployView, #extensionsView { flex: 1; min-height: 0; overflow: hidden; padding: 8px 12px; display: none; }
+  #treeView::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
+  #treeView::-webkit-scrollbar-track { background: transparent; }
+  #treeView::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
+  #treeView::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
+  #treeView::-webkit-scrollbar-corner { background: transparent; }
   ul { list-style: none; margin: 0; padding: 0; }
   ul.root { padding: 4px 0; }
   ul.children { position: relative; }
@@ -27,7 +37,16 @@
   .guide.on-selected { opacity: 1; }
   .row.root-row > span:last-child { font-weight: bold; }
 </style>
-<ul id="files" class="root"></ul>
+<div class="topbar">
+  <button class="topbarBtn filesBtn active" id="filesBtn"><span class="icon"></span></button>
+  <button class="topbarBtn searchBtn" id="searchBtn"><span class="icon"></span></button>
+  <button class="topbarBtn deployBtn" id="deployBtn"><span class="icon"></span></button>
+  <button class="topbarBtn extensionsBtn" id="extensionsBtn"><span class="icon"></span></button>
+</div>
+<div id="treeView"><ul id="files" class="root"></ul></div>
+<div id="searchView">Search</div>
+<div id="deployView">Deployments</div>
+<div id="extensionsView">Extensions</div>
 <script>
   let fileNames = [];
   let selectedPath = null;
@@ -233,8 +252,24 @@
   });
   setFocused(document.hasFocus());
 
-  document.documentElement.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
-  document.documentElement.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+  const treeView = document.getElementById('treeView');
+  treeView.addEventListener('mouseenter', () => document.body.classList.add('hovering'));
+  treeView.addEventListener('mouseleave', () => document.body.classList.remove('hovering'));
+
+  const views = {
+    files: { btn: document.getElementById('filesBtn'), view: treeView, display: 'flex' },
+    search: { btn: document.getElementById('searchBtn'), view: document.getElementById('searchView'), display: 'block' },
+    deploy: { btn: document.getElementById('deployBtn'), view: document.getElementById('deployView'), display: 'block' },
+    extensions: { btn: document.getElementById('extensionsBtn'), view: document.getElementById('extensionsView'), display: 'block' },
+  };
+  const setView = active => {
+    for (const [name, v] of Object.entries(views)) {
+      const on = name === active;
+      v.btn.classList.toggle('active', on);
+      v.view.style.display = on ? v.display : 'none';
+    }
+  };
+  for (const name of Object.keys(views)) views[name].btn.onclick = () => setView(name);
 
   parent.postMessage({ type: 'vfs:list' }, '*');
 </script>

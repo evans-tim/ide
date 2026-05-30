@@ -123,6 +123,29 @@
 - Choosing a directory from the native directory picker changes the mounted workspace directory to that directory.
 
 
+# Left Panel
+**Left panel topbar**
+- The left panel has a topbar equal in height to the main top bar.
+- The left panel topbar height is 32px.
+- The left panel topbar background matches the left panel background.
+- The left panel topbar has no borders.
+- The left panel topbar contains a `files.svg` button, followed by a `search.svg` button, followed by a `deploy.svg` button, followed by an `extensions.svg` button.
+- Exactly one of the buttons is the active button at any time.
+- The `files.svg` button is the active button by default.
+- When the `files.svg` button is active, the left panel displays the file tree view.
+- When the `search.svg` button is active, the left panel displays the search view.
+- When the `deploy.svg` button is active, the left panel displays the deployments view.
+- When the `extensions.svg` button is active, the left panel displays the extensions view.
+- The search view displays the placeholder text `Search` at its top.
+- The deployments view displays the placeholder text `Deployments` at its top.
+- The extensions view displays the placeholder text `Extensions` at its top.
+- Clicking a button makes it the active button and the other inactive, switching the left panel to the corresponding view.
+- An active button has an emphasized background with rounded corners, derived from theme tokens.
+- A hovered button has the same emphasized background with rounded corners.
+- An active or hovered button's icon color uses the theme token for the strongest/black foreground text.
+- An inactive, non-hovered button's icon color uses the theme token for a slightly off-black, deemphasized foreground text.
+- The left panel topbar buttons and their icons render at a fixed size that does not grow, shrink, or flicker while the left panel is resized.
+
 # File Tree
 **File browsing**
 - The left pane lists every file in the VFS as a file tree.
