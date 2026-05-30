@@ -4,9 +4,14 @@
   html, body {
     margin: 0;
     height: 100%;
+    box-sizing: border-box;
     font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif);
     background: var(--editor-background, #fff);
     color: var(--editor-foreground, #000);
+  }
+
+  body {
+    padding: 8px;
   }
 
   .general-purpose-button {
@@ -99,7 +104,7 @@
   }
 
   .setting-row {
-    margin: 8px;
+    margin-bottom: 8px;
     padding: 14px;
     border-radius: 8px;
     display: flex;
