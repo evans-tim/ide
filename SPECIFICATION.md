@@ -279,8 +279,8 @@
 - (DONE) The first item in the list is highlighted with an emphasized background color by default and rounded corners
 - (DONE) Each item has a 2px margin on all sides.
 - (DONE) Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
-- (2) Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
-- (2) Moving the highlight to an item by hover removes the emphasized background from any other item.
+- (DONE) Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
+- (DONE) Moving the highlight to an item by hover removes the emphasized background from any other item.
 - (3) Clicking an item, or pressing Enter while it is highlighted, selects that item.
 - (3) Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
 - (3) After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
