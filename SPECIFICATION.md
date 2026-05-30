@@ -320,8 +320,62 @@
 - The `Markdown` button is the active button by default.
 - The `Preview` and `Markdown` buttons each follow the styling and functional requirements of the `Terminal` and `Problems` tabs, including their active/inactive appearance and hover behavior.
 - The `Preview` and `Markdown` buttons function as a mutually exclusive toggle: clicking one makes it the active button and the other inactive.
-- Clicking the `Preview` or `Markdown` button performs no file or view action beyond toggling which button is active.
+- Clicking the `Markdown` button while it is inactive makes it active and displays the raw Markdown source in the editable canvas editor.
+- Clicking the `Preview` button while it is inactive makes it active and replaces the editable canvas editor with the rendered Markdown preview of the current file contents.
 - When the loaded file is not a Markdown file, the breadcrumb bar's right side displays no buttons.
+
+**Markdown preview**
+- The preview is produced by a custom Markdown parser and renderer that converts the file's current in-memory Markdown source into HTML; no third-party Markdown library is used.
+- The preview always renders the current in-memory contents, including any unsaved edits, not the persisted VFS contents.
+- Switching back to `Markdown` returns to the editable editor showing the same in-memory source the preview was rendered from.
+- The preview is read-only: it displays no caret, no line numbers, and no gutter, and its text is not editable.
+- The preview occupies the same canvas content region the editor occupied, scrolls vertically with the same scrolling behavior as the canvas editor, and has no horizontal scroll.
+- The preview re-renders from the in-memory source each time `Preview` becomes active.
+- Each open Markdown filename tab independently remembers whether it is in `Markdown` or `Preview` mode.
+- Preview text uses the workbench/interface font stack; fenced code blocks and inline code use the editor monospace font stack.
+- All preview colors are derived from theme tokens and remain legible in both light and dark themes.
+
+**Markdown block parsing**
+- The parser splits the source into block-level elements: paragraphs, headings, blockquotes, lists, fenced code blocks, indented code blocks, horizontal rules, and tables.
+- Blank lines separate adjacent blocks; consecutive non-blank lines within a paragraph are joined into a single paragraph.
+- A line beginning with one to six `#` characters followed by a space is an ATX heading of the corresponding level (`#` is level 1 through `######` is level 6); trailing `#` characters are stripped.
+- A line of text immediately followed by a line of only `=` characters is a level-1 heading; a line of text immediately followed by a line of only `-` characters is a level-2 heading (Setext headings).
+- A line of three or more `-`, `*`, or `_` characters (optionally separated by spaces) on its own is a horizontal rule.
+- Lines beginning with `>` form a blockquote; nested `>` prefixes produce nested blockquotes, and blockquote contents are themselves parsed as blocks.
+- A fenced code block opens with a line of three or more backticks or three or more tildes and closes with a matching fence; the opening fence's trailing text is the optional language info string.
+- Fenced code block contents are treated literally with no inline parsing and no escaping interpretation beyond HTML-safety.
+- A block of lines each indented by four or more spaces (or one tab) is an indented code block rendered literally.
+
+**Markdown lists**
+- A line beginning with `-`, `*`, or `+` followed by a space is an unordered list item.
+- A line beginning with a number followed by `.` or `)` and a space is an ordered list item; the first item's number sets the list's start value.
+- Consecutive list items of the same type form a single list; switching marker type starts a new list.
+- A list item may contain multiple lines and nested blocks; lines indented under a list item belong to that item, and further-indented list markers produce nested lists.
+- An unordered list item whose content begins with `[ ]` or `[x]` (case-insensitive) is a task list item rendered with an unchecked or checked, non-interactive checkbox before its text.
+
+**Markdown tables**
+- A line of cells delimited by `|`, immediately followed by a delimiter line of cells made of `-` (optionally with leading/trailing `:` for alignment), begins a table; subsequent contiguous `|`-delimited lines are body rows.
+- The header row's cells become the table header; each delimiter cell's colons set its column's alignment to left (`:-`), right (`-:`), center (`:-:`), or default (none).
+- Body rows with fewer cells than the header pad with empty cells; extra cells beyond the header count are dropped.
+- Inline parsing applies to every table cell's contents.
+
+**Markdown inline parsing**
+- Inline parsing applies to the text content of paragraphs, headings, list items, blockquotes, and table cells, but not to code spans or code blocks.
+- Text wrapped in single `*` or `_` renders as emphasis (italic); text wrapped in double `**` or `__` renders as strong (bold); double markers take precedence over single.
+- Text wrapped in double `~~` renders as strikethrough.
+- Text wrapped in single backticks renders as an inline code span using the monospace font; the longest run of backticks needed to delimit literal backtick content is respected.
+- `[text](url)` renders as a link with the given visible text and destination; `[text](url "title")` sets the link's title.
+- `![alt](url)` renders as an image with the given alternative text and source; `![alt](url "title")` sets the image's title.
+- A bare URL beginning with `http://` or `https://` renders as an autolink.
+- A `\` before a Markdown punctuation character escapes it so the character renders literally with no special meaning.
+- A trailing run of two or more spaces, or a backslash, at the end of a line within a paragraph produces a hard line break.
+
+**Markdown rendering and safety**
+- Every character drawn from the source is HTML-escaped so raw `<`, `>`, and `&` in the source render as literal text rather than as markup.
+- Raw HTML embedded in the Markdown source is not interpreted as markup; it is rendered as escaped literal text.
+- Link and image destinations are emitted as-is for `http`, `https`, relative, and anchor targets; `javascript:` and other script-bearing schemes are not emitted as active destinations.
+- Headings, paragraphs, lists, blockquotes, code blocks, tables, horizontal rules, links, images, and inline spans each render as their corresponding semantic HTML element.
+- Malformed or unterminated constructs (e.g., an unclosed code fence, emphasis, or link) render their literal source text rather than producing broken markup.
 
 **Filename tabs**
 - Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.

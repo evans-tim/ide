@@ -222,6 +222,43 @@
   body.empty .scroller { overflow: hidden; }
   body.empty .wrap, body.empty #top-shadow, body.empty #gutter-highlight { display: none; }
   @keyframes blink { 50% { opacity: 0; } }
+
+  .previewScroller { display: none; height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; background: var(--editor-background); }
+  body.preview .scroller, body.preview #gutter-highlight { display: none; }
+  body.preview .previewScroller { display: block; }
+  .markdown {
+    box-sizing: border-box;
+    padding: 16px 32px 32px;
+    max-width: 900px;
+    cursor: auto;
+    font-family: var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif);
+    line-height: 1.6;
+    color: var(--editor-foreground);
+  }
+  .markdown h1, .markdown h2, .markdown h3, .markdown h4, .markdown h5, .markdown h6 { line-height: 1.25; margin: 24px 0 16px; font-weight: 600; }
+  .markdown h1 { font-size: 2em; padding-bottom: 0.3em; border-bottom: 1px solid var(--editorGroup-border); }
+  .markdown h2 { font-size: 1.5em; padding-bottom: 0.3em; border-bottom: 1px solid var(--editorGroup-border); }
+  .markdown h3 { font-size: 1.25em; }
+  .markdown h4 { font-size: 1em; }
+  .markdown h5 { font-size: 0.875em; }
+  .markdown h6 { font-size: 0.85em; opacity: 0.8; }
+  .markdown p { margin: 0 0 16px; }
+  .markdown a { color: var(--textLink-foreground, #4daafc); text-decoration: none; }
+  .markdown a:hover { text-decoration: underline; }
+  .markdown ul, .markdown ol { margin: 0 0 16px; padding-left: 2em; }
+  .markdown li { margin: 4px 0; }
+  .markdown li.task { list-style: none; margin-left: -1.4em; }
+  .markdown li.task input { margin-right: 6px; }
+  .markdown blockquote { margin: 0 0 16px; padding: 0 1em; border-left: 4px solid var(--editorGroup-border); opacity: 0.85; }
+  .markdown hr { border: 0; border-top: 1px solid var(--editorGroup-border); margin: 24px 0; }
+  .markdown code { font-family: var(--ide-font-editor, Menlo, Monaco, "Courier New", monospace); font-size: 0.9em; background: var(--list-inactiveSelectionBackground); padding: 0.2em 0.4em; border-radius: 4px; }
+  .markdown pre { background: var(--list-inactiveSelectionBackground); padding: 12px 16px; border-radius: 6px; overflow-x: auto; margin: 0 0 16px; }
+  .markdown pre code { background: transparent; padding: 0; font-size: 0.9em; }
+  .markdown img { max-width: 100%; }
+  .markdown table { border-collapse: collapse; margin: 0 0 16px; }
+  .markdown th, .markdown td { border: 1px solid var(--editorGroup-border); padding: 6px 12px; }
+  .markdown th { font-weight: 600; }
+  .markdown del { opacity: 0.7; }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask addIcon" aria-hidden="true"></span></button><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask closeIcon" aria-hidden="true"></span></button></div></div>
 <div class="breadcrumbBar"><div class="breadcrumb" id="breadcrumb"></div><div class="breadcrumbButtons" id="breadcrumbButtons"></div></div>
@@ -236,7 +273,7 @@
     </div>
   </div>
 </div>
-<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
+<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
   import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
@@ -252,7 +289,8 @@
   const tabsEl = document.querySelector('.tabs');
   const breadcrumbEl = document.getElementById('breadcrumb');
   const breadcrumbButtonsEl = document.getElementById('breadcrumbButtons');
-  let mdView = 'markdown';
+  const previewScroller = document.getElementById('previewScroller');
+  const markdownEl = document.getElementById('markdown');
   const tabArea = document.querySelector('.tabArea');
   const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
   const settingsFrame = document.getElementById('settingsFrame');
@@ -287,8 +325,14 @@
   }
 
   function updateTopShadow() {
-    document.body.classList.toggle('scrolled', scroller.scrollTop > 0);
+    const active = document.body.classList.contains('preview') ? previewScroller : scroller;
+    document.body.classList.toggle('scrolled', active.scrollTop > 0);
   }
+  document.getElementById('previewScroller').addEventListener('scroll', updateTopShadow);
+  document.getElementById('previewScroller').addEventListener('wheel', e => {
+    e.preventDefault();
+    previewScroller.scrollTop += e.deltaY;
+  }, { passive: false });
 
   function updateScrollPast() {
     const pad = Math.max(0, scroller.clientHeight - LINE_HEIGHT);
@@ -562,14 +606,32 @@
     breadcrumbEl.append(icon, name);
 
     if (baseName(tab.name).toLowerCase().endsWith('.md')) {
+      const mode = tab.mdView || 'markdown';
       for (const view of ['preview', 'markdown']) {
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'topbarTab' + (mdView === view ? ' active' : '');
+        btn.className = 'topbarTab' + (mode === view ? ' active' : '');
         btn.textContent = view === 'preview' ? 'Preview' : 'Markdown';
-        btn.addEventListener('click', () => { mdView = view; renderBreadcrumb(); });
+        btn.addEventListener('click', () => {
+          if (tab.mdView === view) return;
+          tab.mdView = view;
+          applyMdView();
+          renderBreadcrumb();
+        });
         breadcrumbButtonsEl.append(btn);
       }
+    }
+  }
+
+  function applyMdView() {
+    const tab = activeEditableFileTab();
+    const preview = !!tab && (tab.mdView === 'preview') && baseName(tab.name).toLowerCase().endsWith('.md');
+    document.body.classList.toggle('preview', preview);
+    if (preview) {
+      tab.content = lines.join('\n');
+      markdownEl.innerHTML = renderMarkdown(tab.content);
+      previewScroller.scrollTop = 0;
+      updateTopShadow();
     }
   }
 
@@ -589,6 +651,7 @@
     activeFileName = null;
     document.body.classList.add('empty');
     document.body.classList.remove('settings');
+    document.body.classList.remove('preview');
     document.body.classList.remove('scrolled');
     lines = [''];
     cur = { line: 0, col: 0 };
@@ -611,6 +674,7 @@
     if (activeTabName === SETTINGS_TAB_NAME) {
       document.body.classList.remove('empty');
       document.body.classList.add('settings');
+      document.body.classList.remove('preview');
       document.body.classList.remove('scrolled');
       renderTabs();
       return;
@@ -626,6 +690,7 @@
     document.body.classList.remove('settings');
     setFromContent(tab.content);
     renderTabs();
+    applyMdView();
     notifyActiveFileSelected();
   }
 
@@ -1081,6 +1146,344 @@
     document.addEventListener('mouseup', up);
   });
   addEventListener('resize', updateTabScrollbar);
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function safeUrl(url) {
+    const trimmed = url.trim();
+    if (/^\s*javascript:/i.test(trimmed)) return '';
+    return trimmed;
+  }
+
+  function attrEscape(s) {
+    return escapeHtml(s).replace(/"/g, '&quot;');
+  }
+
+  function renderInline(src) {
+    let out = '';
+    let i = 0;
+    const n = src.length;
+    while (i < n) {
+      const c = src[i];
+      if (c === '\\' && i + 1 < n && /[\\`*_{}\[\]()#+\-.!~>|]/.test(src[i + 1])) {
+        out += escapeHtml(src[i + 1]);
+        i += 2;
+        continue;
+      }
+      if (c === '`') {
+        let run = 0;
+        while (src[i + run] === '`') run++;
+        const fence = '`'.repeat(run);
+        const close = src.indexOf(fence, i + run);
+        if (close !== -1) {
+          let code = src.slice(i + run, close);
+          code = code.replace(/^ +| +$/g, '');
+          out += '<code>' + escapeHtml(code) + '</code>';
+          i = close + run;
+          continue;
+        }
+        out += escapeHtml(fence);
+        i += run;
+        continue;
+      }
+      if (c === '!' && src[i + 1] === '[') {
+        const m = matchLink(src, i + 1);
+        if (m) {
+          const url = safeUrl(m.url);
+          out += '<img src="' + attrEscape(url) + '" alt="' + attrEscape(m.text) + '"'
+            + (m.title ? ' title="' + attrEscape(m.title) + '"' : '') + '>';
+          i = m.end;
+          continue;
+        }
+      }
+      if (c === '[') {
+        const m = matchLink(src, i);
+        if (m) {
+          const url = safeUrl(m.url);
+          out += '<a href="' + attrEscape(url) + '"'
+            + (m.title ? ' title="' + attrEscape(m.title) + '"' : '') + '>'
+            + renderInline(m.text) + '</a>';
+          i = m.end;
+          continue;
+        }
+      }
+      if ((c === '*' || c === '_' || c === '~') ) {
+        const double = src[i + 1] === c;
+        const marker = double ? c + c : c;
+        if (c === '~' && !double) { out += escapeHtml(c); i++; continue; }
+        const close = src.indexOf(marker, i + marker.length);
+        if (close !== -1 && close > i + marker.length) {
+          const inner = src.slice(i + marker.length, close);
+          const tag = c === '~' ? 'del' : (double ? 'strong' : 'em');
+          out += '<' + tag + '>' + renderInline(inner) + '</' + tag + '>';
+          i = close + marker.length;
+          continue;
+        }
+        out += escapeHtml(marker);
+        i += marker.length;
+        continue;
+      }
+      const auto = src.slice(i).match(/^https?:\/\/[^\s<]+[^\s<.,;:!?)]/);
+      if (auto) {
+        const url = auto[0];
+        out += '<a href="' + attrEscape(url) + '">' + escapeHtml(url) + '</a>';
+        i += url.length;
+        continue;
+      }
+      out += escapeHtml(c);
+      i++;
+    }
+    return out;
+  }
+
+  function matchLink(src, start) {
+    if (src[start] !== '[') return null;
+    let depth = 1;
+    let i = start + 1;
+    while (i < src.length && depth > 0) {
+      if (src[i] === '\\') { i += 2; continue; }
+      if (src[i] === '[') depth++;
+      else if (src[i] === ']') depth--;
+      if (depth === 0) break;
+      i++;
+    }
+    if (depth !== 0 || src[i + 1] !== '(') return null;
+    const text = src.slice(start + 1, i);
+    let j = i + 2;
+    let url = '';
+    while (j < src.length && src[j] !== ')' && src[j] !== ' ' && src[j] !== '\t') { url += src[j]; j++; }
+    let title = '';
+    if (src[j] === ' ' || src[j] === '\t') {
+      while (src[j] === ' ' || src[j] === '\t') j++;
+      if (src[j] === '"' || src[j] === "'") {
+        const q = src[j]; j++;
+        while (j < src.length && src[j] !== q) { title += src[j]; j++; }
+        j++;
+      }
+    }
+    if (src[j] !== ')') return null;
+    return { text, url, title, end: j + 1 };
+  }
+
+  function isHr(line) {
+    const t = line.trim();
+    if (t.length < 3) return false;
+    const ch = t[0];
+    if (ch !== '-' && ch !== '*' && ch !== '_') return false;
+    return t.split('').every(c => c === ch || c === ' ') && t.replace(/ /g, '').length >= 3;
+  }
+
+  function renderListItemContent(text) {
+    const taskMatch = text.match(/^\[([ xX])\]\s+(.*)$/);
+    if (taskMatch) {
+      const checked = taskMatch[1].toLowerCase() === 'x';
+      return { task: true, html: '<input type="checkbox" disabled' + (checked ? ' checked' : '') + '>' + renderInline(taskMatch[2]) };
+    }
+    return { task: false, html: renderInline(text) };
+  }
+
+  function renderTable(rows) {
+    const splitRow = r => {
+      let s = r.trim();
+      if (s.startsWith('|')) s = s.slice(1);
+      if (s.endsWith('|')) s = s.slice(0, -1);
+      const cells = [];
+      let cur = '';
+      for (let i = 0; i < s.length; i++) {
+        if (s[i] === '\\' && s[i + 1] === '|') { cur += '|'; i++; continue; }
+        if (s[i] === '|') { cells.push(cur); cur = ''; continue; }
+        cur += s[i];
+      }
+      cells.push(cur);
+      return cells.map(c => c.trim());
+    };
+    const header = splitRow(rows[0]);
+    const aligns = splitRow(rows[1]).map(c => {
+      const left = c.startsWith(':');
+      const right = c.endsWith(':');
+      if (left && right) return 'center';
+      if (right) return 'right';
+      if (left) return 'left';
+      return '';
+    });
+    let html = '<table><thead><tr>';
+    header.forEach((cell, idx) => {
+      const a = aligns[idx] ? ' style="text-align:' + aligns[idx] + '"' : '';
+      html += '<th' + a + '>' + renderInline(cell) + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    for (let r = 2; r < rows.length; r++) {
+      const cells = splitRow(rows[r]);
+      html += '<tr>';
+      for (let idx = 0; idx < header.length; idx++) {
+        const a = aligns[idx] ? ' style="text-align:' + aligns[idx] + '"' : '';
+        html += '<td' + a + '>' + renderInline(cells[idx] || '') + '</td>';
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    return html;
+  }
+
+  function isTableDelimiter(line) {
+    const t = line.trim();
+    if (!t.includes('-')) return false;
+    return /^\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?$/.test(t);
+  }
+
+  function renderBlocks(srcLines) {
+    let html = '';
+    let i = 0;
+    const n = srcLines.length;
+    while (i < n) {
+      let line = srcLines[i];
+      if (line.trim() === '') { i++; continue; }
+
+      const fence = line.match(/^(\s*)(```+|~~~+)(.*)$/);
+      if (fence) {
+        const marker = fence[2][0];
+        const len = fence[2].length;
+        const lang = fence[3].trim().split(/\s+/)[0];
+        const body = [];
+        i++;
+        let closed = false;
+        while (i < n) {
+          const cm = srcLines[i].match(/^\s*(`+|~+)\s*$/);
+          if (cm && cm[1][0] === marker && cm[1].length >= len) { closed = true; i++; break; }
+          body.push(srcLines[i]);
+          i++;
+        }
+        if (closed) {
+          html += '<pre><code' + (lang ? ' class="language-' + attrEscape(lang) + '"' : '') + '>'
+            + escapeHtml(body.join('\n')) + '</code></pre>';
+        } else {
+          html += '<p>' + renderInline(line) + '</p>';
+          i = i;
+        }
+        continue;
+      }
+
+      if (/^( {4}|\t)/.test(line)) {
+        const body = [];
+        while (i < n && (/^( {4}|\t)/.test(srcLines[i]) || srcLines[i].trim() === '')) {
+          if (srcLines[i].trim() === '' && !(i + 1 < n && /^( {4}|\t)/.test(srcLines[i + 1]))) break;
+          body.push(srcLines[i].replace(/^( {4}|\t)/, ''));
+          i++;
+        }
+        while (body.length && body[body.length - 1] === '') body.pop();
+        html += '<pre><code>' + escapeHtml(body.join('\n')) + '</code></pre>';
+        continue;
+      }
+
+      const atx = line.match(/^(#{1,6})\s+(.*?)\s*#*\s*$/);
+      if (atx) {
+        const level = atx[1].length;
+        html += '<h' + level + '>' + renderInline(atx[2]) + '</h' + level + '>';
+        i++;
+        continue;
+      }
+
+      if (isHr(line)) { html += '<hr>'; i++; continue; }
+
+      if (line.startsWith('>')) {
+        const body = [];
+        while (i < n && srcLines[i].startsWith('>')) {
+          body.push(srcLines[i].replace(/^>\s?/, ''));
+          i++;
+        }
+        html += '<blockquote>' + renderBlocks(body) + '</blockquote>';
+        continue;
+      }
+
+      if (i + 1 < n && line.includes('|') && isTableDelimiter(srcLines[i + 1])) {
+        const rows = [line, srcLines[i + 1]];
+        i += 2;
+        while (i < n && srcLines[i].includes('|') && srcLines[i].trim() !== '') { rows.push(srcLines[i]); i++; }
+        html += renderTable(rows);
+        continue;
+      }
+
+      const ulMatch = line.match(/^(\s*)([-*+])\s+(.*)$/);
+      const olMatch = line.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+      if (ulMatch || olMatch) {
+        const ordered = !!olMatch;
+        const startNum = ordered ? parseInt(olMatch[2], 10) : 1;
+        let items = [];
+        while (i < n) {
+          const cur = srcLines[i];
+          const um = cur.match(/^(\s*)([-*+])\s+(.*)$/);
+          const om = cur.match(/^(\s*)(\d+)[.)]\s+(.*)$/);
+          const m = ordered ? om : um;
+          if (!m) {
+            if (cur.trim() === '') {
+              if (i + 1 < n && (ordered ? /^(\s*)\d+[.)]\s+/.test(srcLines[i + 1]) : /^(\s*)[-*+]\s+/.test(srcLines[i + 1]))) { i++; continue; }
+              break;
+            }
+            if (/^(\s+)\S/.test(cur)) {
+              items[items.length - 1].lines.push(cur.replace(/^\s{1,4}/, ''));
+              i++;
+              continue;
+            }
+            break;
+          }
+          items.push({ lines: [m[3]] });
+          i++;
+        }
+        const tag = ordered ? 'ol' : 'ul';
+        const startAttr = ordered && startNum !== 1 ? ' start="' + startNum + '"' : '';
+        let listHtml = '<' + tag + startAttr + '>';
+        for (const item of items) {
+          if (item.lines.length === 1) {
+            const r = renderListItemContent(item.lines[0]);
+            listHtml += '<li' + (r.task ? ' class="task"' : '') + '>' + r.html + '</li>';
+          } else {
+            listHtml += '<li>' + renderBlocks(item.lines) + '</li>';
+          }
+        }
+        listHtml += '</' + tag + '>';
+        html += listHtml;
+        continue;
+      }
+
+      const para = [];
+      while (i < n && srcLines[i].trim() !== '' && !/^#{1,6}\s+/.test(srcLines[i])
+        && !srcLines[i].startsWith('>') && !isHr(srcLines[i])
+        && !/^(\s*)([-*+])\s+/.test(srcLines[i]) && !/^(\s*)\d+[.)]\s+/.test(srcLines[i])
+        && !/^(\s*)(```+|~~~+)/.test(srcLines[i])) {
+        if (i > 0 && i + 1 <= n) {
+          const next = srcLines[i + 1];
+          if (para.length === 0 && next !== undefined && /^=+\s*$/.test(next)) {
+            html += '<h1>' + renderInline(srcLines[i].trim()) + '</h1>';
+            i += 2;
+            para.push('__consumed__');
+            break;
+          }
+          if (para.length === 0 && next !== undefined && /^-+\s*$/.test(next)) {
+            html += '<h2>' + renderInline(srcLines[i].trim()) + '</h2>';
+            i += 2;
+            para.push('__consumed__');
+            break;
+          }
+        }
+        para.push(srcLines[i]);
+        i++;
+      }
+      if (para.length && para[0] !== '__consumed__') {
+        const rendered = para.map((l, idx) => {
+          const hard = /( {2,}|\\)$/.test(l) && idx < para.length - 1;
+          return renderInline(l.replace(/( {2,}|\\)$/, '')) + (hard ? '<br>' : '');
+        }).join('\n');
+        html += '<p>' + rendered + '</p>';
+      }
+    }
+    return html;
+  }
+
+  function renderMarkdown(src) {
+    return renderBlocks(src.replace(/\r\n?/g, '\n').split('\n'));
+  }
 
   renderBlankCanvas();
 </script>
