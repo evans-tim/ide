@@ -273,12 +273,12 @@
 
 
 **File mention autocomplete**
-- (1) Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.
-- (1) The autocomplete div is 200px wide and casts a shadow on its left, bottom, and right edges.
-- (1) By default the autocomplete div lists every currently open tab as a selectable item.
-- (1) The first item in the list is highlighted with an emphasized background color by default.
-- (1) Each item has a 2px margin on all sides.
-- (1) Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
+- (DONE) Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.
+- (DONE) The autocomplete div is 200px wide and casts a shadow on its left, bottom, and right edges.
+- (DONE) By default the autocomplete div lists every currently open tab as a selectable item.
+- (DONE) The first item in the list is highlighted with an emphasized background color by default and rounded corners
+- (DONE) Each item has a 2px margin on all sides.
+- (DONE) Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
 - (2) Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
 - (2) Moving the highlight to an item by hover removes the emphasized background from any other item.
 - (3) Clicking an item, or pressing Enter while it is highlighted, selects that item.

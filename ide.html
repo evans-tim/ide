@@ -212,6 +212,8 @@
     } else if (m.type === 'settings:ready') {
       sendTheme(e.source);
       sendDirectory(e.source);
+    } else if (m.type === 'canvas:tabs' || m.type === 'canvas:tabs:request') {
+      broadcast(m, e.source);
     } else if (m.type === 'right:close') {
       closePanel('rw', 'gr');
     }

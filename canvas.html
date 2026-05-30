@@ -622,6 +622,7 @@
     }));
 
     renderBreadcrumb();
+    parent.postMessage({ type: 'canvas:tabs', names: fileTabs.map(tab => tab.name) }, '*');
 
     requestAnimationFrame(() => {
       updateTabScrollbar();
@@ -987,6 +988,7 @@
     if (e.data?.type === 'vfs:opened') openFileTab(e.data.name, e.data.content);
     else if (e.data?.type === 'vfs:reset') resetWorkspace();
     else if (e.data?.type === 'settings:open') openSettingsTab();
+    else if (e.data?.type === 'canvas:tabs:request') parent.postMessage({ type: 'canvas:tabs', names: fileTabs.map(tab => tab.name) }, '*');
     else if (e.data?.type === 'settings:theme') {
       themeVariant = e.data.value === 'light' ? 'light' : 'dark';
       renderTabs();

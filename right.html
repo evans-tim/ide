@@ -285,6 +285,30 @@
   }
   .send:hover { cursor: pointer; background: rgba(20, 20, 20, 0.58); }
   .send img { width: 18px; height: 18px; display: block; }
+  @font-face { font-family: "seti"; src: url(icons/seti.woff) format("woff"); }
+  .mentionMenu {
+    position: absolute;
+    width: 200px;
+    z-index: 10;
+    background: var(--editorSuggestWidget-background, var(--editor-background));
+    border: 1px solid var(--editorSuggestWidget-border, var(--editorGroup-border));
+    box-shadow: -1px 1px 3px rgba(0, 0, 0, 0.12), 1px 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  .mentionItem {
+    box-sizing: border-box;
+    margin: 2px;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .mentionItem.highlighted { background: var(--editorSuggestWidget-selectedBackground, var(--list-activeSelectionBackground)); border-radius: 4px; }
+  .mentionItem .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
+  .mentionItem .mentionName { color: var(--editorSuggestWidget-foreground, var(--foreground, var(--editor-foreground))); flex: none; }
+  .mentionItem .mentionPath { color: var(--descriptionForeground, var(--tab-inactiveForeground)); font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div></div>
 <div class="content">
@@ -296,6 +320,7 @@
     </div>
   </div>
 </div>
+<div class="mentionMenu" style="display: none;"></div>
 <script>
   const tabsEl = document.querySelector('.tabs');
   const tabArea = document.querySelector('.tabArea');
@@ -304,6 +329,105 @@
   const textarea = document.querySelector('textarea');
   const sendButton = document.querySelector('.send');
   const sendIcon = sendButton.querySelector('img');
+  const mentionMenu = document.querySelector('.mentionMenu');
+
+  let openTabNames = [];
+  let setiTheme = null;
+  let themeVariant = 'dark';
+  const EXT_LANG = {
+    js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
+    ts: 'typescript', tsx: 'typescriptreact', html: 'html', htm: 'html',
+    md: 'markdown', txt: 'plaintext', css: 'css', json: 'json'
+  };
+  fetch('icons/vs-seti-icon-theme.json').then(r => r.json()).then(t => { setiTheme = t; });
+
+  function fileIconFor(path) {
+    if (!setiTheme) return { char: '', color: 'inherit' };
+    const light = themeVariant === 'light';
+    const variant = light ? (setiTheme.light || {}) : {};
+    const name = path.split('/').pop().toLowerCase();
+    const dot = name.lastIndexOf('.');
+    const ext = dot >= 0 ? name.slice(dot + 1) : '';
+    const lang = EXT_LANG[ext];
+    const key = (variant.fileNames && variant.fileNames[name]) || setiTheme.fileNames[name]
+      || (variant.fileExtensions && variant.fileExtensions[ext]) || setiTheme.fileExtensions[ext]
+      || (lang && variant.languageIds && variant.languageIds[lang]) || (lang && setiTheme.languageIds[lang])
+      || variant.file || setiTheme.file;
+    const def = setiTheme.iconDefinitions[key] || setiTheme.iconDefinitions[setiTheme.file];
+    return { char: String.fromCodePoint(parseInt(def.fontCharacter.replace(/\\/g, ''), 16)), color: def.fontColor };
+  }
+
+  function parentPathOf(path) {
+    const idx = path.lastIndexOf('/');
+    return idx >= 0 ? path.slice(0, idx) : '';
+  }
+
+  function caretCoordinates() {
+    const mirror = document.createElement('div');
+    const style = getComputedStyle(textarea);
+    for (const prop of ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'whiteSpace', 'wordWrap', 'paddingTop', 'paddingRight', 'paddingBottom', 'paddingLeft', 'borderTopWidth', 'borderRightWidth', 'borderBottomWidth', 'borderLeftWidth', 'boxSizing']) {
+      mirror.style[prop] = style[prop];
+    }
+    mirror.style.position = 'absolute';
+    mirror.style.visibility = 'hidden';
+    mirror.style.whiteSpace = 'pre-wrap';
+    mirror.style.wordWrap = 'break-word';
+    mirror.style.width = textarea.clientWidth + 'px';
+    const pos = textarea.selectionStart - 1;
+    mirror.textContent = textarea.value.slice(0, pos);
+    const marker = document.createElement('span');
+    marker.textContent = '\u200b';
+    mirror.appendChild(marker);
+    document.body.appendChild(mirror);
+    const taRect = textarea.getBoundingClientRect();
+    const x = taRect.left + marker.offsetLeft - textarea.scrollLeft;
+    const y = taRect.top + marker.offsetTop - textarea.scrollTop + marker.offsetHeight;
+    document.body.removeChild(mirror);
+    return { x, y };
+  }
+
+  function closeMentionMenu() {
+    mentionMenu.style.display = 'none';
+    mentionMenu.replaceChildren();
+  }
+
+  function openMentionMenu() {
+    if (openTabNames.length === 0) {
+      closeMentionMenu();
+      return;
+    }
+    mentionMenu.replaceChildren(...openTabNames.map((name, index) => {
+      const item = document.createElement('div');
+      item.className = index === 0 ? 'mentionItem highlighted' : 'mentionItem';
+
+      const icon = document.createElement('span');
+      icon.className = 'fileIcon';
+      icon.setAttribute('aria-hidden', 'true');
+      const glyph = fileIconFor(name);
+      icon.textContent = glyph.char;
+      icon.style.color = glyph.color;
+
+      const nameEl = document.createElement('span');
+      nameEl.className = 'mentionName';
+      nameEl.textContent = name.split('/').pop();
+
+      item.append(icon, nameEl);
+
+      const parent = parentPathOf(name);
+      if (parent) {
+        const pathEl = document.createElement('span');
+        pathEl.className = 'mentionPath';
+        pathEl.textContent = parent;
+        item.append(pathEl);
+      }
+      return item;
+    }));
+
+    const coords = caretCoordinates();
+    mentionMenu.style.left = coords.x + 'px';
+    mentionMenu.style.top = (coords.y + 4) + 'px';
+    mentionMenu.style.display = 'block';
+  }
   const tabs = [createTab(1)];
   const DEFAULT_RESPONSE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
   const DEFAULT_RESPONSE_TOKENS = DEFAULT_RESPONSE.split(' ');
@@ -657,6 +781,8 @@
 
   textarea.addEventListener('input', () => {
     activeTab().draft = textarea.value;
+    if (textarea.value[textarea.selectionStart - 1] === '@') openMentionMenu();
+    else closeMentionMenu();
   });
 
   textarea.addEventListener('keydown', (event) => {
@@ -698,6 +824,8 @@
     if (!message || typeof message !== 'object') return;
     if (message.type === 'right:open') ensureTabForOpen();
     else if (message.type === 'right:reset') resetWorkspace();
+    else if (message.type === 'canvas:tabs') openTabNames = message.names || [];
+    else if (message.type === 'settings:theme') themeVariant = message.value === 'light' ? 'light' : 'dark';
   });
 
   sendButton.addEventListener('click', () => {
@@ -713,4 +841,5 @@
 
   document.querySelector('.addControl').addEventListener('click', addTab);
   renderActiveTab();
+  parent.postMessage({ type: 'canvas:tabs:request' }, '*');
 </script>
