@@ -322,6 +322,43 @@
 - Backspace-to-remove and close-icon-to-remove apply to mentions inside the in-place prompt composer exactly as they do in the bottom prompt composer.
 - Re-submitting an in-place prompt composer preserves the remaining mentions in the resulting submitted user message panel.
 
+**Slash command autocomplete**
+- Typing `/` in the prompt composer opens a slash-command autocomplete div directly beneath the `/` character, with the same alignment behavior as the file-mention autocomplete.
+- The autocomplete div's left edge stays aligned with the left of the `/` character even as a longer refinement sequence is typed after it.
+- The autocomplete div has the same width and shadow as the file-mention autocomplete div.
+- The autocomplete lists a fixed, hardcoded set of commands: `test-command1` (body `test body 1`), `test-command2` (body `test body 2`), and `test-command3` (body `test body 3`).
+- Each command item displays its command title left-aligned in the strongest foreground theme token.
+- Each command item displays its command body left-aligned on a single forced new line beneath the title, truncated with a trailing ellipsis on overflow.
+- The first item in the list is highlighted with an emphasized background color by default and rounded corners.
+- Each item has a 2px margin on all sides.
+- Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time, and moving the highlight to an item by hover removes the emphasized background from any other item.
+- Hovering a command item shows a body-preview modal whose vertical center aligns with the vertical center of the hovered item div, with the same width as the autocomplete div and rounded corners.
+- The body-preview modal displays the command title in its upper-left in the strongest foreground theme token, then the full command body text on a new line.
+- The body-preview modal grows to whatever height is necessary to fit the full command body text without truncation.
+- Clicking an item, or pressing Enter while it is highlighted, selects that item.
+- Selecting an item closes the autocomplete div and inserts an inline command span in place of the `/` (and any typed refinement characters) at that position in the composer.
+- After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `/` command.
+- Typing characters directly after `/` refines the list to command titles that start with that exact character sequence (prefix match, no fuzzy matching).
+- When no command title starts with the typed sequence, the autocomplete div does not show and the `/` plus the typed sequence remain as ordinary composer text.
+- Pressing space after a sequence beginning with `/` leaves the `/` and the sequence as ordinary composer text and inserts no command span.
+
+**Slash command span**
+- A command span displays the command title prepended by a `/`, with no leading icon and no close icon.
+- The command span `/` prefix and title text use color `rgb(184, 136, 67)`.
+- The command span background uses color `rgb(243, 237, 229)` and has rounded corners, in a style matching the file mention span.
+- Hovering the command span makes the entire span slightly brighter (filter: brightness(1.02)), matching the mention span hover brightness behavior.
+- Clicking the command span anywhere is a no-op.
+- The command span has no close icon and cannot be removed by clicking; it can only be removed by Backspace.
+- Pressing Backspace when the text cursor is immediately after a command span removes that span.
+- Hovering the command span shows the same body-preview modal described for the autocomplete item: vertically centered against the span, same width as the autocomplete div, rounded corners, command title in the upper-left in the strongest foreground theme token, full command body text on a new line, and height grown to fit the full body.
+
+**Slash command persistence across composer/message states**
+- Command spans are preserved in the per-tab composer draft when switching tabs and restored verbatim, including their background, hover-brighten, body-preview modal, no-op click, and Backspace-to-remove behaviors.
+- Submitting a prompt that contains command spans renders each command span in the resulting submitted user message panel, in its original position within the surrounding text.
+- A command span inside a submitted user message panel retains its background, rounded corners, and title color, but disables hover-brighten, the body-preview modal, and pointer behavior, matching the file mention span's submitted-panel behavior.
+- Clicking a submitted user message panel to edit it restores full command span behavior at the original positions within the in-place prompt composer.
+- Re-submitting an in-place prompt composer preserves the remaining command spans in the resulting submitted user message panel.
+
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
 - Submitting the chat calls the active chat's title function.

@@ -16,8 +16,8 @@
 - (DONE) Add terminal tabs
 
 # Right Panel
-- at file feature
-- slash commands
+- (DONE) at file feature
+- (DONE) slash commands
 - chat history 
 - chat history chat preview 
 - show context usage
