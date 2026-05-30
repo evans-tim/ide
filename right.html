@@ -9,8 +9,9 @@
     flex: none;
     display: flex;
     align-items: center;
-    background: var(--titleBar-activeBackground, var(--sideBar-background));
-    border-bottom: 1px solid var(--editorGroup-border);
+    background:
+      linear-gradient(var(--editorGroup-border), var(--editorGroup-border)) bottom/100% 1px no-repeat,
+      var(--titleBar-activeBackground, var(--sideBar-background));
   }
   .tabArea {
     flex: 1;
@@ -69,7 +70,6 @@
     max-width: 200px;
     min-width: 0;
     height: 32px;
-    margin-bottom: -1px;
     padding: 0 8px;
     display: flex;
     align-items: center;
