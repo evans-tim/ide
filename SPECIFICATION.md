@@ -127,13 +127,12 @@
 - Directories are inferred from slash-delimited file paths relative to the current mounted workspace directory.
 - A file row displays the file name.
 - A file row displays a file-type icon immediately to the left of the file name.
+- File-type icons are glyphs from the Seti icon font (`seti.woff`); each glyph is selected by file extension using the mapping in `vs-seti-icon-theme.json`.
+- A file-type icon glyph is rendered in the per-extension color defined by the active theme variant in `vs-seti-icon-theme.json` (the light-variant color in light theme, the dark-variant color in dark theme).
 - File-type icons and directory caret icons render at the same square size.
 - File rows and directory rows use the same icon-to-label spacing, so a caret + directory name pair occupies the same rhythm as a file icon + file name pair.
 - The row icon begins very close to its indent guide, with about 5px horizontal margin between the guide and the icon's left edge.
-- A `.txt` file row uses `file-type-text.svg`.
-- A `.md` file row uses `file-type-text.svg`.
-- A `.js` file row uses `file-type-js.svg`.
-- Any other or unknown file type uses `question.svg`.
+- A file row's glyph is resolved in priority order: an exact file-name mapping, then the extension mapping, then the mapping for the VS Code language associated with the extension (e.g. `.js` resolves through the `javascript` language, `.html` through `html`, `.md` through `markdown`, `.txt` through `plaintext`); a file that matches none of these uses the Seti theme's default file glyph.
 - Clicking a file row selects and opens the file.
 - Opening a file displays its contents in the canvas pane.
 - The selected file row uses the relevant Cursor list-selection style, and distinguishes focused vs. unfocused states.

@@ -11,7 +11,8 @@
   body.focused .row.selected { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black), inset 0 -1px 0 color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black); }
   .caret { display: inline-block; width: 16px; height: 16px; flex: none; margin-right: 4px; background: currentColor; opacity: 0.7; -webkit-mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; }
   .caret.expanded { -webkit-mask-image: url(icons/chevron-down.svg); mask-image: url(icons/chevron-down.svg); }
-  .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; }
+  @font-face { font-family: "seti"; src: url(icons/seti.woff) format("woff"); }
+  .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
   body.hovering .guide.dim { opacity: 0.5; }
@@ -26,11 +27,28 @@
   const ROW_PAD_LEFT = 12;
   const GUIDE_ICON_MARGIN = 5;
   const rowIconLeft = depth => ROW_PAD_LEFT + depth * GUIDE_ICON_MARGIN;
+  let setiTheme = null;
+  let themeVariant = 'dark';
+  const EXT_LANG = {
+    js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
+    ts: 'typescript', tsx: 'typescriptreact', html: 'html', htm: 'html',
+    md: 'markdown', txt: 'plaintext', css: 'css', json: 'json'
+  };
+  fetch('icons/vs-seti-icon-theme.json').then(r => r.json()).then(t => { setiTheme = t; render(); });
   const fileIconFor = name => {
-    const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
-    if (ext === '.txt' || ext === '.md') return 'icons/file-type-text.svg';
-    if (ext === '.js') return 'icons/file-type-js.svg';
-    return 'icons/question.svg';
+    if (!setiTheme) return { char: '', color: 'inherit' };
+    const light = themeVariant === 'light';
+    const variant = light ? (setiTheme.light || {}) : {};
+    const lower = name.toLowerCase();
+    const dot = lower.lastIndexOf('.');
+    const ext = dot >= 0 ? lower.slice(dot + 1) : '';
+    const lang = EXT_LANG[ext];
+    const key = (variant.fileNames && variant.fileNames[lower]) || setiTheme.fileNames[lower]
+      || (variant.fileExtensions && variant.fileExtensions[ext]) || setiTheme.fileExtensions[ext]
+      || (lang && variant.languageIds && variant.languageIds[lang]) || (lang && setiTheme.languageIds[lang])
+      || variant.file || setiTheme.file;
+    const def = setiTheme.iconDefinitions[key] || setiTheme.iconDefinitions[setiTheme.file];
+    return { char: String.fromCodePoint(parseInt(def.fontCharacter.replace(/\\/g, ''), 16)), color: def.fontColor };
   };
 
   const buildTree = paths => {
@@ -107,10 +125,11 @@
       const row = document.createElement('div');
       row.className = 'row file';
       row.style.paddingLeft = rowIconLeft(depth) + 'px';
-      const icon = document.createElement('img');
+      const icon = document.createElement('span');
       icon.className = 'file-icon';
-      icon.src = fileIconFor(name);
-      icon.alt = '';
+      const glyph = fileIconFor(name);
+      icon.textContent = glyph.char;
+      icon.style.color = glyph.color;
       row.appendChild(icon);
       const label = document.createElement('span');
       label.textContent = name;
@@ -155,6 +174,9 @@
       selectedType = selectedPath ? 'file' : null;
       expandAncestors(selectedPath);
       render({ revealSelected: true });
+    } else if (e.data?.type === 'settings:theme') {
+      themeVariant = e.data.value === 'light' ? 'light' : 'dark';
+      render();
     }
   });
   const clearSelection = () => {
