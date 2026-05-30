@@ -2,7 +2,7 @@
 - (DONE) Make filetree focus/selection for canvas tab focus  
 - (DONE) Add file specific icons
 - (DONE) Make filetree focus/selection for directory focus 
-- Edit/Save files
+- (DONE) Edit/Save files
 
 # Canvas
 - (DONE) Add canvas topbar with filename tabs, overflow scrolling, placeholder button group, and blank-canvas empty state
