@@ -436,13 +436,13 @@
 - Creating a new terminal does not terminate or alter any existing terminal session.
 
 **Terminal topbar tabs**
-- The terminal topbar contains two tabs, `Server` and `Terminal`, left-aligned.
+- The terminal topbar contains two tabs, `Problems` and `Terminal`, left-aligned.
 - Exactly one of the two tabs is the active tab at any time.
 - The active tab has a slightly gray background with rounded corners and black text.
 - The inactive tab has no background; its text is grayed out and becomes slightly darker on hover.
 - Clicking a tab makes it the active tab.
 - When the `Terminal` tab is active, the terminal pane displays the full terminal layout, including the terminal output area and the terminal tab pane.
-- When the `Server` tab is active, the terminal pane displays only a span reading `server tab`.
+- When the `Problems` tab is active, the terminal pane displays only the text `No problems have been detected in the workspace.`, left-aligned and top-aligned.
 
 **Terminal layout**
 - The terminal pane is split into a terminal output area on the left and a terminal tab pane on the right.

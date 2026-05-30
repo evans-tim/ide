@@ -100,12 +100,12 @@
   .tabControl.split .icon { -webkit-mask-image: url(icons/split-horizontal.svg); mask-image: url(icons/split-horizontal.svg); }
   .tabControl.trash .icon { -webkit-mask-image: url(icons/trash.svg); mask-image: url(icons/trash.svg); }
 </style>
-<div class="topbar"><button class="topbarTab" id="serverTab" type="button">Server</button><button class="topbarTab active" id="terminalTab" type="button">Terminal</button><button class="topbarControl" id="add" type="button" aria-label="Add terminal"><span class="icon"></span></button></div>
+<div class="topbar"><button class="topbarTab" id="serverTab" type="button">Problems</button><button class="topbarTab active" id="terminalTab" type="button">Terminal</button><button class="topbarControl" id="add" type="button" aria-label="Add terminal"><span class="icon"></span></button></div>
 <div class="body" id="terminalBody">
   <div class="terms" id="terms"></div>
   <div class="tabPane" id="tabPane"></div>
 </div>
-<div class="body" id="serverBody" style="display: none; align-items: center; padding: 8px;"><span>server tab</span></div>
+<div class="body" id="serverBody" style="display: none; align-items: flex-start; justify-content: flex-start; padding: 8px;"><span>No problems have been detected in the workspace.</span></div>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
 <script>
