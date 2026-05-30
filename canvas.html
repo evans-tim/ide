@@ -108,9 +108,8 @@
     mask-size: contain;
   }
   .tabIcon { width: 16px; height: 16px; }
-  .textFileIcon { -webkit-mask-image: url("icons/file-type-text.svg"); mask-image: url("icons/file-type-text.svg"); }
-  .jsFileIcon { -webkit-mask-image: url("icons/file-type-js.svg"); mask-image: url("icons/file-type-js.svg"); }
-  .unknownFileIcon { -webkit-mask-image: url("icons/question.svg"); mask-image: url("icons/question.svg"); }
+  @font-face { font-family: "seti"; src: url(icons/seti.woff) format("woff"); }
+  .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; position: relative; top: 1px; }
   .settingsTabIcon { -webkit-mask-image: url("icons/settings.svg"); mask-image: url("icons/settings.svg"); }
   .addIcon { width: 12px; height: 12px; -webkit-mask-image: url("icons/add.svg"); mask-image: url("icons/add.svg"); }
   .closeIcon { width: 12px; height: 12px; -webkit-mask-image: url("icons/close.svg"); mask-image: url("icons/close.svg"); }
@@ -337,12 +336,30 @@
     return parts.length > 1 ? parts[parts.length - 2] : '';
   }
 
-  function fileIconClassFor(path) {
+  let setiTheme = null;
+  let themeVariant = 'dark';
+  const EXT_LANG = {
+    js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
+    ts: 'typescript', tsx: 'typescriptreact', html: 'html', htm: 'html',
+    md: 'markdown', txt: 'plaintext', css: 'css', json: 'json'
+  };
+  fetch('icons/vs-seti-icon-theme.json').then(r => r.json()).then(t => { setiTheme = t; renderTabs(); });
+
+  function fileIconFor(path) {
+    if (!setiTheme) return { char: '', color: 'inherit' };
     const name = baseName(path);
-    const ext = name.slice(name.lastIndexOf('.')).toLowerCase();
-    if (ext === '.txt' || ext === '.md') return 'textFileIcon';
-    if (ext === '.js') return 'jsFileIcon';
-    return 'unknownFileIcon';
+    const light = themeVariant === 'light';
+    const variant = light ? (setiTheme.light || {}) : {};
+    const lower = name.toLowerCase();
+    const dot = lower.lastIndexOf('.');
+    const ext = dot >= 0 ? lower.slice(dot + 1) : '';
+    const lang = EXT_LANG[ext];
+    const key = (variant.fileNames && variant.fileNames[lower]) || setiTheme.fileNames[lower]
+      || (variant.fileExtensions && variant.fileExtensions[ext]) || setiTheme.fileExtensions[ext]
+      || (lang && variant.languageIds && variant.languageIds[lang]) || (lang && setiTheme.languageIds[lang])
+      || variant.file || setiTheme.file;
+    const def = setiTheme.iconDefinitions[key] || setiTheme.iconDefinitions[setiTheme.file];
+    return { char: String.fromCodePoint(parseInt(def.fontCharacter.replace(/\\/g, ''), 16)), color: def.fontColor };
   }
 
   function saveActiveFileContent() {
@@ -380,8 +397,15 @@
       tabEl.className = tab.name === activeTabName ? 'tab active' : 'tab';
 
       const icon = document.createElement('span');
-      icon.className = `iconMask tabIcon ${tab.settings ? 'settingsTabIcon' : fileIconClassFor(tab.name)}`;
       icon.setAttribute('aria-hidden', 'true');
+      if (tab.settings) {
+        icon.className = 'iconMask tabIcon settingsTabIcon';
+      } else {
+        icon.className = 'fileIcon';
+        const glyph = fileIconFor(tab.name);
+        icon.textContent = glyph.char;
+        icon.style.color = glyph.color;
+      }
 
       const title = document.createElement('span');
       title.className = 'tabTitle';
@@ -670,6 +694,8 @@
     else if (e.data?.type === 'vfs:reset') resetWorkspace();
     else if (e.data?.type === 'settings:open') openSettingsTab();
     else if (e.data?.type === 'settings:theme') {
+      themeVariant = e.data.value === 'light' ? 'light' : 'dark';
+      renderTabs();
       if (e.source === settingsFrame.contentWindow) parent.postMessage(e.data, '*');
       else settingsFrame.contentWindow.postMessage(e.data, '*');
     } else if (e.data?.type === 'settings:directory') {

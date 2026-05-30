@@ -308,6 +308,8 @@
 
 **Filename tabs**
 - Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.
+- A filename tab's file-type icon is resolved and rendered identically to a file tree row's file-type icon: the same Seti icon font glyph (selected by the exact-name, extension, then VS Code language priority order with the default file glyph fallback), at the same square size, in the same per-extension active-theme variant color.
+- A filename tab's file-type icon is nudged down 1px relative to its flex-centered position so it vertically aligns with the tab's file name the way VS Code aligns the tab icon and label.
 - The Settings tab behaves like a canvas tab and contains `settings.svg`, the title `Settings`, and its adjacent `close.svg` icon.
 - The Settings tab opens `settings.html` in the canvas pane as a separate iframe.
 - The Settings tab is unique; opening Settings while the tab already exists selects the existing tab and does not create a duplicate.
