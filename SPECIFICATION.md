@@ -281,24 +281,24 @@
 - (DONE) Each item displays the file's file-type icon on the left, then the file name in the strongest foreground theme token, then the relative path to its parent directory (or nothing if it has no parent) in a slightly lighter foreground theme token and a slightly smaller font token.
 - (DONE) Hovering an item gives it the emphasized background; at most one item has the emphasized background at any time.
 - (DONE) Moving the highlight to an item by hover removes the emphasized background from any other item.
-- (3) Clicking an item, or pressing Enter while it is highlighted, selects that item.
-- (3) Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
-- (3) After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
+- (DONE) Clicking an item, or pressing Enter while it is highlighted, selects that item.
+- (DONE) Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
+- (DONE) After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
 - (4) Typing characters directly after `@` refines the list to file names in the workspace that start with that exact character sequence (prefix match, no fuzzy matching).
 - (4) When no workspace file name starts with the typed sequence, the autocomplete div does not show and the `@` plus the typed sequence remain as ordinary composer text.
-- (4) Pressing space after a sequence beginning with `@` leaves the `@` and the sequence as ordinary composer text and inserts no mention span.
+- (DONE) Pressing space after a sequence beginning with `@` leaves the `@` and the sequence as ordinary composer text and inserts no mention span.
 
 **File mention span**
-- (3) A file mention span displays the file's file-type icon followed by the file name.
-- (3) The mention span file name text uses color `rgb(111, 144, 155)` (or the relevant theme token when available).
-- (3) The mention span background uses color `rgb(235, 239, 240)` (or the relevant theme token when available) and has rounded corners.
+- (DONE) A file mention span displays the file's file-type icon followed by the file name.
+- (DONE) The mention span file name text uses color `rgb(111, 144, 155)` (or the relevant theme token when available).
+- (DONE) The mention span background uses color `rgb(235, 239, 240)` (or the relevant theme token when available) and has rounded corners.
 - (5) Hovering anywhere on the mention span uses the pointer cursor.
 - (5) Hovering the mention span makes the entire span slightly brighter.
 - (5) Hovering the mention span replaces the file-type icon with `close.svg`, colored `rgb(111, 144, 155)` (or the relevant theme token when available).
 - (5) Hovering the mention span causes no layout shift whatsoever; the icon swap, brighten, and tooltip do not change the span's size or position or move any surrounding content.
 - (5) Clicking the close icon removes the mention span from the composer.
 - (6) Clicking the mention span anywhere other than the close icon opens that file in the canvas, creating a new tab if it is not already open or activating its existing tab if it is.
-- (5) Pressing Backspace when the text cursor is immediately after a mention span removes that span.
+- (DONE) Pressing Backspace when the text cursor is immediately after a mention span removes that span.
 - (7) Hovering the mention span shows a tooltip div directly above it.
 - (7) The tooltip text uses the strongest foreground theme token and displays the file's full relative path including the file name, with the workspace root parent omitted.
 - (7) The tooltip text is left-aligned and the tooltip is left-aligned flush with the span's left edge.
