@@ -468,6 +468,15 @@
 - Each terminal within a terminal tab group is separated from its neighbors by the same resizable border used between the main panels.
 - Dragging a terminal tab group border resizes the adjacent terminals, and each terminal re-renders its session to fit its resized width.
 
+**Terminal scrolling**
+- The lower panel as a whole never scrolls; its outer container has a hard ceiling and overflow is structurally impossible, not merely hidden.
+- Only the terminal output region scrolls vertically, and it uses the same scrolling behavior as the canvas editor.
+- The terminal's vertical scrollbar space is always reserved; the scrollbar's appearance causes no layout shift.
+- The terminal scrollbar gutter background matches the terminal background.
+- The terminal scrollbar thumb has square corners and fills the full width of the gutter.
+- Terminal scrolling has no momentum; motion stops as soon as scroll input stops.
+- The terminal has no horizontal scroll.
+
 **Terminal focus and selection**
 - Exactly one terminal session is the selected terminal at any time.
 - Clicking inside a terminal's output region makes that terminal the selected terminal, highlights its corresponding terminal tab in the terminal tab pane, and gives that terminal keyboard focus so its caret is ready to accept input.

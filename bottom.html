@@ -2,8 +2,14 @@
 <title>Bottom</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
 <style>
-  html, body { margin: 0; height: 100%; background: var(--terminal-background, var(--panel-background)); color: var(--panel-foreground); font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--terminal-background, var(--panel-background)); color: var(--panel-foreground); font: var(--ide-font-size, 13px) var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif); }
   body { display: flex; flex-direction: column; }
+  .xterm-viewport { overflow-x: hidden !important; overscroll-behavior: none; }
+  .xterm-viewport::-webkit-scrollbar { width: 14px; height: 14px; background: transparent; }
+  .xterm-viewport::-webkit-scrollbar-track { background: transparent; }
+  .xterm-viewport::-webkit-scrollbar-thumb { background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; }
+  .xterm-viewport::-webkit-scrollbar-thumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
+  .xterm-viewport::-webkit-scrollbar-corner { background: transparent; }
   .topbar {
     box-sizing: border-box;
     height: 32px;
@@ -236,10 +242,15 @@
     const inner = document.createElement('div');
     inner.className = 'termPaneInner';
     pane.appendChild(inner);
-    const term = new Terminal({ fontFamily, fontSize: 13, theme: themeOptions() });
+    const term = new Terminal({ fontFamily, fontSize: 13, smoothScrollDuration: 0, theme: themeOptions() });
     const fit = new FitAddon.FitAddon();
     term.loadAddon(fit);
     term.open(inner);
+    const viewport = inner.querySelector('.xterm-viewport');
+    if (viewport) viewport.addEventListener('wheel', e => {
+      e.preventDefault();
+      viewport.scrollTop += e.deltaY;
+    }, { passive: false });
     const s = { id, term, fit, pane };
     sessions.set(id, s);
     send({ type: 'spawn', id });
