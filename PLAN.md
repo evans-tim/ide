@@ -11,9 +11,9 @@
 - edit visualizer and accept/reject
 
 # Lower Panel
-- Add simple terminal
-- Add terminal splitting
-- Add terminal tabs
+- (DONE) Add simple terminal
+- (DONE) Add terminal splitting
+- (DONE) Add terminal tabs
 
 # Right Panel
 - at file feature
