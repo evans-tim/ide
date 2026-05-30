@@ -61,7 +61,7 @@
   }
   .tab:hover { background: var(--list-hoverBackground); color: var(--list-hoverForeground); }
   .tab.selected { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
-  body.focused .tab.selected {
+  body.tabFocused .tab.selected {
     background: var(--list-activeSelectionBackground);
     color: var(--list-activeSelectionForeground);
     border-top-color: color-mix(in srgb, var(--list-activeSelectionBackground) 80%, black);
@@ -118,6 +118,7 @@
   const sessions = new Map();
   const groups = [];
   let selectedId = null;
+  let activeId = null;
   let nextId = 1;
 
   const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -177,7 +178,7 @@
         controls.appendChild(split);
         controls.appendChild(trash);
         tab.appendChild(controls);
-        tab.onmousedown = () => { selectTerminal(id); };
+        tab.onmousedown = e => { e.stopPropagation(); selectTerminal(id, true); };
         tabPaneEl.appendChild(tab);
       }
     }
@@ -185,7 +186,7 @@
 
   const renderGroups = () => {
     for (const group of groups) {
-      group.el.classList.toggle('active', group.members.includes(selectedId));
+      group.el.classList.toggle('active', group.members.includes(activeId));
       group.el.innerHTML = '';
       group.members.forEach((id, i) => {
         const s = sessions.get(id);
@@ -204,12 +205,20 @@
 
   const fitAll = () => { for (const s of sessions.values()) fitSession(s); };
 
-  const selectTerminal = id => {
+  const selectTerminal = (id, tabFocused) => {
+    activeId = id;
     selectedId = id;
+    document.body.classList.toggle('tabFocused', !!tabFocused);
     renderGroups();
     renderTabs();
     const s = sessions.get(id);
     if (s) { s.term.focus(); fitSession(s); }
+  };
+
+  const clearTabSelection = () => {
+    selectedId = null;
+    document.body.classList.remove('tabFocused');
+    renderTabs();
   };
 
   const fitSession = s => {
@@ -235,7 +244,7 @@
     sessions.set(id, s);
     send({ type: 'spawn', id });
     term.onData(data => send({ type: 'data', id, data }));
-    pane.addEventListener('mousedown', () => selectTerminal(id));
+    pane.addEventListener('mousedown', () => selectTerminal(id, false));
     new ResizeObserver(() => fitSession(s)).observe(inner);
     return s;
   };
@@ -273,11 +282,11 @@
       group.el.remove();
       groups.splice(groups.indexOf(group), 1);
     }
-    if (selectedId === id) {
+    if (activeId === id) {
       const next = group.members[Math.min(idx, group.members.length - 1)]
         ?? groups[0]?.members[0] ?? null;
       if (next != null) selectTerminal(next);
-      else { selectedId = null; renderTabs(); }
+      else { activeId = null; selectedId = null; renderTabs(); }
     } else {
       renderGroups();
       renderTabs();
@@ -331,9 +340,8 @@
 
   document.getElementById('add').onclick = createTerminal;
 
-  const setFocused = v => document.body.classList.toggle('focused', v);
-  document.addEventListener('mousedown', event => {
-    setFocused(!!event.target.closest('.tab') || !!event.target.closest('.termPane'));
+  tabPaneEl.addEventListener('mousedown', event => {
+    if (!event.target.closest('.tab')) clearTabSelection();
   });
 
   const applyTheme = () => { for (const s of sessions.values()) s.term.options.theme = themeOptions(); };
