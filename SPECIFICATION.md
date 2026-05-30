@@ -274,6 +274,11 @@
 
 **File mention autocomplete**
 - (DONE) Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.
+- (DONE) The autocomplete div's left edge stays aligned with the left of the `@` character even as a longer refinement sequence is typed after it.
+- (DONE) Each autocomplete item lays out its filename and parent path with the following ellipsis priority when there is not enough room: the filename is shown first; if the filename alone does not fit, the filename is truncated with an ellipsis and the parent path is not displayed; if the filename fits, the parent path is shown and truncated with an ellipsis only when it does not fit.
+- (DONE) The autocomplete div stays left-aligned with the left edge of the `@` character even as a longer refinement sequence is typed after it.
+- (DONE) Within each autocomplete item, the file name is truncated with a trailing ellipsis when there is not enough room, and the file name truncates before the parent path string is reduced.
+- (DONE) Within each autocomplete item, the parent path string is truncated with a trailing ellipsis when there is not enough room for the path string.
 - (DONE) The autocomplete div is 200px wide and casts a shadow on its left, bottom, and right edges.
 - (DONE) By default the autocomplete div lists every currently open tab as a selectable item.
 - (DONE) The first item in the list is highlighted with an emphasized background color by default and rounded corners
@@ -284,8 +289,8 @@
 - (DONE) Clicking an item, or pressing Enter while it is highlighted, selects that item.
 - (DONE) Selecting an item closes the autocomplete div and inserts an inline mention span in place of the `@` (and any typed refinement characters) at that position in the composer.
 - (DONE) After insertion the text cursor is placed immediately after the inserted span, ready to type or to begin another `@` mention.
-- (4) Typing characters directly after `@` refines the list to file names in the workspace that start with that exact character sequence (prefix match, no fuzzy matching).
-- (4) When no workspace file name starts with the typed sequence, the autocomplete div does not show and the `@` plus the typed sequence remain as ordinary composer text.
+- (DONE) Typing characters directly after `@` refines the list to file names in the workspace that start with that exact character sequence (prefix match, no fuzzy matching).
+- (DONE) When no workspace file name starts with the typed sequence, the autocomplete div does not show and the `@` plus the typed sequence remain as ordinary composer text.
 - (DONE) Pressing space after a sequence beginning with `@` leaves the `@` and the sequence as ordinary composer text and inserts no mention span.
 
 **File mention span**

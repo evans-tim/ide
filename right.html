@@ -321,8 +321,8 @@
   }
   .mentionItem.highlighted { background: var(--editorSuggestWidget-selectedBackground, var(--list-activeSelectionBackground)); border-radius: 4px; }
   .mentionItem .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
-  .mentionItem .mentionName { color: var(--editorSuggestWidget-foreground, var(--foreground, var(--editor-foreground))); flex: none; }
-  .mentionItem .mentionPath { color: var(--descriptionForeground, var(--tab-inactiveForeground)); font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .mentionItem .mentionName { color: var(--editorSuggestWidget-foreground, var(--foreground, var(--editor-foreground))); flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .mentionItem .mentionPath { color: var(--descriptionForeground, var(--tab-inactiveForeground)); font-size: 0.9em; overflow: hidden; text-overflow: ellipsis; flex: 1000000 1 0; min-width: 0; }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div></div>
 <div class="content">
@@ -346,6 +346,7 @@
   const mentionMenu = document.querySelector('.mentionMenu');
 
   let openTabNames = [];
+  let workspaceFiles = [];
   let setiTheme = null;
   let themeVariant = 'dark';
   const EXT_LANG = {
@@ -428,17 +429,31 @@
     return { x: rect.left, y: rect.bottom };
   }
 
+  function atCoordinates() {
+    const match = findMentionQuery();
+    if (!match) return null;
+    const range = document.createRange();
+    range.setStart(match.node, match.at);
+    range.setEnd(match.node, match.at + 1);
+    const rect = range.getClientRects()[0] || range.getBoundingClientRect();
+    if (!rect || (rect.left === 0 && rect.bottom === 0)) return null;
+    return { x: rect.left, y: rect.bottom };
+  }
+
   function closeMentionMenu() {
     mentionMenu.style.display = 'none';
     mentionMenu.replaceChildren();
   }
 
-  function openMentionMenu() {
-    if (openTabNames.length === 0) {
+  function openMentionMenu(query) {
+    const items = query
+      ? workspaceFiles.filter(name => name.split('/').pop().startsWith(query))
+      : openTabNames;
+    if (items.length === 0) {
       closeMentionMenu();
       return;
     }
-    mentionMenu.replaceChildren(...openTabNames.map((name, index) => {
+    mentionMenu.replaceChildren(...items.map((name, index) => {
       const item = document.createElement('div');
       item.className = index === 0 ? 'mentionItem highlighted' : 'mentionItem';
       item.dataset.path = name;
@@ -474,7 +489,7 @@
       return item;
     }));
 
-    const coords = caretCoordinates();
+    const coords = atCoordinates() || caretCoordinates();
     mentionMenu.style.left = coords.x + 'px';
     mentionMenu.style.top = (coords.y + 4) + 'px';
     mentionMenu.style.display = 'block';
@@ -875,7 +890,8 @@
 
   editor.addEventListener('input', () => {
     activeTab().draft = editor.innerHTML;
-    if (findMentionQuery()) openMentionMenu();
+    const match = findMentionQuery();
+    if (match) openMentionMenu(match.query);
     else closeMentionMenu();
   });
 
@@ -927,6 +943,7 @@
     if (message.type === 'right:open') ensureTabForOpen();
     else if (message.type === 'right:reset') resetWorkspace();
     else if (message.type === 'canvas:tabs') openTabNames = message.names || [];
+    else if (message.type === 'vfs:files') workspaceFiles = message.files || [];
     else if (message.type === 'settings:theme') themeVariant = message.value === 'light' ? 'light' : 'dark';
   });
 
@@ -944,4 +961,5 @@
   document.querySelector('.addControl').addEventListener('click', addTab);
   renderActiveTab();
   parent.postMessage({ type: 'canvas:tabs:request' }, '*');
+  parent.postMessage({ type: 'vfs:list' }, '*');
 </script>
