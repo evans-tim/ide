@@ -211,7 +211,8 @@
   #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
   #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
   body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
-  .line { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); position: relative; }
+  .line { display: block; }
+  .vrow { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); position: relative; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
   .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
@@ -275,7 +276,7 @@
 </div>
 <div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
-  import { prepare, layout } from '/node_modules/@chenglou/pretext/dist/layout.js';
+  import { prepare, prepareWithSegments, layout, layoutWithLines } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
   const LINE_HEIGHT = layout(prepare('M', FONT), 10000, 18).height;
   let lines = [''];
@@ -304,6 +305,29 @@
   let sel = null;
   let lastPointerDown = null;
 
+  function availableTextWidth() {
+    return view.clientWidth;
+  }
+
+  function wrapColumnsFor(text, maxWidth) {
+    if (!text || maxWidth <= 0) return [0];
+    const result = layoutWithLines(prepareWithSegments(text, FONT), maxWidth, LINE_HEIGHT);
+    const cols = [0];
+    let consumed = 0;
+    for (let r = 0; r < result.lines.length - 1; r++) {
+      consumed += result.lines[r].text.length;
+      if (consumed > 0 && consumed < text.length) cols.push(consumed);
+    }
+    return cols;
+  }
+
+  function computeWrap() {
+    const maxWidth = availableTextWidth();
+    return lines.map(text => wrapColumnsFor(text, maxWidth));
+  }
+
+  let wrapCols = [[0]];
+
   function positionGutterHighlight() {
     const line = view.querySelector('.line.active');
     if (!line) {
@@ -321,7 +345,7 @@
     gutterHighlight.style.top = lr.top + 'px';
     gutterHighlight.style.left = (sr.left + scroller.clientWidth) + 'px';
     gutterHighlight.style.width = gutterW + 'px';
-    gutterHighlight.style.height = LINE_HEIGHT + 'px';
+    gutterHighlight.style.height = lr.height + 'px';
   }
 
   function updateTopShadow() {
@@ -339,7 +363,12 @@
     view.style.paddingBottom = pad + 'px';
     gutter.style.paddingBottom = pad + 'px';
   }
-  addEventListener('resize', () => { updateScrollPast(); positionGutterHighlight(); updateTopShadow(); });
+  addEventListener('resize', () => {
+    updateScrollPast();
+    if (!document.body.classList.contains('empty') && !document.body.classList.contains('settings')) render();
+    positionGutterHighlight();
+    updateTopShadow();
+  });
   scroller.addEventListener('scroll', () => { positionGutterHighlight(); updateTopShadow(); });
   scroller.addEventListener('wheel', e => {
     e.preventDefault();
@@ -350,12 +379,21 @@
 
   function render() {
     const range = selectionRange();
-    gutter.replaceChildren(...lines.map((_, i) => {
-      const g = document.createElement('div');
-      g.className = 'gline';
-      g.textContent = i + 1;
-      return g;
-    }));
+    wrapCols = computeWrap();
+    const gutterChildren = [];
+    lines.forEach((_, i) => {
+      const block = document.createElement('div');
+      block.className = 'gblock';
+      const rows = wrapCols[i].length;
+      for (let r = 0; r < rows; r++) {
+        const g = document.createElement('div');
+        g.className = 'gline';
+        g.textContent = r === 0 ? i + 1 : '';
+        block.appendChild(g);
+      }
+      gutterChildren.push(block);
+    });
+    gutter.replaceChildren(...gutterChildren);
     view.innerHTML = '';
     lines.forEach((text, i) => {
       const div = document.createElement('div');
@@ -389,18 +427,29 @@
     const endCol = startCol === null
       ? null
       : (lineIndex === range.end.line ? range.end.col : text.length);
-    const boundaries = [0, text.length, cur.line === lineIndex ? cur.col : null, startCol, endCol]
-      .filter(v => v !== null)
-      .sort((a, b) => a - b);
-    const unique = [...new Set(boundaries)];
-    if (cur.line === lineIndex && cur.col === 0) appendCaret(div, text, 0);
-    for (let j = 0; j < unique.length - 1; j++) {
-      const from = unique[j];
-      const to = unique[j + 1];
-      if (to > from) appendText(div, text.slice(from, to), startCol !== null && from >= startCol && to <= endCol);
-      if (cur.line === lineIndex && cur.col === to) appendCaret(div, text, to);
+    const starts = wrapCols[lineIndex] || [0];
+    for (let r = 0; r < starts.length; r++) {
+      const rowStart = starts[r];
+      const rowEnd = r + 1 < starts.length ? starts[r + 1] : text.length;
+      const row = document.createElement('div');
+      row.className = 'vrow';
+      const boundaries = [rowStart, rowEnd, cur.line === lineIndex ? cur.col : null, startCol, endCol]
+        .filter(v => v !== null && v >= rowStart && v <= rowEnd)
+        .sort((a, b) => a - b);
+      const unique = [...new Set(boundaries)];
+      const caretOnRow = cur.line === lineIndex
+        && cur.col >= rowStart
+        && (cur.col < rowEnd || (cur.col === rowEnd && (r === starts.length - 1)));
+      if (caretOnRow && cur.col === rowStart) appendCaret(row, text, rowStart, cur.col);
+      for (let j = 0; j < unique.length - 1; j++) {
+        const from = unique[j];
+        const to = unique[j + 1];
+        if (to > from) appendText(row, text.slice(from, to), startCol !== null && from >= startCol && to <= endCol);
+        if (caretOnRow && cur.col === to && to > rowStart) appendCaret(row, text, rowStart, to);
+      }
+      if (rowEnd === rowStart && !caretOnRow) row.textContent = '\u200b';
+      div.appendChild(row);
     }
-    if (!text && !(cur.line === lineIndex && cur.col === 0)) div.textContent = '\u200b';
   }
 
   function appendText(parent, text, selected) {
@@ -419,11 +468,11 @@
     return layout(prepare(text, FONT), 10000, LINE_HEIGHT).width;
   }
 
-  function appendCaret(parent, text, col) {
+  function appendCaret(parent, text, rowStart, col) {
     const caret = document.createElement('span');
     caret.className = 'cursor';
     const ratio = window.devicePixelRatio || 1;
-    caret.style.left = Math.round(textWidth(text.slice(0, col)) * ratio) / ratio + 'px';
+    caret.style.left = Math.round(textWidth(text.slice(rowStart, col)) * ratio) / ratio + 'px';
     caret.style.width = 1 / ratio + 'px';
     parent.appendChild(caret);
   }
@@ -803,19 +852,33 @@
     document.getElementById('confirmCancel').onclick = cleanup;
   }
 
-  function positionFromEvent(e, mode = 'caret') {
+  function visualRowAtY(clientY) {
     const padTop = parseFloat(getComputedStyle(view).paddingTop) || 0;
     const viewRect = view.getBoundingClientRect();
-    const lineIndex = Math.max(0, Math.min(lines.length - 1, Math.floor((e.clientY - viewRect.top - padTop) / LINE_HEIGHT)));
-    let lineEl = view.querySelector(`[data-line="${lineIndex}"]`);
-    if (!lineEl) {
-      const last = view.lastElementChild;
-      if (!last) return null;
-      return { line: lines.length - 1, col: lines[lines.length - 1].length };
+    let target = Math.floor((clientY - viewRect.top - padTop) / LINE_HEIGHT);
+    let acc = 0;
+    for (let li = 0; li < lines.length; li++) {
+      const starts = wrapCols[li] || [0];
+      if (target < acc + starts.length) {
+        return { line: li, row: Math.max(0, target - acc) };
+      }
+      acc += starts.length;
     }
-    const li = +lineEl.dataset.line;
+    const li = lines.length - 1;
+    const starts = wrapCols[li] || [0];
+    return { line: li, row: starts.length - 1 };
+  }
+
+  function positionFromEvent(e, mode = 'caret') {
+    if (!lines.length) return null;
+    const { line: li, row } = visualRowAtY(e.clientY);
     const text = lines[li];
-    const rect = lineEl.getBoundingClientRect();
+    const starts = wrapCols[li] || [0];
+    const rowStart = starts[row];
+    const rowEnd = row + 1 < starts.length ? starts[row + 1] : text.length;
+    const lineEl = view.querySelector(`[data-line="${li}"]`);
+    const rowEl = lineEl ? lineEl.children[row] : null;
+    const rect = (rowEl || lineEl || view).getBoundingClientRect();
     const x = e.clientX - rect.left;
     const measure = document.createElement('span');
     measure.style.font = getComputedStyle(view).font;
@@ -823,20 +886,19 @@
     measure.style.position = 'absolute';
     measure.style.whiteSpace = 'pre';
     document.body.appendChild(measure);
+    const widthTo = i => { measure.textContent = text.slice(rowStart, i); return measure.offsetWidth; };
     if (mode === 'character') {
-      let col = Math.max(0, text.length - 1);
-      for (let i = 0; i < text.length; i++) {
-        measure.textContent = text.slice(0, i + 1);
-        if (measure.offsetWidth > x) { col = i; break; }
+      let col = Math.max(rowStart, rowEnd - 1);
+      for (let i = rowStart; i < rowEnd; i++) {
+        if (widthTo(i + 1) > x) { col = i; break; }
       }
       document.body.removeChild(measure);
       return { line: li, col };
     }
-    let col = text.length;
+    let col = rowEnd;
     let left = 0;
-    for (let i = 0; i < text.length; i++) {
-      measure.textContent = text.slice(0, i + 1);
-      const right = measure.offsetWidth;
+    for (let i = rowStart; i < rowEnd; i++) {
+      const right = widthTo(i + 1);
       if (x < left + (right - left) / 2) { col = i; break; }
       left = right;
     }

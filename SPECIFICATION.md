@@ -425,6 +425,15 @@
 - Gutter on the left displays line numbers, one per content line, right-aligned.
 - `editor.wordSeparators` defines the characters that delimit words.
 
+**Line wrapping**
+- A content line whose rendered width exceeds the available canvas text width wraps onto one or more additional visual rows instead of scrolling horizontally.
+- A wrapped visual row displays no line number; only the first visual row of a content line carries that content line's gutter number.
+- The wrap point is computed exactly from the canvas text width and the editor monospace metrics, not approximated; the number of wrapped rows is the deterministic result of that calculation for the given content and width.
+- The available canvas text width is the canvas content region width minus the gutter width and the reserved vertical scrollbar gutter width.
+- Changing the canvas text width (e.g. resizing the center pane) recomputes every content line's wrap points and visual rows exactly.
+- Wrapped visual rows of a content line align their left edge with the start of the first visual row's text, immediately to the right of the gutter.
+- The caret-line highlight, text selection, and caret position all follow the wrapped visual layout, treating each visual row as part of its content line.
+
 **Settings page**
 - `settings.html` contains a theme dropdown and a directory button.
 - The Settings controls have 100px of margin around them.
