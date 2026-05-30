@@ -64,6 +64,16 @@
   let mountedDirectory = '';
   let browserVfs = null;
 
+  const COMMANDS_DIR = 'COMMANDS';
+  const commandsVfs = {
+    [`${COMMANDS_DIR}/test-command1.md`]: 'test body 1',
+    [`${COMMANDS_DIR}/test-command2.md`]: 'test body 2',
+    [`${COMMANDS_DIR}/test-command3.md`]: 'test body 3',
+  };
+  const isCommandPath = name => typeof name === 'string' && name.startsWith(COMMANDS_DIR + '/');
+  const commandsFiles = () => Object.keys(commandsVfs);
+  const broadcastCommands = () => broadcast({ type: 'commands:files', files: commandsVfs });
+
   const themeFiles = {
     light: 'cursor-light-theme.json',
     dark: 'cursor-dark-midnight-theme.json'
@@ -124,6 +134,7 @@
   };
   const sendFiles = async target => {
     target.postMessage({ type: 'vfs:files', files: await loadFiles() }, '*');
+    target.postMessage({ type: 'commands:files', files: commandsVfs }, '*');
   };
   const resetMountedWorkspace = async () => {
     broadcast({ type: 'vfs:reset' });
@@ -173,6 +184,10 @@
     }
   };
   const openFile = async (name, from) => {
+    if (isCommandPath(name)) {
+      broadcast({ type: 'vfs:opened', name, content: commandsVfs[name] ?? '' }, from);
+      return;
+    }
     if (browserVfs) {
       broadcast({ type: 'vfs:opened', name, content: browserVfs[name] ?? '' }, from);
       return;
@@ -182,6 +197,12 @@
     broadcast({ type: 'vfs:opened', name, content: data.content ?? '' }, from);
   };
   const saveFile = async (name, content, from) => {
+    if (isCommandPath(name)) {
+      commandsVfs[name] = content;
+      from.postMessage({ type: 'vfs:saved', name }, '*');
+      broadcastCommands();
+      return;
+    }
     if (browserVfs) {
       browserVfs[name] = content;
       from.postMessage({ type: 'vfs:saved', name }, '*');
@@ -199,6 +220,8 @@
     if (!m || typeof m !== 'object') return;
     if (m.type === 'vfs:list') {
       sendFiles(e.source);
+    } else if (m.type === 'commands:list') {
+      e.source.postMessage({ type: 'commands:files', files: commandsVfs }, '*');
     } else if (m.type === 'vfs:save') {
       saveFile(m.name, m.content, e.source);
     } else if (m.type === 'vfs:open') {

@@ -425,12 +425,18 @@
   const commandMenu = document.querySelector('.commandMenu');
   let activeEditor = editor;
 
-  const COMMANDS = [
+  let COMMANDS = [
     { title: 'test-command1', body: 'test body 1' },
     { title: 'test-command2', body: 'test body 2' },
     { title: 'test-command3', body: 'test body 3' },
   ];
   const commandByTitle = title => COMMANDS.find(command => command.title === title) || null;
+  const setCommandsFromVfs = files => {
+    COMMANDS = Object.keys(files || {}).sort().map(path => ({
+      title: path.slice('COMMANDS/'.length).replace(/\.md$/, ''),
+      body: files[path],
+    }));
+  };
 
   let openTabNames = [];
   let workspaceFiles = [];
@@ -1264,6 +1270,7 @@
     else if (message.type === 'right:reset') resetWorkspace();
     else if (message.type === 'canvas:tabs') openTabNames = message.names || [];
     else if (message.type === 'vfs:files') workspaceFiles = message.files || [];
+    else if (message.type === 'commands:files') setCommandsFromVfs(message.files);
     else if (message.type === 'settings:theme') themeVariant = message.value === 'light' ? 'light' : 'dark';
   });
 

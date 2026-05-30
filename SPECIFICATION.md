@@ -99,6 +99,23 @@
 - (NOT IMPLEMENTED) File tabs should be saved and restored per mounted workspace directory.
 - (NOT IMPLEMENTED) Agent chat tabs should be saved and restored per mounted workspace directory.
 
+**Virtual COMMANDS directory**
+- The file tree displays a virtual `COMMANDS` root directory row at the same top level as the mounted workspace root directory row, rendered in all caps with a bold font weight identically to the mounted workspace root directory row.
+- The `COMMANDS` directory is backed by an in-memory virtual filesystem, not by the mounted workspace directory or any on-disk file.
+- The `COMMANDS` directory contains one Markdown (`.md`) file per hardcoded slash command, named `{command-title}.md`, with initial contents equal to that command's hardcoded body.
+- The `COMMANDS` directory's command files use the same hardcoded set as the slash-command autocomplete (`test-command1`, `test-command2`, `test-command3`).
+- The `COMMANDS` directory and its command files behave like ordinary file tree directory and file rows for icon resolution, selection, focus, expansion, hover, indent guides, and click-to-open.
+- The `COMMANDS` directory is independent of the mounted workspace directory and persists when the mounted workspace directory changes; changing the mounted directory does not clear, reload, or remove the `COMMANDS` directory or its in-memory edits.
+- Clicking a `COMMANDS` command file row opens it in the canvas exactly like any other file, including Markdown preview/source toggling.
+- A `COMMANDS` command file is editable and saveable in the canvas exactly like any mounted file: edits mark its filename tab dirty, and Cmd+S (or the save confirmation flow) writes the in-memory changes back to the in-memory `COMMANDS` virtual filesystem.
+- Saving a `COMMANDS` command file updates that command's body in memory; the slash-command body, body-preview modal, and inserted command span body all reflect the updated saved body.
+- A command's `COMMANDS` file contents and that command's slash-command body are the same single in-memory source of truth.
+
+**Slash command body sourced from COMMANDS**
+- A slash command's body is read from the live in-memory contents of its corresponding `COMMANDS/{command-title}.md` file.
+- When a command span is inserted into the composer and the prompt is submitted, the submitted command resolves its body from the current saved `COMMANDS` file contents at submission time.
+- Editing and saving a `COMMANDS` command file before referencing the command in chat causes the referenced command to carry the updated saved body text.
+
 **Inter-pane communication**
 - All messages route through the root; panes never address each other directly.
 - Panes request the file list and request to open a file; the root responds and broadcasts open events to other panes.

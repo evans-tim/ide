@@ -50,10 +50,12 @@
 <div id="extensionsView">Extensions</div>
 <script>
   let fileNames = [];
+  let commandNames = [];
   let selectedPath = null;
   let selectedType = null;
   let rootName = '';
   const ROOT_KEY = '\u0000root';
+  const COMMANDS_ROOT_KEY = '\u0000commands';
   const expanded = new Set([ROOT_KEY]);
   const ROW_PAD_LEFT = 12;
   const GUIDE_ICON_MARGIN = 5;
@@ -106,6 +108,14 @@
 
   const expandAncestors = path => {
     if (!path) return;
+    if (path.startsWith('COMMANDS/')) {
+      expanded.add(COMMANDS_ROOT_KEY);
+      const parts = path.slice('COMMANDS/'.length).split('/');
+      for (let i = 1; i < parts.length; i++) {
+        expanded.add('COMMANDS/' + parts.slice(0, i).join('/'));
+      }
+      return;
+    }
     const parts = path.split('/');
     for (let i = 1; i < parts.length; i++) {
       expanded.add(parts.slice(0, i).join('/'));
@@ -178,33 +188,38 @@
     return ul;
   };
 
-  const render = ({ revealSelected = false } = {}) => {
-    const tree = buildTree(fileNames);
-    const newRoot = document.createElement('ul');
-    newRoot.className = 'root';
-    newRoot.id = 'files';
+  const renderRoot = (newRoot, rootKey, rootLabel, tree, basePath) => {
     const li = document.createElement('li');
     const row = document.createElement('div');
     row.className = 'row dir root-row';
     row.style.paddingLeft = rowIconLeft(0) + 'px';
     const caret = document.createElement('span');
     caret.className = 'caret';
-    if (expanded.has(ROOT_KEY)) caret.classList.add('expanded');
+    if (expanded.has(rootKey)) caret.classList.add('expanded');
     row.appendChild(caret);
     const label = document.createElement('span');
-    label.textContent = (rootName || '').toUpperCase();
+    label.textContent = (rootLabel || '').toUpperCase();
     row.appendChild(label);
-    if (selectedType === 'dir' && selectedPath === ROOT_KEY) row.classList.add('selected');
+    if (selectedType === 'dir' && selectedPath === rootKey) row.classList.add('selected');
     row.onclick = () => {
-      selectedPath = ROOT_KEY;
+      selectedPath = rootKey;
       selectedType = 'dir';
-      if (expanded.has(ROOT_KEY)) expanded.delete(ROOT_KEY);
-      else expanded.add(ROOT_KEY);
+      if (expanded.has(rootKey)) expanded.delete(rootKey);
+      else expanded.add(rootKey);
       render();
     };
     li.appendChild(row);
-    if (expanded.has(ROOT_KEY)) li.appendChild(renderNode(tree, '', 1));
+    if (expanded.has(rootKey)) li.appendChild(renderNode(tree, basePath, 1));
     newRoot.appendChild(li);
+  };
+
+  const render = ({ revealSelected = false } = {}) => {
+    const newRoot = document.createElement('ul');
+    newRoot.className = 'root';
+    newRoot.id = 'files';
+    renderRoot(newRoot, ROOT_KEY, rootName, buildTree(fileNames), '');
+    const commandLeaves = commandNames.map(p => p.slice('COMMANDS/'.length));
+    renderRoot(newRoot, COMMANDS_ROOT_KEY, 'COMMANDS', buildTree(commandLeaves), 'COMMANDS');
     document.getElementById('files').replaceWith(newRoot);
     if (revealSelected) {
       requestAnimationFrame(() => {
@@ -216,6 +231,9 @@
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:files') {
       fileNames = e.data.files;
+      render();
+    } else if (e.data?.type === 'commands:files') {
+      commandNames = Object.keys(e.data.files || {}).sort();
       render();
     } else if (e.data?.type === 'vfs:reset') {
       fileNames = [];
