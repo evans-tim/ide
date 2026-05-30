@@ -7,7 +7,7 @@
 # Canvas
 - (DONE) Add canvas topbar with filename tabs, overflow scrolling, placeholder button group, and blank-canvas empty state
 - (DONE) file preview
-- md parser and preview
+- (DONE) md parser and preview
 - edit visualizer and accept/reject
 
 # Lower Panel
