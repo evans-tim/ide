@@ -311,6 +311,18 @@
 - Dragging the filename tab list's horizontal scrollbar thumb scrolls the filename tab list horizontally.
 - Wheel scrolling the filename tab list has no momentum; motion stops as soon as scroll input stops.
 
+**Canvas file breadcrumb bar**
+- Below the canvas topbar, the canvas has a file breadcrumb bar equal in height to the canvas topbar (32px).
+- The breadcrumb bar's left side displays the currently loaded file's path as a breadcrumb trail.
+- The breadcrumb trail lists every parent directory name of the current file, separated by `chevron-right.svg`, followed by the current file's file-type icon and then the file name.
+- The current file's file-type icon in the breadcrumb is resolved and rendered identically to a filename tab's file-type icon (same Seti glyph priority order, same square size, same per-extension active-theme variant color).
+- When the loaded file is a Markdown (`.md`) file, the breadcrumb bar's right side displays a `Preview` button and a `Markdown` button.
+- The `Markdown` button is the active button by default.
+- The `Preview` and `Markdown` buttons each follow the styling and functional requirements of the `Terminal` and `Problems` tabs, including their active/inactive appearance and hover behavior.
+- The `Preview` and `Markdown` buttons function as a mutually exclusive toggle: clicking one makes it the active button and the other inactive.
+- Clicking the `Preview` or `Markdown` button performs no file or view action beyond toggling which button is active.
+- When the loaded file is not a Markdown file, the breadcrumb bar's right side displays no buttons.
+
 **Filename tabs**
 - Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.
 - A filename tab's `close.svg` icon is hidden unless that tab is hovered or is the active tab; on inactive non-hovered tabs the close icon's space is preserved so revealing it causes no layout shift.

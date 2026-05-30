@@ -155,6 +155,50 @@
     cursor: pointer;
   }
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
+  .breadcrumbBar {
+    box-sizing: border-box;
+    height: 32px;
+    flex: none;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    gap: 8px;
+    cursor: default;
+    font-family: var(--ide-font-ui, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", sans-serif);
+    background: var(--editor-background);
+  }
+  body.empty .breadcrumbBar, body.settings .breadcrumbBar { display: none; }
+  .breadcrumb {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    color: var(--tab-inactiveForeground);
+  }
+  .breadcrumb .crumb { overflow: hidden; text-overflow: ellipsis; }
+  .breadcrumb .chevron { width: 16px; height: 16px; flex: none; -webkit-mask-image: url("icons/chevron-right.svg"); mask-image: url("icons/chevron-right.svg"); }
+  .breadcrumb .fileIcon { position: static; top: 0; }
+  .breadcrumb .fileName { color: var(--editor-foreground); }
+  .breadcrumbButtons { flex: none; display: flex; align-items: center; gap: 6px; }
+  .breadcrumbButtons .topbarTab {
+    border: 0;
+    background: transparent;
+    border-radius: 5px;
+    padding: 3px 10px;
+    font: inherit;
+    cursor: pointer;
+    color: var(--editor-foreground);
+    opacity: 0.6;
+  }
+  .breadcrumbButtons .topbarTab:hover { opacity: 0.8; }
+  .breadcrumbButtons .topbarTab.active {
+    background: var(--list-inactiveSelectionBackground);
+    color: var(--list-inactiveSelectionForeground, var(--editor-foreground));
+    opacity: 1;
+  }
   .editor { flex: 1; min-height: 0; background: var(--editor-background); }
   .settingsFrame { display: none; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
   body.settings .settingsFrame { display: block; }
@@ -180,6 +224,7 @@
   @keyframes blink { 50% { opacity: 0; } }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask addIcon" aria-hidden="true"></span></button><button class="topbarControl" type="button" aria-label="Placeholder"><span class="iconMask closeIcon" aria-hidden="true"></span></button></div></div>
+<div class="breadcrumbBar"><div class="breadcrumb" id="breadcrumb"></div><div class="breadcrumbButtons" id="breadcrumbButtons"></div></div>
 <div id="confirmOverlay" style="display:none; position:fixed; inset:0; z-index:100; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; font-family: var(--ide-font-ui, -apple-system, BlinkMacSystemFont, sans-serif);">
   <div style="background: var(--editorWidget-background, var(--editor-background)); color: var(--foreground, var(--editor-foreground)); border:1px solid var(--editorGroup-border); border-radius:6px; padding:16px; width:360px; box-shadow:0 4px 16px rgba(0,0,0,0.4);">
     <div id="confirmTitle" style="font-weight:600; margin-bottom:8px;"></div>
@@ -205,6 +250,9 @@
   let activeTabHistory = [];
   const SETTINGS_TAB_NAME = '__settings__';
   const tabsEl = document.querySelector('.tabs');
+  const breadcrumbEl = document.getElementById('breadcrumb');
+  const breadcrumbButtonsEl = document.getElementById('breadcrumbButtons');
+  let mdView = 'markdown';
   const tabArea = document.querySelector('.tabArea');
   const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
   const settingsFrame = document.getElementById('settingsFrame');
@@ -475,11 +523,54 @@
       return tabEl;
     }));
 
+    renderBreadcrumb();
+
     requestAnimationFrame(() => {
       updateTabScrollbar();
       const activeTabEl = tabsEl.querySelector('.tab.active');
       if (activeTabEl) activeTabEl.scrollIntoView({ block: 'nearest', inline: 'nearest' });
     });
+  }
+
+  function renderBreadcrumb() {
+    const tab = activeEditableFileTab();
+    breadcrumbEl.replaceChildren();
+    breadcrumbButtonsEl.replaceChildren();
+    if (!tab) return;
+
+    const parts = tab.name.split('/');
+    parts.slice(0, -1).forEach(dir => {
+      const crumb = document.createElement('span');
+      crumb.className = 'crumb';
+      crumb.textContent = dir;
+      breadcrumbEl.append(crumb);
+      const chevron = document.createElement('span');
+      chevron.className = 'iconMask chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      breadcrumbEl.append(chevron);
+    });
+
+    const icon = document.createElement('span');
+    icon.className = 'fileIcon';
+    icon.setAttribute('aria-hidden', 'true');
+    const glyph = fileIconFor(tab.name);
+    icon.textContent = glyph.char;
+    icon.style.color = glyph.color;
+    const name = document.createElement('span');
+    name.className = 'crumb fileName';
+    name.textContent = baseName(tab.name);
+    breadcrumbEl.append(icon, name);
+
+    if (baseName(tab.name).toLowerCase().endsWith('.md')) {
+      for (const view of ['preview', 'markdown']) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'topbarTab' + (mdView === view ? ' active' : '');
+        btn.textContent = view === 'preview' ? 'Preview' : 'Markdown';
+        btn.addEventListener('click', () => { mdView = view; renderBreadcrumb(); });
+        breadcrumbButtonsEl.append(btn);
+      }
+    }
   }
 
   function updateTabScrollbar() {
@@ -781,6 +872,7 @@
     if (closestTarget(e.target, '#confirmOverlay')) return;
     if (confirmOverlay.style.display !== 'none') return;
     if (closestTarget(e.target, '.topbar')) return;
+    if (closestTarget(e.target, '.breadcrumbBar')) return;
     if (document.body.classList.contains('empty')) return;
     if (closestTarget(e.target, '.gutter')) return;
     const start = positionFromEvent(e);
@@ -846,6 +938,7 @@
 
   document.addEventListener('dblclick', e => {
     if (closestTarget(e.target, '.topbar')) return;
+    if (closestTarget(e.target, '.breadcrumbBar')) return;
     if (document.body.classList.contains('empty')) return;
     if (closestTarget(e.target, '.gutter')) return;
     const pos = positionFromEvent(e, 'character');
