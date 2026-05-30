@@ -18,6 +18,23 @@
     align-items: center;
     background: var(--terminal-background, var(--panel-background));
   }
+  .topbarTab {
+    border: 0;
+    background: transparent;
+    border-radius: 5px;
+    padding: 3px 10px;
+    margin-left: 6px;
+    font: inherit;
+    cursor: pointer;
+    color: var(--panel-foreground);
+    opacity: 0.6;
+  }
+  .topbarTab:hover { opacity: 0.8; }
+  .topbarTab.active {
+    background: var(--list-inactiveSelectionBackground);
+    color: black;
+    opacity: 1;
+  }
   .topbarControl {
     width: 20px;
     height: 20px;
@@ -83,11 +100,12 @@
   .tabControl.split .icon { -webkit-mask-image: url(icons/split-horizontal.svg); mask-image: url(icons/split-horizontal.svg); }
   .tabControl.trash .icon { -webkit-mask-image: url(icons/trash.svg); mask-image: url(icons/trash.svg); }
 </style>
-<div class="topbar"><button class="topbarControl" id="add" type="button" aria-label="Add terminal"><span class="icon"></span></button></div>
-<div class="body">
+<div class="topbar"><button class="topbarTab" id="serverTab" type="button">Server</button><button class="topbarTab active" id="terminalTab" type="button">Terminal</button><button class="topbarControl" id="add" type="button" aria-label="Add terminal"><span class="icon"></span></button></div>
+<div class="body" id="terminalBody">
   <div class="terms" id="terms"></div>
   <div class="tabPane" id="tabPane"></div>
 </div>
+<div class="body" id="serverBody" style="display: none; align-items: center; padding: 8px;"><span>server tab</span></div>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
 <script>
@@ -350,6 +368,23 @@
   };
 
   document.getElementById('add').onclick = createTerminal;
+
+  const serverTabEl = document.getElementById('serverTab');
+  const terminalTabEl = document.getElementById('terminalTab');
+  const terminalBodyEl = document.getElementById('terminalBody');
+  const serverBodyEl = document.getElementById('serverBody');
+  const addEl = document.getElementById('add');
+  const setActiveTab = tab => {
+    const terminal = tab === 'terminal';
+    terminalTabEl.classList.toggle('active', terminal);
+    serverTabEl.classList.toggle('active', !terminal);
+    terminalBodyEl.style.display = terminal ? 'flex' : 'none';
+    serverBodyEl.style.display = terminal ? 'none' : 'flex';
+    addEl.style.display = terminal ? '' : 'none';
+    if (terminal) fitAll();
+  };
+  terminalTabEl.onclick = () => setActiveTab('terminal');
+  serverTabEl.onclick = () => setActiveTab('server');
 
   tabPaneEl.addEventListener('mousedown', event => {
     if (!event.target.closest('.tab')) clearTabSelection();
