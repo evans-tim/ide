@@ -187,9 +187,9 @@
 - Hovering an inactive tab gives it a slightly emphasized background relative to its default inactive tab background.
 - While a tab has a submission running, its `chat.svg` icon is replaced by `spinner.svg`.
 - The active tab background matches the main right panel background, not the right panel topbar background.
-- The active tab has a 1px border on its left, right, and bottom edges; its bottom border matches the main right panel background so switching tabs causes no 1px layout shift.
+- The active tab has a 1px border on its right edge only, to avoid doubled borders between adjacent tabs.
 - Inactive tab backgrounds match the right panel topbar background.
-- Inactive tabs have a 1px border on their left, right, and bottom edges.
+- Inactive tabs have a 1px border on their right edge only, to avoid doubled borders between adjacent tabs.
 - Clicking the `add.svg` control creates a new agent tab at the end of the current tab list.
 - The newly-created tab becomes the active tab immediately.
 - The button group div containing the `add.svg` control has a left border separating it from the scrollable tab list.
@@ -393,9 +393,9 @@
 - The parent directory name in a conflicting filename tab uses a smaller font than the file name.
 - The parent directory name participates in the same tab-width limit and may be fully or partially hidden by ellipsis.
 - The active filename tab background matches the canvas background, not the canvas topbar background.
-- The active filename tab has a 1px border on its left, right, and bottom edges; its bottom border matches the canvas background so switching tabs causes no 1px layout shift.
+- The active filename tab has a 1px border on its right edge only, to avoid doubled borders between adjacent tabs.
 - Inactive filename tab backgrounds match the canvas topbar background.
-- Inactive filename tabs have a 1px border on their left, right, and bottom edges.
+- Inactive filename tabs have a 1px border on their right edge only, to avoid doubled borders between adjacent tabs.
 - Each filename tab grows only as wide as needed for its file name and controls, up to a maximum width of 200px.
 - Filename text that exceeds the available tab width is truncated with an ellipsis.
 - Opening a file that is not already open in the filename tabs creates a new filename tab immediately to the right of the currently active filename tab.
