@@ -25,13 +25,16 @@
   .guide.dim { opacity: 0; }
   body.hovering .guide.dim { opacity: 0.5; }
   .guide.on-selected { opacity: 1; }
+  .row.root-row > span:last-child { font-weight: bold; }
 </style>
 <ul id="files" class="root"></ul>
 <script>
   let fileNames = [];
   let selectedPath = null;
   let selectedType = null;
-  const expanded = new Set();
+  let rootName = '';
+  const ROOT_KEY = '\u0000root';
+  const expanded = new Set([ROOT_KEY]);
   const ROW_PAD_LEFT = 12;
   const GUIDE_ICON_MARGIN = 5;
   const rowIconLeft = depth => ROW_PAD_LEFT + depth * GUIDE_ICON_MARGIN;
@@ -157,8 +160,31 @@
 
   const render = ({ revealSelected = false } = {}) => {
     const tree = buildTree(fileNames);
-    const newRoot = renderNode(tree, '', 0);
+    const newRoot = document.createElement('ul');
+    newRoot.className = 'root';
     newRoot.id = 'files';
+    const li = document.createElement('li');
+    const row = document.createElement('div');
+    row.className = 'row dir root-row';
+    row.style.paddingLeft = rowIconLeft(0) + 'px';
+    const caret = document.createElement('span');
+    caret.className = 'caret';
+    if (expanded.has(ROOT_KEY)) caret.classList.add('expanded');
+    row.appendChild(caret);
+    const label = document.createElement('span');
+    label.textContent = (rootName || '').toUpperCase();
+    row.appendChild(label);
+    if (selectedType === 'dir' && selectedPath === ROOT_KEY) row.classList.add('selected');
+    row.onclick = () => {
+      selectedPath = ROOT_KEY;
+      selectedType = 'dir';
+      if (expanded.has(ROOT_KEY)) expanded.delete(ROOT_KEY);
+      else expanded.add(ROOT_KEY);
+      render();
+    };
+    li.appendChild(row);
+    if (expanded.has(ROOT_KEY)) li.appendChild(renderNode(tree, '', 1));
+    newRoot.appendChild(li);
     document.getElementById('files').replaceWith(newRoot);
     if (revealSelected) {
       requestAnimationFrame(() => {
@@ -176,12 +202,18 @@
       selectedPath = null;
       selectedType = null;
       expanded.clear();
+      expanded.add(ROOT_KEY);
       render();
     } else if (e.data?.type === 'vfs:selected') {
       selectedPath = e.data.name;
       selectedType = selectedPath ? 'file' : null;
       expandAncestors(selectedPath);
       render({ revealSelected: true });
+    } else if (e.data?.type === 'settings:directory') {
+      const value = e.data.value || '';
+      const parts = value.replace(/[\/\\]+$/, '').split(/[\/\\]/);
+      rootName = parts[parts.length - 1] || value;
+      render();
     } else if (e.data?.type === 'settings:theme') {
       themeVariant = e.data.value === 'light' ? 'light' : 'dark';
       render();

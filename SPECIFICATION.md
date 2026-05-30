@@ -142,6 +142,8 @@
 - When a filename tab selects a file, every collapsed ancestor directory of that file expands before the selected file row is highlighted, so the highlighted row is visible in the file tree.
 - When the left pane is focused, the selected file row additionally shows a slightly darker 1px top and bottom border; when the left pane is unfocused, the selection highlight remains but the borders are absent.
 - Hovering a file row uses the relevant Cursor list-selection style without top and bottom border.
+- The file tree's top-level entries are nested under a single root directory row whose label is the mounted workspace directory's base name rendered in all caps with a bold font weight.
+- The root directory row is collapsible like any other directory row; collapsing it hides the entire tree and expanding it restores the previous expansion state of its descendants.
 - A directory row displays a caret icon followed by the directory name.
 - Clicking a directory row selects that directory row and toggles it between collapsed and expanded.
 - The selected directory row uses the relevant Cursor list-selection style, and distinguishes focused vs. unfocused states.
