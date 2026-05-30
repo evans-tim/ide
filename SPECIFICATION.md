@@ -160,6 +160,14 @@
 - When the mouse is outside the left pane, only indent guides for the single parent directory immediately containing the selected file are visible.
 - Indent guides for directories containing the selected file are slightly darker than hover-only indent guides.
 
+**File tree scrolling**
+- The file tree scrolls vertically when its content exceeds the available height, and it uses the same scrolling behavior as the canvas editor.
+- The file tree's vertical scrollbar space is always reserved; the scrollbar's appearance causes no layout shift.
+- The file tree scrollbar gutter background matches the file tree background.
+- The file tree scrollbar thumb has square corners and fills the full width of the gutter.
+- File tree scrolling has no momentum; motion stops as soon as scroll input stops.
+- The file tree has no horizontal scroll.
+
 
 
 
