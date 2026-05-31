@@ -392,6 +392,15 @@
 - Clicking a submitted user message panel to edit it restores full command span behavior at the original positions within the in-place prompt composer.
 - Re-submitting an in-place prompt composer preserves the remaining command spans in the resulting submitted user message panel.
 
+**Slash command resolution when sending to the LLM**
+- The conversation sent to the LLM is a text serialization of each user message, distinct from its rendered UI representation; the UI rendering of command spans is never altered by this resolution.
+- When a user message is serialized for the LLM, every command span within it is replaced by that command's current body text, resolved from the live in-memory `COMMANDS/{command-title}.md` contents at the moment of submission.
+- The command span's body text replaces the span at its exact position in the surrounding message text, so the resolved body is inlined inline with any other text and mentions in that message.
+- Body resolution applies to every command span in every user message of the conversation, including command spans from prior turns, not only the message being submitted in the current turn.
+- A multiturn conversation sent to the LLM therefore contains the resolved body text for every command span across all turns, while the right panel continues to display those command spans verbatim as command spans.
+- If a command's `COMMANDS` body has been edited and saved since a command span was inserted in an earlier turn, the resolution uses the latest saved body at the current submission time for that earlier span as well.
+- File mention spans continue to serialize by their own existing rule and are unaffected by command-span body resolution.
+
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
 - Submitting the chat calls the active chat's title function.

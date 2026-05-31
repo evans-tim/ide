@@ -922,10 +922,28 @@
     };
   }
 
+  function serializeForLLM(turn) {
+    const html = turn.html != null ? turn.html : escapeHtml(turn.text);
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    let text = '';
+    for (const node of container.childNodes) {
+      if (node.nodeType === Node.TEXT_NODE) text += node.textContent;
+      else if (node.classList && node.classList.contains('command')) {
+        const command = commandByTitle(node.dataset.title);
+        text += command ? command.body : '/' + node.dataset.title;
+      }
+      else if (node.classList && node.classList.contains('mention')) text += '@' + node.dataset.path;
+      else if (node.nodeName === 'BR') text += '\n';
+      else text += node.textContent;
+    }
+    return text;
+  }
+
   function conversationMessages(tab, throughText) {
     const history = [];
     for (const turn of tab.turns) {
-      history.push({ role: 'user', content: turn.text });
+      history.push({ role: 'user', content: serializeForLLM(turn) });
       if (turn.text === throughText) break;
       history.push({ role: 'assistant', content: turn.responseText });
     }
