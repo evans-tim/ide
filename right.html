@@ -922,7 +922,17 @@
     };
   }
 
-  function serializeForLLM(turn) {
+  const pendingReads = new Map();
+  function readFileContent(path) {
+    return new Promise(resolve => {
+      let list = pendingReads.get(path);
+      if (!list) { list = []; pendingReads.set(path, list); }
+      list.push(resolve);
+      parent.postMessage({ type: 'vfs:read', name: path }, '*');
+    });
+  }
+
+  async function serializeForLLM(turn) {
     const html = turn.html != null ? turn.html : escapeHtml(turn.text);
     const container = document.createElement('div');
     container.innerHTML = html;
@@ -933,17 +943,20 @@
         const command = commandByTitle(node.dataset.title);
         text += command ? command.body : '/' + node.dataset.title;
       }
-      else if (node.classList && node.classList.contains('mention')) text += '@' + node.dataset.path;
+      else if (node.classList && node.classList.contains('mention')) {
+        const path = node.dataset.path;
+        text += path.split('/').pop() + ':\n' + await readFileContent(path);
+      }
       else if (node.nodeName === 'BR') text += '\n';
       else text += node.textContent;
     }
     return text;
   }
 
-  function conversationMessages(tab, throughText) {
+  async function conversationMessages(tab, throughText) {
     const history = [];
     for (const turn of tab.turns) {
-      history.push({ role: 'user', content: serializeForLLM(turn) });
+      history.push({ role: 'user', content: await serializeForLLM(turn) });
       if (turn.text === throughText) break;
       history.push({ role: 'assistant', content: turn.responseText });
     }
@@ -963,7 +976,7 @@
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: conversationMessages(tab, turn.text) }),
+        body: JSON.stringify({ messages: await conversationMessages(tab, turn.text) }),
         signal: controller.signal,
       });
       const reader = response.body.getReader();
@@ -1353,6 +1366,13 @@
     else if (message.type === 'right:reset') resetWorkspace();
     else if (message.type === 'canvas:tabs') openTabNames = message.names || [];
     else if (message.type === 'vfs:files') workspaceFiles = message.files || [];
+    else if (message.type === 'vfs:content') {
+      const list = pendingReads.get(message.name);
+      if (list) {
+        pendingReads.delete(message.name);
+        for (const resolve of list) resolve(message.content ?? '');
+      }
+    }
     else if (message.type === 'commands:files') setCommandsFromVfs(message.files);
     else if (message.type === 'settings:theme') themeVariant = message.value === 'light' ? 'light' : 'dark';
   });

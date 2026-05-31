@@ -183,6 +183,13 @@
       if (f.contentWindow !== from) f.contentWindow.postMessage(msg, '*');
     }
   };
+  const readFile = async name => {
+    if (isCommandPath(name)) return commandsVfs[name] ?? '';
+    if (browserVfs) return browserVfs[name] ?? '';
+    const res = await fetch('/api/file?path=' + encodeURIComponent(name));
+    const data = await res.json();
+    return data.content ?? '';
+  };
   const openFile = async (name, from) => {
     if (isCommandPath(name)) {
       broadcast({ type: 'vfs:opened', name, content: commandsVfs[name] ?? '' }, from);
@@ -226,6 +233,8 @@
       saveFile(m.name, m.content, e.source);
     } else if (m.type === 'vfs:open') {
       openFile(m.name, e.source);
+    } else if (m.type === 'vfs:read') {
+      readFile(m.name).then(content => e.source.postMessage({ type: 'vfs:content', name: m.name, content }, '*'));
     } else if (m.type === 'vfs:select') {
       broadcast({ type: 'vfs:selected', name: m.name }, e.source);
     } else if (m.type === 'settings:theme') {

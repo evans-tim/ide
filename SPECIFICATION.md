@@ -401,6 +401,15 @@
 - If a command's `COMMANDS` body has been edited and saved since a command span was inserted in an earlier turn, the resolution uses the latest saved body at the current submission time for that earlier span as well.
 - File mention spans continue to serialize by their own existing rule and are unaffected by command-span body resolution.
 
+**File mention content replacement when sending to the LLM**
+- When a user message is serialized for the LLM, every file mention span within it is replaced by the entire current contents of the mentioned file, prepended with the file's name followed by a colon and a single newline (`{filename}:\n`).
+- The mentioned file's full contents are inlined verbatim, as-is, with no truncation, summarization, or other transformation.
+- The file contents replace the mention span at its exact position in the surrounding message text, inlined inline with any other text and command spans in that message.
+- File content replacement applies to every file mention span in every user message of the conversation, including mentions from prior turns, not only the message being submitted in the current turn.
+- The mentioned file's contents are resolved from the current VFS contents at the moment of submission, so a multiturn conversation sent to the LLM contains the latest contents for every mentioned file across all turns.
+- This replacement affects only the LLM text serialization; the UI rendering of file mention spans is never altered, and the right panel continues to display those mention spans verbatim.
+- Command spans are unaffected by file mention content replacement and continue to be serialized by their own existing command-span body resolution rule.
+
 **Submission**
 - Submitting the chat clears the composer text and places the full composer, including its text area and bottom affordance area, at the bottom of the right panel.
 - Submitting the chat calls the active chat's title function.
