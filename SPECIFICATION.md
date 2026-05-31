@@ -233,6 +233,20 @@
 - The `close.svg` icon renders at 12px by 12px.
 - The `add.svg` icon renders at 12px by 12px.
 
+**Chat history modal**
+- Clicking the `clockface.svg` control opens a chat history popup modal beneath it.
+- The modal's top-right corner is aligned with the bottom-left corner of the clockface control.
+- The modal casts a shadow on its edges and has rounded corners, matching the file-mention autocomplete modal's shadow and corner styling.
+- The modal lists every chat that has occurred since the server was started, one item per row, in the same single-row hover-styled list layout as the file-mention autocomplete items.
+- The chat history is held in server memory and is cleared when the server restarts; chats from prior server runs are not listed.
+- Each chat history item displays that chat's title, truncated with a trailing ellipsis when there is not enough room.
+- Hovering a chat history item gives it the emphasized background; at most one item has the emphasized background at any time.
+- The first item in the list is highlighted by default.
+- Clicking a chat history item, or pressing Enter while it is highlighted, opens that chat.
+- Opening a chat that is not currently open in any agent tab opens it in a new agent tab.
+- Opening a chat that is already open in an agent tab activates that existing tab instead of creating a duplicate.
+- Clicking outside the open chat history modal closes the modal.
+
 **Tabs**
 - Each tab contains the `chat.svg` icon, its title text, and its adjacent `close.svg` icon.
 - A tab's `close.svg` icon is hidden unless that tab is hovered or is the active tab; on inactive non-hovered tabs the close icon's space is preserved so revealing it causes no layout shift.

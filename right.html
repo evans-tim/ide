@@ -408,6 +408,27 @@
     pointer-events: none;
   }
   .commandPreview .commandTitle { color: var(--foreground, var(--editor-foreground)); }
+  .historyMenu {
+    position: fixed;
+    width: 200px;
+    z-index: 10;
+    background: var(--editorSuggestWidget-background, var(--editor-background));
+    border: 1px solid var(--editorSuggestWidget-border, var(--editorGroup-border));
+    border-radius: 5px;
+    box-shadow: -1px 1px 3px rgba(0, 0, 0, 0.12), 1px 1px 3px rgba(0, 0, 0, 0.12);
+  }
+  .historyItem {
+    box-sizing: border-box;
+    margin: 2px;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .historyItem.highlighted { background: var(--editorSuggestWidget-selectedBackground, var(--list-activeSelectionBackground)); border-radius: 4px; }
+  .historyItem .historyTitle { color: var(--editorSuggestWidget-foreground, var(--foreground, var(--editor-foreground))); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button><button class="topbarControl clockControl" type="button" aria-label="History"><span class="iconMask clockIcon"></span></button></div></div>
 <div class="content">
@@ -421,6 +442,7 @@
 </div>
 <div class="mentionMenu" style="display: none;"></div>
 <div class="commandMenu mentionMenu" style="display: none;"></div>
+<div class="historyMenu" style="display: none;"></div>
 <script>
   const tabsEl = document.querySelector('.tabs');
   const tabArea = document.querySelector('.tabArea');
@@ -830,6 +852,21 @@
     else if (tab.editingTurnIndex !== null) tab.editingDraft = activeEditor.innerHTML;
   }
 
+  const historyMenu = document.querySelector('.historyMenu');
+  const clockControl = document.querySelector('.clockControl');
+  const chatHistory = [];
+
+  function recordHistory(tab) {
+    let entry = chatHistory.find(item => item.id === tab.id);
+    if (!entry) {
+      entry = { id: tab.id };
+      chatHistory.push(entry);
+    }
+    entry.title = tab.title;
+    entry.turns = tab.turns;
+    entry.draft = tab.draft;
+  }
+
   const tabs = [createTab(1)];
   const DEFAULT_RESPONSE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
   const DEFAULT_RESPONSE_TOKENS = DEFAULT_RESPONSE.split(' ');
@@ -869,6 +906,7 @@
   function setChatTitleFromPrompt(tab, promptText) {
     if (tab.title !== 'New Agent') return;
     tab.title = promptText;
+    recordHistory(tab);
   }
 
   function clearTurnTimers(turn) {
@@ -1131,6 +1169,7 @@
     if (index === -1) return;
 
     const [closedTab] = tabs.splice(index, 1);
+    if (closedTab.title !== 'New Agent') recordHistory(closedTab);
     for (const turn of closedTab.turns) clearTurnTimers(turn);
     activeTabHistory = activeTabHistory.filter(tabId => tabId !== id);
 
@@ -1291,6 +1330,82 @@
     }
 
     submitChat();
+  });
+
+  function openHistoryChat(entry) {
+    closeHistoryMenu();
+    const existing = tabs.find(tab => tab.id === entry.id);
+    if (existing) {
+      switchTab(existing.id);
+      return;
+    }
+    saveActiveDraft();
+    const tab = createTab(entry.id);
+    tab.title = entry.title;
+    tab.draft = entry.draft || '';
+    tab.turns = entry.turns || [];
+    for (const turn of tab.turns) {
+      clearTurnTimers(turn);
+      turn.responding = false;
+    }
+    tabs.push(tab);
+    activeTabId = tab.id;
+    activeTabHistory = activeTabHistory.filter(tabId => tabId !== tab.id);
+    activeTabHistory.push(tab.id);
+    renderActiveTab();
+  }
+
+  function closeHistoryMenu() {
+    historyMenu.style.display = 'none';
+    historyMenu.replaceChildren();
+  }
+
+  function openHistoryMenu() {
+    if (chatHistory.length === 0) return;
+    historyMenu.replaceChildren(...chatHistory.map((entry, index) => {
+      const item = document.createElement('div');
+      item.className = index === 0 ? 'historyItem highlighted' : 'historyItem';
+      item.addEventListener('mouseenter', () => {
+        for (const other of historyMenu.children) other.classList.remove('highlighted');
+        item.classList.add('highlighted');
+      });
+      item.addEventListener('mousedown', event => {
+        event.preventDefault();
+        openHistoryChat(entry);
+      });
+      const titleEl = document.createElement('span');
+      titleEl.className = 'historyTitle';
+      titleEl.textContent = entry.title;
+      item.append(titleEl);
+      return item;
+    }));
+
+    historyMenu.style.display = 'block';
+    const rect = clockControl.getBoundingClientRect();
+    historyMenu.style.left = (rect.left - historyMenu.offsetWidth) + 'px';
+    historyMenu.style.top = rect.bottom + 'px';
+  }
+
+  clockControl.addEventListener('click', event => {
+    event.stopPropagation();
+    if (historyMenu.style.display === 'block') closeHistoryMenu();
+    else openHistoryMenu();
+  });
+  document.addEventListener('mousedown', event => {
+    if (historyMenu.style.display !== 'block') return;
+    if (historyMenu.contains(event.target) || clockControl.contains(event.target)) return;
+    closeHistoryMenu();
+  });
+  historyMenu.addEventListener('keydown', () => {});
+  document.addEventListener('keydown', event => {
+    if (historyMenu.style.display !== 'block') return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const highlighted = historyMenu.querySelector('.historyItem.highlighted');
+      if (highlighted) highlighted.dispatchEvent(new MouseEvent('mousedown'));
+    } else if (event.key === 'Escape') {
+      closeHistoryMenu();
+    }
   });
 
   document.querySelector('.addControl').addEventListener('click', addTab);
