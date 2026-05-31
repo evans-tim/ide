@@ -141,6 +141,14 @@
   }
   .topbarControl:hover { background: var(--list-inactiveSelectionBackground); }
   .topbarControl img { width: 12px; height: 12px; display: block; }
+  .addControl { margin-left: 8px; }
+  .clockControl { margin-left: 2px; }
+  .clockIcon {
+    width: 12px;
+    height: 12px;
+    -webkit-mask-image: url("icons/clockface.svg");
+    mask-image: url("icons/clockface.svg");
+  }
   .content { box-sizing: border-box; min-height: 0; flex: 1; padding: 12px 0 12px 12px; display: flex; flex-direction: column; gap: 12px; }
   .messages {
     display: none;
@@ -401,7 +409,7 @@
   }
   .commandPreview .commandTitle { color: var(--foreground, var(--editor-foreground)); }
 </style>
-<div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button></div></div>
+<div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button><button class="topbarControl clockControl" type="button" aria-label="History"><span class="iconMask clockIcon"></span></button></div></div>
 <div class="content">
   <div class="messages"></div>
   <div class="prompt">
