@@ -415,11 +415,14 @@
 - Submitting from an in-place prompt composer replaces that user message with the submitted text, submits the conversation from that point, and removes every later message and response from the conversation history.
 - While a submitted user message panel is hovered, a rounded stop control appears inside the panel on the right-hand side for as long as the response to that message is not complete.
 - Immediately after chat submission, `Planning next moves` displays beneath the just-submitted user message panel with 12px of margin above it.
-- After 500ms, `Planning next moves` is replaced by the default response stream.
-- The default response is `Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.`
-- Response tokens are delimited by spaces only.
-- The default response streams one token every 50ms until all tokens have displayed, then the response is complete.
-- Subsequent submissions append a new user message panel beneath the previous response, followed by its own streamed default response; prior messages and responses remain visible above.
+- The response is produced by a single hardcoded LLM model; submitting a prompt sends the conversation to the model and begins streaming its response into the active chat.
+- `Planning next moves` displays until the first response token arrives, then is replaced by the streaming response.
+- Response tokens render incrementally as they arrive, appended in order, until the model finishes.
+- When the model finishes on its own, the streamed text becomes the final response and the chat exits the stop state back to the send state.
+- Pressing the stop control while a response is streaming aborts the in-flight request and stops further tokens from arriving.
+- Aborting via stop finalizes the tokens already received as the completed response and exits the stop state back to the send state; an aborted response is indistinguishable from a completed one except that it contains only the tokens received before the abort.
+- Each chat tab streams its response independently, so a response streaming or aborting in one tab does not affect any other tab's conversation or composer state.
+- Subsequent submissions append a new user message panel beneath the previous response, followed by its own streamed response; prior messages and responses remain visible above.
 - The conversation area scrolls vertically when its content exceeds the available height; the composer remains pinned to the bottom of the right panel.
 
 **Right panel spacing**

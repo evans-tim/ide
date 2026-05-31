@@ -18,8 +18,7 @@
 # Right Panel
 - (DONE) at file feature
 - (DONE) slash commands
-- chat history 
-- chat history chat preview 
+- (DONE) chat history 
 - show context usage
 - real LLM
 - choose model
