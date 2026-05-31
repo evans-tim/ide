@@ -95,6 +95,9 @@ const server = http.createServer((req, res) => {
       req.on('close', () => result.textStream.cancel?.());
       for await (const delta of result.textStream) res.write(delta);
       res.end();
+      const usage = await result.usage;
+      const cost = (usage.inputTokens / 1e6) * 1 + (usage.outputTokens / 1e6) * 5;
+      console.log(`[cost] in=${usage.inputTokens} out=${usage.outputTokens} $${cost.toFixed(6)}`);
     }).catch(err => {
       if (!res.headersSent) sendJson(res, 500, { error: err.message });
       else res.end();
