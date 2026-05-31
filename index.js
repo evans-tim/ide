@@ -100,11 +100,11 @@ const server = http.createServer((req, res) => {
   }
   if (req.url === '/api/chat' && req.method === 'POST') {
     readBody(req).then(async body => {
-      const { messages } = JSON.parse(body);
+      const { messages, system } = JSON.parse(body);
       const { streamText } = await aiModule;
       const { anthropic } = await anthropicModule;
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-      const result = streamText({ model: anthropic(MODEL), messages });
+      const result = streamText({ model: anthropic(MODEL), messages, ...(system ? { system } : {}) });
       req.on('close', () => result.textStream.cancel?.());
       for await (const delta of result.textStream) res.write(delta);
       res.end();

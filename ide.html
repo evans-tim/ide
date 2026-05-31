@@ -69,10 +69,22 @@
     [`${COMMANDS_DIR}/index.md`]: 'Single sentence responses only.',
     [`${COMMANDS_DIR}/deobfuscation.md`]: 'The core problem is detecting and efficiently resolving cascading semantic reinterpretations of code primitives as higher-level usage contexts are discovered during bottom up deobfuscation. ',
     [`${COMMANDS_DIR}/density.md`]: 'The core problem is organizing code to maximize local dependency density so that related definitions, usages, and their semantic relationships appear within LLM context windows, enabling accurate prediction of code behavior without long-range reasoning.',
+    [`${COMMANDS_DIR}/spec.md`]: `write inline md in the style of specification.md (focus on the logical and behavior specification rather than the implementation details)
+
+When reading files to increase your understanding, READ THE ENTIRE CONTENTS OF THE FILE INSTEAD OF USING RG OR GREP. 
+
+Limit the "spec blast radius": when a new clause could be read as altering an adjacent already-specified governed object, explicitly carve out that governed object so it stays bound by its original clause — e.g. "X is unaffected by Y and continues to behave by its own existing rule."`,
   };
   const isCommandPath = name => typeof name === 'string' && name.startsWith(COMMANDS_DIR + '/');
   const commandsFiles = () => Object.keys(commandsVfs);
   const broadcastCommands = () => broadcast({ type: 'commands:files', files: commandsVfs });
+
+  const SYSTEM_DIR = 'SYSTEM';
+  const systemVfs = {
+    [`${SYSTEM_DIR}/system.md`]: 'Single sentence responses only.',
+  };
+  const isSystemPath = name => typeof name === 'string' && name.startsWith(SYSTEM_DIR + '/');
+  const broadcastSystem = () => broadcast({ type: 'system:files', files: systemVfs });
 
   const themeFiles = {
     light: 'cursor-light-theme.json',
@@ -135,6 +147,7 @@
   const sendFiles = async target => {
     target.postMessage({ type: 'vfs:files', files: await loadFiles() }, '*');
     target.postMessage({ type: 'commands:files', files: commandsVfs }, '*');
+    target.postMessage({ type: 'system:files', files: systemVfs }, '*');
   };
   const resetMountedWorkspace = async () => {
     broadcast({ type: 'vfs:reset' });
@@ -179,6 +192,7 @@
     }
   };
   const readFile = async name => {
+    if (isSystemPath(name)) return systemVfs[name] ?? '';
     if (isCommandPath(name)) return commandsVfs[name] ?? '';
     if (browserVfs) return browserVfs[name] ?? '';
     const res = await fetch('/api/file?path=' + encodeURIComponent(name));
@@ -186,6 +200,10 @@
     return data.content ?? '';
   };
   const openFile = async (name, from) => {
+    if (isSystemPath(name)) {
+      broadcast({ type: 'vfs:opened', name, content: systemVfs[name] ?? '' }, from);
+      return;
+    }
     if (isCommandPath(name)) {
       broadcast({ type: 'vfs:opened', name, content: commandsVfs[name] ?? '' }, from);
       return;
@@ -199,6 +217,12 @@
     broadcast({ type: 'vfs:opened', name, content: data.content ?? '' }, from);
   };
   const saveFile = async (name, content, from) => {
+    if (isSystemPath(name)) {
+      systemVfs[name] = content;
+      from.postMessage({ type: 'vfs:saved', name }, '*');
+      broadcastSystem();
+      return;
+    }
     if (isCommandPath(name)) {
       commandsVfs[name] = content;
       from.postMessage({ type: 'vfs:saved', name }, '*');
@@ -224,6 +248,8 @@
       sendFiles(e.source);
     } else if (m.type === 'commands:list') {
       e.source.postMessage({ type: 'commands:files', files: commandsVfs }, '*');
+    } else if (m.type === 'system:list') {
+      e.source.postMessage({ type: 'system:files', files: systemVfs }, '*');
     } else if (m.type === 'vfs:save') {
       saveFile(m.name, m.content, e.source);
     } else if (m.type === 'vfs:open') {

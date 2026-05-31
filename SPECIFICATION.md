@@ -117,6 +117,21 @@
 - Saving a `COMMANDS` command file updates that command's body in memory; the slash-command body, body-preview modal, and inserted command span body all reflect the updated saved body.
 - A command's `COMMANDS` file contents and that command's slash-command body are the same single in-memory source of truth.
 
+**Virtual SYSTEM directory**
+- The file tree displays a virtual `SYSTEM` root directory row at the same top level as the `COMMANDS` root directory row, rendered in all caps with a bold font weight identically to the `COMMANDS` directory row.
+- The `SYSTEM` directory is backed by an in-memory virtual filesystem, not by the mounted workspace directory or any on-disk file.
+- The `SYSTEM` directory contains exactly one Markdown (`.md`) file named `system.md`, with initial contents `Single sentence responses only.`
+- The `SYSTEM` directory and its `system.md` file behave like ordinary file tree directory and file rows for icon resolution, selection, focus, expansion, hover, indent guides, and click-to-open.
+- The `SYSTEM` directory is independent of the mounted workspace directory and persists when the mounted workspace directory changes; changing the mounted directory does not clear, reload, or remove the `SYSTEM` directory or its in-memory edits.
+- Clicking the `system.md` file row opens it in the canvas exactly like any other file, including Markdown preview/source toggling.
+- The `system.md` file is editable and saveable in the canvas exactly like any mounted file: edits mark its filename tab dirty, and Cmd+S (or the save confirmation flow) writes the in-memory changes back to the in-memory `SYSTEM` virtual filesystem.
+- The `SYSTEM` directory is unaffected by the `COMMANDS` directory's command-file behavior and continues to behave by its own rules; it has no slash-command association and its file is not a command file.
+
+**System prompt sourced from SYSTEM**
+- The system prompt is read from the live in-memory contents of the `SYSTEM/system.md` file.
+- Whenever a prompt is sent to the LLM, the current `SYSTEM/system.md` contents are sent as the system prompt for that request, resolved at the moment of submission.
+- Editing and saving the `SYSTEM/system.md` file causes subsequent submissions to use the updated saved system prompt text.
+
 **Slash command body sourced from COMMANDS**
 - A slash command's body is read from the live in-memory contents of its corresponding `COMMANDS/{command-title}.md` file.
 - When a command span is inserted into the composer and the prompt is submitted, the submitted command resolves its body from the current saved `COMMANDS` file contents at submission time.

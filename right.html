@@ -976,7 +976,7 @@
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: await conversationMessages(tab, turn.text) }),
+        body: JSON.stringify({ messages: await conversationMessages(tab, turn.text), system: await readFileContent('SYSTEM/system.md') }),
         signal: controller.signal,
       });
       const reader = response.body.getReader();
