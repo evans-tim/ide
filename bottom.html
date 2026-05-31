@@ -392,8 +392,13 @@
   });
 
   const applyTheme = () => { for (const s of sessions.values()) s.term.options.theme = themeOptions(); };
+  const resetTerminals = () => {
+    for (const id of [...sessions.keys()]) killTerminal(id);
+    createTerminal();
+  };
   addEventListener('message', e => {
     if (e.data?.type === 'settings:theme') requestAnimationFrame(applyTheme);
+    else if (e.data?.type === 'terminal:reset') resetTerminals();
   });
 
   createTerminal();

@@ -91,11 +91,17 @@
 - The VFS exposes files from the current mounted workspace directory.
 - File paths are relative to the current mounted workspace directory.
 - Panes never access the mounted workspace directory or VFS directly.
-- Changing the mounted workspace directory replaces the active VFS contents with the files from the newly mounted directory.
-- Changing the mounted workspace directory clears the current file-tree selection state.
+- The mounted workspace directory is either the server's default root (the server process's current working directory) or a module: a direct child directory of the server's hardcoded `modules` folder.
+- The hardcoded `modules` folder is the `modules` directory located directly under the server process's current working directory.
+- Because the browser directory picker exposes only the chosen folder's base name and never its full path, the chosen folder's base name is interpreted as a module name and resolved against the hardcoded `modules` folder, ignoring any other path information the picker would otherwise provide.
+- A chosen folder whose base name matches the server root's base name mounts the server's default root instead of resolving against the `modules` folder.
+- Selecting a folder whose name resolves to neither the server root nor an existing directory under the `modules` folder leaves the mounted workspace directory unchanged.
+- Changing the mounted workspace directory replaces the active VFS contents with the files from the newly mounted module directory.
+- Changing the mounted workspace directory clears the current file-tree selection state and the file tree updates to show the new module's files.
 - Changing the mounted workspace directory collapses every directory in the file tree.
 - Changing the mounted workspace directory closes every open filename tab and leaves the canvas pane on a blank canvas.
-- Changing the mounted workspace directory closes every open agent chat tab and leaves the right panel closed.
+- Changing the mounted workspace directory closes every open agent chat tab, discards their conversation histories, and leaves the right panel closed.
+- Changing the mounted workspace directory terminates every existing terminal session, removes their terminal tabs, and spawns one new terminal session whose working directory is the newly mounted module directory.
 - (NOT IMPLEMENTED) File tabs should be saved and restored per mounted workspace directory.
 - (NOT IMPLEMENTED) Agent chat tabs should be saved and restored per mounted workspace directory.
 
@@ -137,7 +143,7 @@
 - The directory button text is the current mounted workspace directory path.
 - When the current mounted workspace directory path exceeds the directory button's available text area, the path is truncated on the left with an ellipsis so the end of the path remains visible.
 - Clicking the directory button opens the browser's native directory picker.
-- Choosing a directory from the native directory picker changes the mounted workspace directory to that directory.
+- Choosing a directory from the native directory picker uses only the chosen folder's base name, treats it as a module name, and changes the mounted workspace directory to the matching module directory under the hardcoded `modules` folder.
 
 
 # Left Panel

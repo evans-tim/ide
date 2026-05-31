@@ -139,17 +139,12 @@
   const resetMountedWorkspace = async () => {
     broadcast({ type: 'vfs:reset' });
     broadcast({ type: 'right:reset' });
+    broadcast({ type: 'terminal:reset' });
     broadcast({ type: 'settings:directory', value: mountedDirectory });
     closePanel('rw', 'gr');
     broadcast({ type: 'vfs:files', files: await loadFiles() });
   };
   const mountDirectory = async message => {
-    if (message.files) {
-      mountedDirectory = message.value;
-      browserVfs = message.files;
-      await resetMountedWorkspace();
-      return;
-    }
     const value = message.value;
     const res = await fetch('/api/mount', {
       method: 'POST',

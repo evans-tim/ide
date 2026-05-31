@@ -4,7 +4,20 @@ const path = require('path');
 const pty = require('node-pty');
 const { WebSocketServer } = require('ws');
 
-let mountedDir = process.cwd();
+const serverRoot = process.cwd();
+const modulesDir = path.join(serverRoot, 'modules');
+let mountedDir = serverRoot;
+
+const resolveModule = name => {
+  const base = path.basename(name || '');
+  if (base === path.basename(serverRoot)) return serverRoot;
+  const candidate = path.join(modulesDir, base);
+  if (candidate !== modulesDir && candidate.startsWith(modulesDir + path.sep)
+    && fs.existsSync(candidate) && fs.statSync(candidate).isDirectory()) {
+    return fs.realpathSync(candidate);
+  }
+  return null;
+};
 
 const types = {
   '.html': 'text/html',
@@ -106,10 +119,9 @@ const server = http.createServer((req, res) => {
   }
   if (req.url === '/api/mount' && req.method === 'POST') {
     readBody(req).then(body => {
-      const next = path.resolve(JSON.parse(body).path);
-      const stat = fs.statSync(next);
-      if (!stat.isDirectory()) throw new Error('Path is not a directory');
-      mountedDir = fs.realpathSync(next);
+      const next = resolveModule(JSON.parse(body).path);
+      if (!next) throw new Error('Unknown module');
+      mountedDir = next;
       sendJson(res, 200, { directory: mountedDir });
     }).catch(err => sendJson(res, 400, { error: err.message }));
     return;
