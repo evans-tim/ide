@@ -868,8 +868,6 @@
   }
 
   const tabs = [createTab(1)];
-  const DEFAULT_RESPONSE = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.';
-  const DEFAULT_RESPONSE_TOKENS = DEFAULT_RESPONSE.split(' ');
   let activeTabId = 1;
   let nextTabId = 2;
   let activeTabHistory = [1];
@@ -910,8 +908,8 @@
   }
 
   function clearTurnTimers(turn) {
-    clearTimeout(turn.planningTimer);
-    clearTimeout(turn.streamTimer);
+    turn.abortController?.abort();
+    turn.abortController = null;
   }
 
   function createTurn(text, html) {
@@ -919,16 +917,54 @@
       text,
       html: html != null ? html : escapeHtml(text),
       responseText: 'Planning next moves',
-      responseTokens: [],
       responding: true,
-      planningTimer: null,
-      streamTimer: null,
+      abortController: null,
     };
+  }
+
+  function conversationMessages(tab, throughText) {
+    const history = [];
+    for (const turn of tab.turns) {
+      history.push({ role: 'user', content: turn.text });
+      if (turn.text === throughText) break;
+      history.push({ role: 'assistant', content: turn.responseText });
+    }
+    return history;
   }
 
   function startTurnResponse(tab, turn) {
     renderActiveTab();
-    turn.planningTimer = setTimeout(() => streamResponse(tab, turn), 5000);
+    streamResponse(tab, turn);
+  }
+
+  async function streamResponse(tab, turn) {
+    const controller = new AbortController();
+    turn.abortController = controller;
+    let firstToken = true;
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: conversationMessages(tab, turn.text) }),
+        signal: controller.signal,
+      });
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        if (!chunk) continue;
+        if (firstToken) { turn.responseText = ''; firstToken = false; }
+        turn.responseText += chunk;
+        if (tab.id === activeTabId) renderActiveTab();
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') return;
+    }
+    turn.responding = false;
+    turn.abortController = null;
+    if (tab.id === activeTabId) renderActiveTab();
   }
 
   function createEditComposer(tab, turn, index) {
@@ -1094,7 +1130,7 @@
   function completeResponse(tab, turn) {
     if (!turn) return;
     clearTurnTimers(turn);
-    turn.responseText = DEFAULT_RESPONSE;
+    if (turn.responseText === 'Planning next moves') turn.responseText = '';
     turn.responding = false;
     if (tab.id === activeTabId) {
       renderActiveTab();
@@ -1115,10 +1151,8 @@
     turn.text = text;
     turn.html = html;
     turn.responseText = 'Planning next moves';
-    turn.responseTokens = [];
     turn.responding = true;
-    turn.planningTimer = null;
-    turn.streamTimer = null;
+    turn.abortController = null;
     tab.editingTurnIndex = null;
     tab.editingDraft = '';
     activeEditor = editor;
@@ -1126,22 +1160,6 @@
 
     setChatTitleFromPrompt(tab, text);
     startTurnResponse(tab, turn);
-  }
-
-  function streamResponse(tab, turn) {
-    clearTimeout(turn.streamTimer);
-    turn.responseTokens.push(DEFAULT_RESPONSE_TOKENS[turn.responseTokens.length]);
-    turn.responseText = turn.responseTokens.join(' ');
-
-    if (turn.responseTokens.length === DEFAULT_RESPONSE_TOKENS.length) {
-      turn.responding = false;
-    } else {
-      turn.streamTimer = setTimeout(() => streamResponse(tab, turn), 50);
-    }
-
-    if (tab.id === activeTabId) {
-      renderActiveTab();
-    }
   }
 
   function switchTab(id) {

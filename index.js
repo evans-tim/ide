@@ -45,6 +45,10 @@ const filePath = name => {
   return full;
 };
 
+const MODEL = 'claude-haiku-4-5';
+const aiModule = import('ai');
+const anthropicModule = import('@ai-sdk/anthropic');
+
 const server = http.createServer((req, res) => {
   if (req.url === '/api/workspace' && req.method === 'GET') {
     sendJson(res, 200, { directory: mountedDir });
@@ -79,6 +83,22 @@ const server = http.createServer((req, res) => {
       fs.writeFileSync(full, content, 'utf8');
       sendJson(res, 200, { ok: true });
     }).catch(err => sendJson(res, 400, { error: err.message }));
+    return;
+  }
+  if (req.url === '/api/chat' && req.method === 'POST') {
+    readBody(req).then(async body => {
+      const { messages } = JSON.parse(body);
+      const { streamText } = await aiModule;
+      const { anthropic } = await anthropicModule;
+      res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+      const result = streamText({ model: anthropic(MODEL), messages });
+      req.on('close', () => result.textStream.cancel?.());
+      for await (const delta of result.textStream) res.write(delta);
+      res.end();
+    }).catch(err => {
+      if (!res.headersSent) sendJson(res, 500, { error: err.message });
+      else res.end();
+    });
     return;
   }
   if (req.url === '/api/mount' && req.method === 'POST') {

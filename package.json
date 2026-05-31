@@ -10,7 +10,9 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.81",
     "@chenglou/pretext": "^0.0.7",
+    "ai": "^6.0.193",
     "node-pty": "^1.1.0",
     "ws": "^8.21.0"
   }
