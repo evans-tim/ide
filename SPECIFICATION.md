@@ -496,22 +496,22 @@
 - The breadcrumb bar's left side displays the currently loaded file's path as a breadcrumb trail.
 - The breadcrumb trail lists every parent directory name of the current file, separated by `chevron-right.svg`, followed by the current file's file-type icon and then the file name.
 - The current file's file-type icon in the breadcrumb is resolved and rendered identically to a filename tab's file-type icon (same Seti glyph priority order, same square size, same per-extension active-theme variant color).
-- When the loaded file is a Markdown (`.md`) file, the breadcrumb bar's right side displays a `Preview` button and a `Markdown` button.
-- The `Markdown` button is the active button by default.
-- The `Preview` and `Markdown` buttons each follow the styling and functional requirements of the `Terminal` and `Problems` tabs, including their active/inactive appearance and hover behavior.
-- The `Preview` and `Markdown` buttons function as a mutually exclusive toggle: clicking one makes it the active button and the other inactive.
-- Clicking the `Markdown` button while it is inactive makes it active and displays the raw Markdown source in the editable canvas editor.
+- When the loaded file is a Markdown (`.md`) file, the breadcrumb bar's right side displays a `Preview` button and a `Source` button.
+- The `Source` button is the active button by default.
+- The `Preview` and `Source` buttons each follow the styling and functional requirements of the `Terminal` and `Problems` tabs, including their active/inactive appearance and hover behavior.
+- The `Preview` and `Source` buttons function as a mutually exclusive toggle: clicking one makes it the active button and the other inactive.
+- Clicking the `Source` button while it is inactive makes it active and displays the raw Markdown source in the editable canvas editor.
 - Clicking the `Preview` button while it is inactive makes it active and replaces the editable canvas editor with the rendered Markdown preview of the current file contents.
 - When the loaded file is not a Markdown file, the breadcrumb bar's right side displays no buttons.
 
 **Markdown preview**
 - The preview is produced by a custom Markdown parser and renderer that converts the file's current in-memory Markdown source into HTML; no third-party Markdown library is used.
 - The preview always renders the current in-memory contents, including any unsaved edits, not the persisted VFS contents.
-- Switching back to `Markdown` returns to the editable editor showing the same in-memory source the preview was rendered from.
+- Switching back to `Source` returns to the editable editor showing the same in-memory source the preview was rendered from.
 - The preview is read-only: it displays no caret, no line numbers, and no gutter, and its text is not editable.
 - The preview occupies the same canvas content region the editor occupied, scrolls vertically with the same scrolling behavior as the canvas editor, and has no horizontal scroll.
 - The preview re-renders from the in-memory source each time `Preview` becomes active.
-- Each open Markdown filename tab independently remembers whether it is in `Markdown` or `Preview` mode.
+- Each open Markdown filename tab independently remembers whether it is in `Source` or `Preview` mode.
 - Preview text uses the workbench/interface font stack; fenced code blocks and inline code use the editor monospace font stack.
 - All preview colors are derived from theme tokens and remain legible in both light and dark themes.
 

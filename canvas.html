@@ -661,12 +661,12 @@
     breadcrumbEl.append(icon, name);
 
     if (baseName(tab.name).toLowerCase().endsWith('.md')) {
-      const mode = tab.mdView || 'markdown';
-      for (const view of ['preview', 'markdown']) {
+      const mode = tab.mdView || 'source';
+      for (const view of ['preview', 'source']) {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'topbarTab' + (mode === view ? ' active' : '');
-        btn.textContent = view === 'preview' ? 'Preview' : 'Markdown';
+        btn.textContent = view === 'preview' ? 'Preview' : 'Source';
         btn.addEventListener('click', () => {
           if (tab.mdView === view) return;
           tab.mdView = view;
