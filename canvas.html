@@ -198,7 +198,7 @@
     color: var(--list-inactiveSelectionForeground, var(--editor-foreground));
     opacity: 1;
   }
-  .editor { flex: 1; min-height: 0; background: var(--editor-background); }
+  .editor { flex: 1; min-height: 0; background: var(--editor-background); position: relative; }
   .settingsFrame { display: none; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
   body.settings .settingsFrame { display: block; }
   body.settings .scroller, body.settings #top-shadow, body.settings #gutter-highlight { display: none; }
@@ -227,6 +227,9 @@
   .previewScroller { display: none; height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; background: var(--editor-background); }
   body.preview .scroller, body.preview #gutter-highlight { display: none; }
   body.preview .previewScroller { display: block; }
+  .htmlPreview { display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
+  body.htmlpreview .scroller, body.htmlpreview #gutter-highlight, body.htmlpreview #top-shadow { display: none; }
+  body.htmlpreview .htmlPreview { display: block; }
   .markdown {
     box-sizing: border-box;
     padding: 16px 32px 32px;
@@ -274,7 +277,7 @@
     </div>
   </div>
 </div>
-<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
+<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><iframe id="htmlPreview" class="htmlPreview"></iframe><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
 <script type="module">
   import { prepare, prepareWithSegments, layout, layoutWithLines } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
@@ -291,6 +294,7 @@
   const breadcrumbEl = document.getElementById('breadcrumb');
   const breadcrumbButtonsEl = document.getElementById('breadcrumbButtons');
   const previewScroller = document.getElementById('previewScroller');
+  const htmlPreviewEl = document.getElementById('htmlPreview');
   const markdownEl = document.getElementById('markdown');
   const tabArea = document.querySelector('.tabArea');
   const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
@@ -660,7 +664,8 @@
     name.textContent = baseName(tab.name);
     breadcrumbEl.append(icon, name);
 
-    if (baseName(tab.name).toLowerCase().endsWith('.md')) {
+    const lower = baseName(tab.name).toLowerCase();
+    if (lower.endsWith('.md') || lower.endsWith('.html')) {
       const mode = tab.mdView || 'source';
       for (const view of ['preview', 'source']) {
         const btn = document.createElement('button');
@@ -680,13 +685,20 @@
 
   function applyMdView() {
     const tab = activeEditableFileTab();
-    const preview = !!tab && (tab.mdView === 'preview') && baseName(tab.name).toLowerCase().endsWith('.md');
-    document.body.classList.toggle('preview', preview);
-    if (preview) {
+    const lower = tab ? baseName(tab.name).toLowerCase() : '';
+    const isPreview = !!tab && tab.mdView === 'preview';
+    const mdPreview = isPreview && lower.endsWith('.md');
+    const htmlPreview = isPreview && lower.endsWith('.html');
+    document.body.classList.toggle('preview', mdPreview);
+    document.body.classList.toggle('htmlpreview', htmlPreview);
+    if (mdPreview) {
       tab.content = lines.join('\n');
       markdownEl.innerHTML = renderMarkdown(tab.content);
       previewScroller.scrollTop = 0;
       updateTopShadow();
+    } else if (htmlPreview) {
+      tab.content = lines.join('\n');
+      htmlPreviewEl.srcdoc = tab.content;
     }
   }
 
@@ -707,6 +719,7 @@
     document.body.classList.add('empty');
     document.body.classList.remove('settings');
     document.body.classList.remove('preview');
+    document.body.classList.remove('htmlpreview');
     document.body.classList.remove('scrolled');
     lines = [''];
     cur = { line: 0, col: 0 };

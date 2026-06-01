@@ -517,7 +517,12 @@
 - The `Preview` and `Source` buttons function as a mutually exclusive toggle: clicking one makes it the active button and the other inactive.
 - Clicking the `Source` button while it is inactive makes it active and displays the raw Markdown source in the editable canvas editor.
 - Clicking the `Preview` button while it is inactive makes it active and replaces the editable canvas editor with the rendered Markdown preview of the current file contents.
-- When the loaded file is not a Markdown file, the breadcrumb bar's right side displays no buttons.
+- When the loaded file is an HTML (`.html`) file, the breadcrumb bar's right side displays a `Preview` button and a `Source` button, following the same styling and toggle behavior as the Markdown `Preview` and `Source` buttons.
+- The HTML `Source` button is the active button by default.
+- Clicking the HTML `Source` button while it is inactive makes it active and displays the raw HTML source in the editable canvas editor.
+- Clicking the HTML `Preview` button while it is inactive makes it active and replaces the editable canvas editor with an iframe that runs the current in-memory HTML source and fills the entire canvas content region the editor occupied.
+- The Markdown breadcrumb `Preview`/`Source` buttons are unaffected by the HTML buttons and continue to render only for Markdown files and to toggle the Markdown preview by their own existing rule.
+- When the loaded file is neither a Markdown nor an HTML file, the breadcrumb bar's right side displays no buttons.
 
 **Markdown preview**
 - The preview is produced by a custom Markdown parser and renderer that converts the file's current in-memory Markdown source into HTML; no third-party Markdown library is used.
@@ -571,6 +576,15 @@
 - Link and image destinations are emitted as-is for `http`, `https`, relative, and anchor targets; `javascript:` and other script-bearing schemes are not emitted as active destinations.
 - Headings, paragraphs, lists, blockquotes, code blocks, tables, horizontal rules, links, images, and inline spans each render as their corresponding semantic HTML element.
 - Malformed or unterminated constructs (e.g., an unclosed code fence, emphasis, or link) render their literal source text rather than producing broken markup.
+
+**HTML preview**
+- The HTML preview is an iframe whose document is the current in-memory HTML source, including any unsaved edits, not the persisted VFS contents.
+- The HTML preview iframe runs the source as a live document, executing its scripts and applying its styles, and fills the entire canvas content region the editor occupied.
+- Switching back to `Source` returns to the editable editor showing the same in-memory source the preview was running.
+- The HTML preview is not the editable editor: it displays no caret, no line numbers, and no gutter.
+- The HTML preview re-runs the in-memory source each time `Preview` becomes active.
+- Each open HTML filename tab independently remembers whether it is in `Source` or `Preview` mode.
+- The HTML preview is unaffected by the Markdown preview rules and continues to behave by its own rules.
 
 **Filename tabs**
 - Each filename tab contains the file-type icon, the file name, and its adjacent `close.svg` icon.
