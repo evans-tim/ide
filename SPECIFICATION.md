@@ -448,7 +448,9 @@
 - When a submitted user message panel converts into an in-place prompt composer, focus enters the composer with the text cursor at the end of the prompt.
 - The in-place prompt composer's text area height is the smallest height that fits the submitted text, up to the normal prompt composer's maximum text area height.
 - If the submitted text exceeds that maximum height, the in-place prompt composer uses the same vertical scrolling behavior as the normal prompt composer.
-- When focus leaves the in-place prompt composer without submitting, it converts back into a submitted user message panel.
+- When focus leaves the in-place prompt composer without submitting, the current draft text is saved to that message's in-place draft; the panel converts back into a submitted user message panel displaying the original submitted text, but the in-place draft is preserved.
+- Re-clicking a submitted user message panel that has a saved in-place draft restores the draft text into the in-place composer, not the original submitted text.
+- The in-place draft is discarded only when the in-place composer is re-submitted or the conversation history for that message is otherwise replaced.
 - Clicking a different submitted user message panel while an in-place prompt composer is active closes the active in-place composer and opens the clicked message panel as an in-place prompt composer in the same click.
 - The bottom prompt composer remains visible while a submitted user message is being edited in place.
 - Submitting from an in-place prompt composer replaces that user message with the submitted text, submits the conversation from that point, and removes every later message and response from the conversation history.

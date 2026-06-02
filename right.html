@@ -849,7 +849,11 @@
     const tab = activeTab();
     if (!tab) return;
     if (activeEditor === editor) tab.draft = editor.innerHTML;
-    else if (tab.editingTurnIndex !== null) tab.editingDraft = activeEditor.innerHTML;
+    else if (tab.editingTurnIndex !== null) {
+      tab.editingDraft = activeEditor.innerHTML;
+      if (!tab.editingDrafts) tab.editingDrafts = {};
+      tab.editingDrafts[tab.editingTurnIndex] = activeEditor.innerHTML;
+    }
   }
 
   const historyMenu = document.querySelector('.historyMenu');
@@ -1044,8 +1048,14 @@
 
   function editTurn(tab, index) {
     const turn = tab.turns[index];
-    tab.editingTurnIndex = index;
-    tab.editingDraft = turn.html != null ? turn.html : escapeHtml(turn.text);
+    if (tab.editingTurnIndex !== index) {
+      tab.editingTurnIndex = index;
+      if (!tab.editingDrafts) tab.editingDrafts = {};
+      if (tab.editingDrafts[index] == null) {
+        tab.editingDrafts[index] = turn.html != null ? turn.html : escapeHtml(turn.text);
+      }
+      tab.editingDraft = tab.editingDrafts[index];
+    }
     renderActiveTab();
     const editEditor = messages.querySelector('.editPrompt .editor');
     if (editEditor) {
@@ -1061,8 +1071,10 @@
   }
 
   function cancelEditTurn(tab) {
+    if (tab.editingDrafts && tab.editingTurnIndex !== null) {
+      tab.editingDrafts[tab.editingTurnIndex] = tab.editingDraft;
+    }
     tab.editingTurnIndex = null;
-    tab.editingDraft = '';
     activeEditor = editor;
     closeMentionMenu();
     renderActiveTab();
@@ -1184,6 +1196,7 @@
     turn.responseText = 'Planning next moves';
     turn.responding = true;
     turn.abortController = null;
+    if (tab.editingDrafts) delete tab.editingDrafts[index];
     tab.editingTurnIndex = null;
     tab.editingDraft = '';
     activeEditor = editor;

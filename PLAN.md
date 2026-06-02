@@ -45,7 +45,7 @@
 
 
 # Bugs
-- (COST CRITICAL) when stopping the stream on the frontend, the backend doens't properly stop the message stream and the full output token cost is incurred once the LLM is done even though the frontend had already aborted it. 
+- (DONE) when stopping the stream on the frontend, the backend doens't properly stop the message stream and the full output token cost is incurred once the LLM is done even though the frontend had already aborted it. 
 - (BUG) when editing a user message panel and then clicking away, it wont save the drafted message it just reverts, causing lost work. 
 - (BUG) when adding spaces at the end of a long line, it won't linewrap. 
 - (BUG) when double clicking on a word after ~1000 lines it will highlight the word 1 line above it. 
