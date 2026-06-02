@@ -329,7 +329,55 @@
     bottom: 0;
     height: 28px;
     cursor: default;
+    display: flex;
+    align-items: center;
   }
+  .agentChooser {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 4px;
+    margin: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .agentChooser:hover { background: var(--list-inactiveSelectionBackground); }
+  .agentChooserName {
+    color: var(--foreground, var(--editor-foreground));
+    font-size: inherit;
+    white-space: nowrap;
+  }
+  .agentChooserChevron {
+    width: 10px;
+    height: 10px;
+    color: var(--descriptionForeground, var(--tab-inactiveForeground));
+    flex: none;
+  }
+  .agentChooser:hover .agentChooserChevron { color: var(--foreground, var(--editor-foreground)); }
+  .agentChooserMenu {
+    position: fixed;
+    width: 200px;
+    z-index: 10;
+    background: var(--editorSuggestWidget-background, var(--editor-background));
+    border: 1px solid var(--editorSuggestWidget-border, var(--editorGroup-border));
+    border-radius: 5px;
+    box-shadow: -1px 1px 3px rgba(0,0,0,0.12), 1px 1px 3px rgba(0,0,0,0.12);
+  }
+  .agentChooserItem {
+    box-sizing: border-box;
+    margin: 2px;
+    padding: 2px 4px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    border-radius: 4px;
+    color: var(--editorSuggestWidget-foreground, var(--foreground, var(--editor-foreground)));
+  }
+  .agentChooserItem.highlighted { background: var(--editorSuggestWidget-selectedBackground, var(--list-activeSelectionBackground)); }
   .send {
     position: absolute;
     right: 4px;
@@ -436,6 +484,10 @@
   <div class="prompt">
     <div class="editor" contenteditable="true"></div>
     <div class="promptFooter">
+      <div class="agentChooser" id="agentChooser">
+        <span class="agentChooserName" id="agentChooserName"></span>
+        <svg class="agentChooserChevron" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
       <button class="send" type="button" aria-label="Send"><img src="icons/arrow-up.svg" alt=""></button>
     </div>
   </div>
@@ -443,7 +495,73 @@
 <div class="mentionMenu" style="display: none;"></div>
 <div class="commandMenu mentionMenu" style="display: none;"></div>
 <div class="historyMenu" style="display: none;"></div>
+<div class="agentChooserMenu" id="agentChooserMenu" style="display: none;"></div>
 <script>
+  const MODELS = [
+    { id: 'claude-opus-4-8', name: 'Claude Opus 4' },
+    { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.5' },
+    { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5' },
+  ];
+  let selectedModel = 'claude-sonnet-4-6';
+
+  const agentChooserEl = document.getElementById('agentChooser');
+  const agentChooserNameEl = document.getElementById('agentChooserName');
+  const agentChooserMenuEl = document.getElementById('agentChooserMenu');
+
+  function updateAgentChooserDisplay() {
+    const m = MODELS.find(m => m.id === selectedModel);
+    agentChooserNameEl.textContent = m ? m.name : selectedModel;
+  }
+  updateAgentChooserDisplay();
+
+  function openAgentChooserMenu() {
+    agentChooserMenuEl.replaceChildren(...MODELS.map((m, i) => {
+      const item = document.createElement('div');
+      item.className = i === 0 ? 'agentChooserItem highlighted' : 'agentChooserItem';
+      item.textContent = m.name;
+      item.dataset.id = m.id;
+      item.addEventListener('mouseenter', () => {
+        for (const other of agentChooserMenuEl.children) other.classList.remove('highlighted');
+        item.classList.add('highlighted');
+      });
+      item.addEventListener('mousedown', event => {
+        event.preventDefault();
+        selectedModel = m.id;
+        updateAgentChooserDisplay();
+        closeAgentChooserMenu();
+      });
+      return item;
+    }));
+    const rect = agentChooserEl.getBoundingClientRect();
+    agentChooserMenuEl.style.display = 'block';
+    agentChooserMenuEl.style.left = rect.left + 'px';
+    agentChooserMenuEl.style.top = (rect.top - agentChooserMenuEl.offsetHeight - 4) + 'px';
+  }
+
+  function closeAgentChooserMenu() {
+    agentChooserMenuEl.style.display = 'none';
+  }
+
+  agentChooserEl.addEventListener('click', event => {
+    event.stopPropagation();
+    if (agentChooserMenuEl.style.display === 'block') closeAgentChooserMenu();
+    else openAgentChooserMenu();
+  });
+  document.addEventListener('mousedown', event => {
+    if (agentChooserMenuEl.style.display !== 'block') return;
+    if (agentChooserMenuEl.contains(event.target) || agentChooserEl.contains(event.target)) return;
+    closeAgentChooserMenu();
+  });
+  document.addEventListener('keydown', event => {
+    if (agentChooserMenuEl.style.display !== 'block') return;
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const highlighted = agentChooserMenuEl.querySelector('.agentChooserItem.highlighted');
+      if (highlighted) { selectedModel = highlighted.dataset.id; updateAgentChooserDisplay(); closeAgentChooserMenu(); }
+    } else if (event.key === 'Escape') {
+      closeAgentChooserMenu();
+    }
+  });
   const tabsEl = document.querySelector('.tabs');
   const tabArea = document.querySelector('.tabArea');
   const tabScrollbarThumb = document.querySelector('.tabScrollbarThumb');
@@ -980,7 +1098,7 @@
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: await conversationMessages(tab, turn.text), system: await readFileContent('SYSTEM/system.md') }),
+        body: JSON.stringify({ messages: await conversationMessages(tab, turn.text), system: await readFileContent('SYSTEM/system.md'), model: selectedModel }),
         signal: controller.signal,
       });
       const reader = response.body.getReader();

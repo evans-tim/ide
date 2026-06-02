@@ -325,6 +325,25 @@
 - Enter submits the chat.
 - Clicking the upward arrow send control submits the chat.
 
+**Agent chooser**
+- The prompt composer affordance contains an agent chooser control aligned to the left side of the affordance area, at the same vertical position as the send control on the right.
+- The agent chooser displays the selected model's display name (not its model ID) in the strongest foreground theme token (black in light mode).
+- The agent chooser displays a down-chevron icon immediately to the right of the display name, using the theme's de-emphasized foreground color token.
+- Hovering the agent chooser shows an emphasized background with 4px margin on all sides, rounded corners, and darkens the chevron slightly; hovering uses the pointer cursor.
+- Clicking the agent chooser opens a model-selection modal in the same visual style as the file-mention autocomplete modal (rounded corners, shadow on left/right/bottom edges).
+- The modal is positioned such that it appears above the agent chooser, aligned to its left edge.
+- The modal lists exactly three selectable model items: `claude-opus-4-8` (display name `Claude Opus 4`), `claude-sonnet-4-6` (display name `Claude Sonnet 4.5`), and `claude-haiku-4-5` (display name `Claude Haiku 4.5`), in that order.
+- Each model item displays only its display name.
+- Hovering a model item gives it the emphasized background and uses the pointer cursor; at most one item has the emphasized background at any time.
+- Clicking a model item sets that model as the currently selected model, closes the modal, and updates the agent chooser to display that model's display name.
+- The first item in the list is highlighted with the emphasized background by default when the modal opens.
+- Pressing Enter while a model item is highlighted sets that model as the currently selected model and closes the modal.
+- Clicking outside the open model-selection modal closes the modal without changing the selected model.
+- The default selected model is `claude-sonnet-4-6`.
+- The agent chooser is unaffected by the send control and continues to behave by its own rule; it is not a general purpose button or dropdown trigger.
+- The cost logger computes per-token cost using the pricing for the currently selected model; switching the selected model changes the per-token rate applied to all subsequent cost calculations.
+- The cost logger's model pricing is: `claude-opus-4-8` at the Opus 4 rate, `claude-sonnet-4-6` at the Sonnet 4.5 rate, and `claude-haiku-4-5` at the Haiku 4.5 rate.
+
 
 **File mention autocomplete**
 - Typing `@` in the prompt composer opens a file-mention autocomplete div directly beneath the `@` character.

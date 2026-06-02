@@ -58,7 +58,12 @@ const filePath = name => {
   return full;
 };
 
-const MODEL = 'claude-haiku-4-5';
+const MODEL_PRICING = {
+  'claude-opus-4-8':  { input: 15,  output: 75  },
+  'claude-sonnet-4-6': { input: 3,   output: 15  },
+  'claude-haiku-4-5':  { input: 1,   output: 5   },
+};
+const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const aiModule = import('ai');
 const anthropicModule = import('@ai-sdk/anthropic');
 
@@ -100,14 +105,16 @@ const server = http.createServer((req, res) => {
   }
   if (req.url === '/api/chat' && req.method === 'POST') {
     readBody(req).then(async body => {
-      const { messages, system } = JSON.parse(body);
+      const { messages, system, model: requestedModel } = JSON.parse(body);
+      const model = MODEL_PRICING[requestedModel] ? requestedModel : DEFAULT_MODEL;
+      const pricing = MODEL_PRICING[model];
       const { streamText } = await aiModule;
       const { anthropic } = await anthropicModule;
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
       const controller = new AbortController();
       let aborted = false;
       let streamed = '';
-      const result = streamText({ model: anthropic(MODEL), messages, ...(system ? { system } : {}), abortSignal: controller.signal });
+      const result = streamText({ model: anthropic(model), messages, ...(system ? { system } : {}), abortSignal: controller.signal });
       res.on('close', () => { if (!res.writableFinished) { aborted = true; controller.abort(); } });
       try {
         for await (const delta of result.textStream) { streamed += delta; res.write(delta); }
@@ -119,13 +126,13 @@ const server = http.createServer((req, res) => {
         const usage = await result.usage.catch(() => null);
         const inputTokens = usage?.inputTokens ?? Math.ceil(JSON.stringify(messages).length / 3);
         const outputTokens = usage?.outputTokens ?? Math.ceil(streamed.length / 3);
-        const cost = (inputTokens / 1e6) * 1 + (outputTokens / 1e6) * 5;
-        console.log(`[cost][aborted] in=${inputTokens} out=${outputTokens} $${cost.toFixed(6)}`);
+        const cost = (inputTokens / 1e6) * pricing.input + (outputTokens / 1e6) * pricing.output;
+        console.log(`[cost][aborted] model=${model} in=${inputTokens} out=${outputTokens} $${cost.toFixed(6)}`);
         return;
       }
       const usage = await result.usage;
-      const cost = (usage.inputTokens / 1e6) * 1 + (usage.outputTokens / 1e6) * 5;
-      console.log(`[cost] in=${usage.inputTokens} out=${usage.outputTokens} $${cost.toFixed(6)}`);
+      const cost = (usage.inputTokens / 1e6) * pricing.input + (usage.outputTokens / 1e6) * pricing.output;
+      console.log(`[cost] model=${model} in=${usage.inputTokens} out=${usage.outputTokens} $${cost.toFixed(6)}`);
     }).catch(err => {
       if (!res.headersSent) sendJson(res, 500, { error: err.message });
       else res.end();
