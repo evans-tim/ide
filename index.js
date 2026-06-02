@@ -104,10 +104,25 @@ const server = http.createServer((req, res) => {
       const { streamText } = await aiModule;
       const { anthropic } = await anthropicModule;
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
-      const result = streamText({ model: anthropic(MODEL), messages, ...(system ? { system } : {}) });
-      req.on('close', () => result.textStream.cancel?.());
-      for await (const delta of result.textStream) res.write(delta);
+      const controller = new AbortController();
+      let aborted = false;
+      let streamed = '';
+      const result = streamText({ model: anthropic(MODEL), messages, ...(system ? { system } : {}), abortSignal: controller.signal });
+      res.on('close', () => { if (!res.writableFinished) { aborted = true; controller.abort(); } });
+      try {
+        for await (const delta of result.textStream) { streamed += delta; res.write(delta); }
+      } catch (err) {
+        if (!aborted) throw err;
+      }
       res.end();
+      if (aborted) {
+        const usage = await result.usage.catch(() => null);
+        const inputTokens = usage?.inputTokens ?? Math.ceil(JSON.stringify(messages).length / 3);
+        const outputTokens = usage?.outputTokens ?? Math.ceil(streamed.length / 3);
+        const cost = (inputTokens / 1e6) * 1 + (outputTokens / 1e6) * 5;
+        console.log(`[cost][aborted] in=${inputTokens} out=${outputTokens} $${cost.toFixed(6)}`);
+        return;
+      }
       const usage = await result.usage;
       const cost = (usage.inputTokens / 1e6) * 1 + (usage.outputTokens / 1e6) * 5;
       console.log(`[cost] in=${usage.inputTokens} out=${usage.outputTokens} $${cost.toFixed(6)}`);
