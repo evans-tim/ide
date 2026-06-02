@@ -20,7 +20,7 @@
 - (DONE) slash commands
 - (DONE) chat history 
 - show context usage
-- real LLM
+- (DONE) real LLM
 - choose model
 - jsonrpc tool call
 - read file tool
