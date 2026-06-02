@@ -498,8 +498,8 @@
 <div class="agentChooserMenu" id="agentChooserMenu" style="display: none;"></div>
 <script>
   const MODELS = [
-    { id: 'claude-opus-4-8', name: 'Claude Opus 4' },
-    { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.5' },
+    { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
+    { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6' },
     { id: 'claude-haiku-4-5', name: 'Claude Haiku 4.5' },
   ];
   let selectedModel = 'claude-sonnet-4-6';
@@ -535,7 +535,13 @@
     const rect = agentChooserEl.getBoundingClientRect();
     agentChooserMenuEl.style.display = 'block';
     agentChooserMenuEl.style.left = rect.left + 'px';
-    agentChooserMenuEl.style.top = (rect.top - agentChooserMenuEl.offsetHeight - 4) + 'px';
+    const menuH = agentChooserMenuEl.offsetHeight;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    if (spaceBelow >= menuH + 4) {
+      agentChooserMenuEl.style.top = (rect.bottom + 4) + 'px';
+    } else {
+      agentChooserMenuEl.style.top = (rect.top - menuH - 4) + 'px';
+    }
   }
 
   function closeAgentChooserMenu() {

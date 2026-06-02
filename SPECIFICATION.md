@@ -331,7 +331,7 @@
 - The agent chooser displays a down-chevron icon immediately to the right of the display name, using the theme's de-emphasized foreground color token.
 - Hovering the agent chooser shows an emphasized background with 4px margin on all sides, rounded corners, and darkens the chevron slightly; hovering uses the pointer cursor.
 - Clicking the agent chooser opens a model-selection modal in the same visual style as the file-mention autocomplete modal (rounded corners, shadow on left/right/bottom edges).
-- The modal is positioned such that it appears above the agent chooser, aligned to its left edge.
+- The modal is positioned such that it appears below the agent chooser button when there is sufficient viewport space below it, otherwise it appears above the button; in both cases the modal's left edge is aligned with the button's left edge.
 - The modal lists exactly three selectable model items: `claude-opus-4-8` (display name `Claude Opus 4`), `claude-sonnet-4-6` (display name `Claude Sonnet 4.5`), and `claude-haiku-4-5` (display name `Claude Haiku 4.5`), in that order.
 - Each model item displays only its display name.
 - Hovering a model item gives it the emphasized background and uses the pointer cursor; at most one item has the emphasized background at any time.
