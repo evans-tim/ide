@@ -867,16 +867,16 @@
   }
 
   function visualRowAtY(clientY) {
-    const padTop = parseFloat(getComputedStyle(view).paddingTop) || 0;
-    const viewRect = view.getBoundingClientRect();
-    let target = Math.floor((clientY - viewRect.top - padTop) / LINE_HEIGHT);
-    let acc = 0;
-    for (let li = 0; li < lines.length; li++) {
-      const starts = wrapCols[li] || [0];
-      if (target < acc + starts.length) {
-        return { line: li, row: Math.max(0, target - acc) };
+    const lineEls = view.querySelectorAll('[data-line]');
+    for (const lineEl of lineEls) {
+      const li = parseInt(lineEl.getAttribute('data-line'), 10);
+      const rows = lineEl.children.length ? lineEl.children : [lineEl];
+      for (let row = 0; row < rows.length; row++) {
+        const rect = rows[row].getBoundingClientRect();
+        if (clientY < rect.bottom) {
+          return { line: li, row };
+        }
       }
-      acc += starts.length;
     }
     const li = lines.length - 1;
     const starts = wrapCols[li] || [0];
