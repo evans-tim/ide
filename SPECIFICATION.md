@@ -228,8 +228,11 @@
 - A file's git status is one of: modified, new, or unchanged, as reported by git for the mounted workspace directory.
 - A modified file's file-tree row file name is rendered in color `rgb(184, 136, 67)`, and an `M` glyph in the same color `rgb(184, 136, 67)` is added to the same row container, right-aligned with an 8px margin to the right.
 - A new file's file-tree row file name is rendered in color `rgb(88, 126, 139)`, and a `U` glyph in the same color `rgb(88, 126, 139)` is added to the same row container, right-aligned with an 8px margin to the right.
+- A modified file that is staged for commit has its file-tree row file name and its `M` glyph rendered in color `rgb(152, 122, 77)` instead of the unstaged modified color, with the `M` glyph and right-alignment otherwise unchanged.
+- A new file that is staged for commit has its file-tree row file name rendered in color `rgb(106, 158, 134)` instead of the unstaged new color, and its right-aligned status glyph changes from `U` to `A` rendered in the same color `rgb(106, 158, 134)`, with the right-alignment otherwise unchanged.
 - An unchanged file's file-tree row file name and container carry no git status color or status glyph.
 - The same git status decoration applies to canvas filename tabs: a modified file's filename tab renders its file name and an appended right-aligned `M` glyph (8px right margin) in `rgb(184, 136, 67)`, and a new file's filename tab renders its file name and an appended right-aligned `U` glyph (8px right margin) in `rgb(88, 126, 139)`.
+- The same staged-for-commit decoration applies to canvas filename tabs: a staged modified file's filename tab renders its file name and `M` glyph in `rgb(152, 122, 77)`, and a staged new file's filename tab renders its file name in `rgb(106, 158, 134)` with its glyph changed from `U` to `A` in the same color `rgb(106, 158, 134)`.
 - The git status status glyph is part of the same container as the file name in both the file-tree row and the filename tab.
 
 **File tree scrolling**

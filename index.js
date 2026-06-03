@@ -80,8 +80,15 @@ const gitStatus = () => {
     let rel = entry.slice(3);
     if (code[0] === 'R' || code[0] === 'C') { i++; }
     if (!rel) continue;
-    const isNew = code === '??' || code.includes('A');
-    status[rel] = isNew ? 'U' : 'M';
+    const index = code[0];
+    const worktree = code[1];
+    const staged = index !== ' ' && index !== '?';
+    const isNew = code === '??' || index === 'A';
+    if (staged) {
+      status[rel] = isNew ? 'AS' : 'MS';
+    } else {
+      status[rel] = isNew ? 'U' : 'M';
+    }
   }
   return { isRepo: true, status };
 };

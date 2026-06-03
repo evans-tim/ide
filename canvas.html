@@ -129,6 +129,8 @@
   }
   .tab.git-M .tabTitle, .tab.git-M .tabGitStatus { color: rgb(184, 136, 67); }
   .tab.git-U .tabTitle, .tab.git-U .tabGitStatus { color: rgb(88, 126, 139); }
+  .tab.git-MS .tabTitle, .tab.git-MS .tabGitStatus { color: rgb(152, 122, 77); }
+  .tab.git-AS .tabTitle, .tab.git-AS .tabGitStatus { color: rgb(106, 158, 134); }
   .tabGitStatus { flex: none; margin-left: auto; margin-right: 4px; }
   .tabDir {
     font-size: 11px;
@@ -623,11 +625,11 @@
       close.innerHTML = '<span class="iconMask closeIcon" aria-hidden="true"></span><span class="dirtyDot" aria-hidden="true"></span>';
 
       const code = !tab.settings && gitIsRepo ? gitStatus[tab.name] : null;
-      if (code === 'M' || code === 'U') {
+      if (code === 'M' || code === 'U' || code === 'MS' || code === 'AS') {
         tabEl.classList.add('git-' + code);
         const status = document.createElement('span');
         status.className = 'tabGitStatus';
-        status.textContent = code;
+        status.textContent = code === 'AS' ? 'A' : code === 'MS' ? 'M' : code;
         tabEl.append(icon, title, status, close);
       } else {
         tabEl.append(icon, title, close);

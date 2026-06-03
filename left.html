@@ -34,9 +34,13 @@
   .row > span:last-child:not(.gitStatus) { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .row.git-M > span.label { color: rgb(184, 136, 67); }
   .row.git-U > span.label { color: rgb(88, 126, 139); }
+  .row.git-MS > span.label { color: rgb(152, 122, 77); }
+  .row.git-AS > span.label { color: rgb(106, 158, 134); }
   .gitStatus { flex: none; margin-left: 8px; margin-right: 16px; text-align: right; }
   .row.git-M .gitStatus { color: rgb(184, 136, 67); }
   .row.git-U .gitStatus { color: rgb(88, 126, 139); }
+  .row.git-MS .gitStatus { color: rgb(152, 122, 77); }
+  .row.git-AS .gitStatus { color: rgb(106, 158, 134); }
   .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
@@ -195,11 +199,11 @@
       label.textContent = name;
       row.appendChild(label);
       const code = gitIsRepo ? gitStatus[childPath] : null;
-      if (code === 'M' || code === 'U') {
+      if (code === 'M' || code === 'U' || code === 'MS' || code === 'AS') {
         row.classList.add('git-' + code);
         const status = document.createElement('span');
         status.className = 'gitStatus';
-        status.textContent = code;
+        status.textContent = code === 'AS' ? 'A' : code === 'MS' ? 'M' : code;
         row.appendChild(status);
       }
       if (selectedType === 'file' && selectedPath === childPath) row.classList.add('selected');
