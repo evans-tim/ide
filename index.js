@@ -123,6 +123,27 @@ const server = http.createServer((req, res) => {
     }
     return;
   }
+  if (req.url.startsWith('/api/git-head?') && req.method === 'GET') {
+    const url = new URL(req.url, 'http://localhost');
+    const name = url.searchParams.get('path');
+    if (!filePath(name)) {
+      sendJson(res, 400, { error: 'Invalid path' });
+      return;
+    }
+    try {
+      execFileSync('git', ['-C', mountedDir, 'rev-parse', '--is-inside-work-tree'], { stdio: 'ignore' });
+    } catch {
+      sendJson(res, 200, { isRepo: false, tracked: false, content: '' });
+      return;
+    }
+    try {
+      const content = execFileSync('git', ['-C', mountedDir, 'show', 'HEAD:' + name], { encoding: 'utf8' });
+      sendJson(res, 200, { isRepo: true, tracked: true, content });
+    } catch {
+      sendJson(res, 200, { isRepo: true, tracked: false, content: '' });
+    }
+    return;
+  }
   if (req.url.startsWith('/api/file?') && req.method === 'GET') {
     const url = new URL(req.url, 'http://localhost');
     const full = filePath(url.searchParams.get('path'));

@@ -165,6 +165,19 @@ Limit the "spec blast radius": when a new clause could be read as altering an ad
     const git = await loadGitStatus();
     target.postMessage({ type: 'git:status', isRepo: git.isRepo, status: git.status }, '*');
   };
+  const sendGitHead = async (name, target) => {
+    if (browserVfs || isSystemPath(name) || isCommandPath(name)) {
+      target.postMessage({ type: 'git:head', name, isRepo: false, tracked: false, content: '' }, '*');
+      return;
+    }
+    try {
+      const res = await fetch('/api/git-head?path=' + encodeURIComponent(name));
+      const data = await res.json();
+      target.postMessage({ type: 'git:head', name, isRepo: !!data.isRepo, tracked: !!data.tracked, content: data.content ?? '' }, '*');
+    } catch {
+      target.postMessage({ type: 'git:head', name, isRepo: false, tracked: false, content: '' }, '*');
+    }
+  };
   const broadcastGitStatus = async () => {
     const git = await loadGitStatus();
     broadcast({ type: 'git:status', isRepo: git.isRepo, status: git.status });
@@ -273,6 +286,8 @@ Limit the "spec blast radius": when a new clause could be read as altering an ad
       sendFiles(e.source);
     } else if (m.type === 'git:list') {
       sendGitStatus(e.source);
+    } else if (m.type === 'git:head') {
+      sendGitHead(m.name, e.source);
     } else if (m.type === 'commands:list') {
       e.source.postMessage({ type: 'commands:files', files: commandsVfs }, '*');
     } else if (m.type === 'system:list') {

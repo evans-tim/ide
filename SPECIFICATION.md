@@ -672,6 +672,13 @@
 - Gutter on the left displays line numbers, one per content line, right-aligned.
 - `editor.wordSeparators` defines the characters that delimit words.
 
+**Canvas added-line decoration**
+- A content line that is added relative to git (a line present in the canvas's in-memory contents but absent from the file's committed git version) is decorated as an added line.
+- An added content line's row background is `rgb(228, 238, 233)`, spanning the line's full row height.
+- An added content line additionally displays a slim vertical bar of color `rgb(56, 136, 102)` positioned immediately to the right of the line-number gutter, with the bar's height equal to the line's row height.
+- Added-line decoration applies only when the mounted workspace directory is itself a git repository, by the same condition that governs file git status decoration; when the mounted workspace directory is not a git repository, no canvas line carries added-line decoration.
+- The line-number gutter, caret, caret-line highlight, and text selection are unaffected by added-line decoration and continue to behave by their own existing rules; the added-line background and bar are decoration drawn beneath them.
+
 **Line wrapping**
 - A content line whose rendered width exceeds the available canvas text width wraps onto one or more additional visual rows instead of scrolling horizontally.
 - A wrapped visual row displays no line number; only the first visual row of a content line carries that content line's gutter number.

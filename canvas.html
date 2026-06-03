@@ -216,10 +216,15 @@
   #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
   #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
   body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
-  .line { display: block; }
-  .vrow { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); position: relative; }
+  .line { display: block; position: relative; }
+  .line.added { background: rgb(228, 238, 233); }
+  .line.added::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgb(56, 136, 102); z-index: 1; }
+  .vrow { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); position: relative; z-index: 1; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
+  body .line.added.active, body.focused .line.added.active { background: rgb(228, 238, 233); color: inherit; }
+  .line.added.active::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; background: var(--list-inactiveSelectionBackground); opacity: 0.5; }
+  body.focused .line.added.active::after { background: var(--list-activeSelectionBackground); }
   .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
   body:not(.focused) .selection { background: transparent; color: inherit; }
   .cursor { position: absolute; top: 0; width: 1px; background: var(--editor-foreground, #000); animation: blink 1s step-end infinite; height: var(--ide-line-height, 18px); }
@@ -388,6 +393,7 @@
 
   function render() {
     const range = selectionRange();
+    recomputeAddedLines();
     wrapCols = computeWrap();
     const gutterChildren = [];
     lines.forEach((_, i) => {
@@ -406,7 +412,7 @@
     view.innerHTML = '';
     lines.forEach((text, i) => {
       const div = document.createElement('div');
-      div.className = 'line' + (!range && i === cur.line ? ' active' : '');
+      div.className = 'line' + (!range && i === cur.line ? ' active' : '') + (addedLines.has(i) ? ' added' : '');
       div.dataset.line = i;
       appendLine(div, text, i, range);
       view.appendChild(div);
@@ -514,6 +520,41 @@
   let themeVariant = 'dark';
   let gitStatus = {};
   let gitIsRepo = false;
+  let addedLines = new Set();
+
+  function computeAddedLines(headContent, currentLines) {
+    const added = new Set();
+    if (headContent == null) return added;
+    const a = headContent.replace(/\r\n?/g, '\n').split('\n');
+    const b = currentLines;
+    const m = a.length, n = b.length;
+    const lcs = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+    for (let i = m - 1; i >= 0; i--) {
+      for (let j = n - 1; j >= 0; j--) {
+        lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+      }
+    }
+    let i = 0, j = 0;
+    while (i < m && j < n) {
+      if (a[i] === b[j]) { i++; j++; }
+      else if (lcs[i + 1][j] >= lcs[i][j + 1]) i++;
+      else { added.add(j); j++; }
+    }
+    while (j < n) { added.add(j); j++; }
+    return added;
+  }
+
+  function requestGitHead(tab) {
+    if (!tab || tab.headContent !== undefined) return;
+    parent.postMessage({ type: 'git:head', name: tab.name }, '*');
+  }
+
+  function recomputeAddedLines() {
+    const tab = activeEditableFileTab();
+    addedLines = (gitIsRepo && tab && tab.headTracked && tab.headContent != null)
+      ? computeAddedLines(tab.headContent, lines)
+      : new Set();
+  }
   const EXT_LANG = {
     js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
     ts: 'typescript', tsx: 'typescriptreact', html: 'html', htm: 'html',
@@ -774,6 +815,7 @@
     document.body.classList.remove('empty');
     document.body.classList.remove('settings');
     setFromContent(tab.content);
+    requestGitHead(tab);
     renderTabs();
     applyMdView();
     notifyActiveFileSelected();
@@ -1019,7 +1061,18 @@
     else if (e.data?.type === 'git:status') {
       gitIsRepo = !!e.data.isRepo;
       gitStatus = e.data.status || {};
+      for (const tab of fileTabs) tab.headContent = undefined;
+      const active = activeEditableFileTab();
+      if (active) requestGitHead(active);
       renderTabs();
+    }
+    else if (e.data?.type === 'git:head') {
+      const tab = fileTabs.find(fileTab => fileTab.name === e.data.name);
+      if (tab) {
+        tab.headTracked = !!e.data.tracked;
+        tab.headContent = e.data.content ?? '';
+        if (tab.name === activeTabName && !document.body.classList.contains('settings')) render();
+      }
     }
     else if (e.data?.type === 'vfs:reset') resetWorkspace();
     else if (e.data?.type === 'settings:open') openSettingsTab();
