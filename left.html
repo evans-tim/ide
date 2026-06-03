@@ -30,7 +30,13 @@
   .caret { display: inline-block; width: 16px; height: 16px; flex: none; margin-right: 4px; background: currentColor; opacity: 0.7; -webkit-mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; mask: url(icons/chevron-right.svg) center / 10px 10px no-repeat; }
   .caret.expanded { -webkit-mask-image: url(icons/chevron-down.svg); mask-image: url(icons/chevron-down.svg); }
   @font-face { font-family: "seti"; src: url(icons/seti.woff) format("woff"); }
-  .row > span:last-child { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .row > span.label { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .row > span:last-child:not(.gitStatus) { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .row.git-M > span.label { color: rgb(184, 136, 67); }
+  .row.git-U > span.label { color: rgb(88, 126, 139); }
+  .gitStatus { flex: none; margin-left: 8px; margin-right: 16px; text-align: right; }
+  .row.git-M .gitStatus { color: rgb(184, 136, 67); }
+  .row.git-U .gitStatus { color: rgb(88, 126, 139); }
   .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
@@ -50,6 +56,8 @@
 <div id="extensionsView">Extensions</div>
 <script>
   let fileNames = [];
+  let gitStatus = {};
+  let gitIsRepo = false;
   let commandNames = [];
   let systemNames = [];
   let selectedPath = null;
@@ -183,8 +191,17 @@
       icon.style.color = glyph.color;
       row.appendChild(icon);
       const label = document.createElement('span');
+      label.className = 'label';
       label.textContent = name;
       row.appendChild(label);
+      const code = gitIsRepo ? gitStatus[childPath] : null;
+      if (code === 'M' || code === 'U') {
+        row.classList.add('git-' + code);
+        const status = document.createElement('span');
+        status.className = 'gitStatus';
+        status.textContent = code;
+        row.appendChild(status);
+      }
       if (selectedType === 'file' && selectedPath === childPath) row.classList.add('selected');
       row.onclick = () => {
         selectedPath = childPath;
@@ -244,6 +261,10 @@
     if (e.data?.type === 'vfs:files') {
       fileNames = e.data.files;
       render();
+    } else if (e.data?.type === 'git:status') {
+      gitIsRepo = !!e.data.isRepo;
+      gitStatus = e.data.status || {};
+      render();
     } else if (e.data?.type === 'commands:files') {
       commandNames = Object.keys(e.data.files || {}).sort();
       render();
@@ -252,6 +273,8 @@
       render();
     } else if (e.data?.type === 'vfs:reset') {
       fileNames = [];
+      gitStatus = {};
+      gitIsRepo = false;
       selectedPath = null;
       selectedType = null;
       expanded.clear();

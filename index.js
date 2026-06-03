@@ -2,6 +2,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const pty = require('node-pty');
+const { execFileSync } = require('child_process');
 const { WebSocketServer } = require('ws');
 
 const serverRoot = process.cwd();
@@ -58,6 +59,33 @@ const filePath = name => {
   return full;
 };
 
+const gitStatus = () => {
+  try {
+    execFileSync('git', ['-C', mountedDir, 'rev-parse', '--is-inside-work-tree'], { stdio: 'ignore' });
+  } catch {
+    return { isRepo: false, status: {} };
+  }
+  let out;
+  try {
+    out = execFileSync('git', ['-C', mountedDir, 'status', '--porcelain', '-z', '--untracked-files=all'], { encoding: 'utf8' });
+  } catch {
+    return { isRepo: true, status: {} };
+  }
+  const status = {};
+  const entries = out.split('\0');
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (!entry) continue;
+    const code = entry.slice(0, 2);
+    let rel = entry.slice(3);
+    if (code[0] === 'R' || code[0] === 'C') { i++; }
+    if (!rel) continue;
+    const isNew = code === '??' || code.includes('A');
+    status[rel] = isNew ? 'U' : 'M';
+  }
+  return { isRepo: true, status };
+};
+
 const MODEL_PRICING = {
   'claude-opus-4-8':  { input: 15,  output: 75  },
   'claude-sonnet-4-6': { input: 3,   output: 15  },
@@ -75,6 +103,14 @@ const server = http.createServer((req, res) => {
   if (req.url === '/api/files' && req.method === 'GET') {
     try {
       sendJson(res, 200, { files: walk(mountedDir).sort() });
+    } catch (err) {
+      sendJson(res, 500, { error: err.message });
+    }
+    return;
+  }
+  if (req.url === '/api/git-status' && req.method === 'GET') {
+    try {
+      sendJson(res, 200, gitStatus());
     } catch (err) {
       sendJson(res, 500, { error: err.message });
     }

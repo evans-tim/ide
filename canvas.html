@@ -127,6 +127,9 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .tab.git-M .tabTitle, .tab.git-M .tabGitStatus { color: rgb(184, 136, 67); }
+  .tab.git-U .tabTitle, .tab.git-U .tabGitStatus { color: rgb(88, 126, 139); }
+  .tabGitStatus { flex: none; margin-left: auto; margin-right: 4px; }
   .tabDir {
     font-size: 11px;
   }
@@ -507,12 +510,15 @@
 
   let setiTheme = null;
   let themeVariant = 'dark';
+  let gitStatus = {};
+  let gitIsRepo = false;
   const EXT_LANG = {
     js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
     ts: 'typescript', tsx: 'typescriptreact', html: 'html', htm: 'html',
     md: 'markdown', txt: 'plaintext', css: 'css', json: 'json'
   };
   fetch('icons/vs-seti-icon-theme.json').then(r => r.json()).then(t => { setiTheme = t; renderTabs(); });
+  parent.postMessage({ type: 'git:list' }, '*');
 
   function fileIconFor(path) {
     if (!setiTheme) return { char: '', color: 'inherit' };
@@ -616,7 +622,16 @@
       close.setAttribute('aria-label', 'Close');
       close.innerHTML = '<span class="iconMask closeIcon" aria-hidden="true"></span><span class="dirtyDot" aria-hidden="true"></span>';
 
-      tabEl.append(icon, title, close);
+      const code = !tab.settings && gitIsRepo ? gitStatus[tab.name] : null;
+      if (code === 'M' || code === 'U') {
+        tabEl.classList.add('git-' + code);
+        const status = document.createElement('span');
+        status.className = 'tabGitStatus';
+        status.textContent = code;
+        tabEl.append(icon, title, status, close);
+      } else {
+        tabEl.append(icon, title, close);
+      }
       tabEl.addEventListener('click', () => switchTab(tab.name));
       close.addEventListener('click', event => {
         event.stopPropagation();
@@ -999,6 +1014,11 @@
 
   addEventListener('message', e => {
     if (e.data?.type === 'vfs:opened') openFileTab(e.data.name, e.data.content);
+    else if (e.data?.type === 'git:status') {
+      gitIsRepo = !!e.data.isRepo;
+      gitStatus = e.data.status || {};
+      renderTabs();
+    }
     else if (e.data?.type === 'vfs:reset') resetWorkspace();
     else if (e.data?.type === 'settings:open') openSettingsTab();
     else if (e.data?.type === 'canvas:tabs:request') parent.postMessage({ type: 'canvas:tabs', names: fileTabs.map(tab => tab.name) }, '*');
