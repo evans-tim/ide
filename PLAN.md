@@ -21,7 +21,7 @@
 - (DONE) chat history 
 - show context usage
 - (DONE) real LLM
-- choose model
+- (DONE) choose model
 - jsonrpc tool call
 - read file tool
 - edit tool
