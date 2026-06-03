@@ -3,12 +3,14 @@
 - (DONE) Add file specific icons
 - (DONE) Make filetree focus/selection for directory focus 
 - (DONE) Edit/Save files
+- Show git status for each file in file tree
 
 # Canvas
 - (DONE) Add canvas topbar with filename tabs, overflow scrolling, placeholder button group, and blank-canvas empty state
 - (DONE) file preview
 - (DONE) md parser and preview
 - edit visualizer and accept/reject
+- show git status for line in canvas editor
 
 # Lower Panel
 - (DONE) Add simple terminal
