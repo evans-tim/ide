@@ -53,6 +53,7 @@
 - (DONE) when double clicking on a word after ~1000 lines it will highlight the word 1 line above it. 
 - (BUG) When hovering over an item in the slash command popup modal, the additional hover modal should show up on the left if there isn't enough room left to show it on the right. (Can't be fixed right now because z-index can't help iframes cutting each other off)
 - (BUG) refreshing the filetree view does not update the git status styling of canvas file tabs.
+- (BUG) slash commands and file mentions cause layout shift when towards the right of the prompt composer. 
 
 # Nice to Have
 - right click add folder/file in tree view
