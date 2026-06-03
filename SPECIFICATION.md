@@ -205,6 +205,10 @@
 - Hovering a file row uses the relevant Cursor list-selection style without top and bottom border.
 - The file tree's top-level entries are nested under a single root directory row whose label is the mounted workspace directory's base name rendered in all caps with a bold font weight.
 - The root directory row is collapsible like any other directory row; collapsing it hides the entire tree and expanding it restores the previous expansion state of its descendants.
+- The mounted workspace root directory row displays a `refresh.svg` button right-aligned within the root row.
+- The `refresh.svg` button uses the same hover styling as the terminal tab trash and split controls: hovering shows a rounded square background using a slightly darker gray, matching the list highlight color, and uses the pointer cursor.
+- Clicking the `refresh.svg` button re-reads the current mounted workspace directory's filesystem and updates the file tree to reflect any files added, deleted, or whose git status changed (including newly staged or changed files).
+- The `refresh.svg` button's filesystem refresh does not change the file tree selection state, directory expansion state, open filename tabs, or any pane other than reflecting the latest filesystem and git status in the file tree and its existing git status decorations.
 - A directory row displays a caret icon followed by the directory name.
 - Clicking a directory row selects that directory row and toggles it between collapsed and expanded.
 - The selected directory row uses the relevant Cursor list-selection style, and distinguishes focused vs. unfocused states.
@@ -234,6 +238,15 @@
 - The same git status decoration applies to canvas filename tabs: a modified file's filename tab renders its file name and an appended right-aligned `M` glyph (8px right margin) in `rgb(184, 136, 67)`, and a new file's filename tab renders its file name and an appended right-aligned `U` glyph (8px right margin) in `rgb(88, 126, 139)`.
 - The same staged-for-commit decoration applies to canvas filename tabs: a staged modified file's filename tab renders its file name and `M` glyph in `rgb(152, 122, 77)`, and a staged new file's filename tab renders its file name in `rgb(106, 158, 134)` with its glyph changed from `U` to `A` in the same color `rgb(106, 158, 134)`.
 - The git status status glyph is part of the same container as the file name in both the file-tree row and the filename tab.
+
+**Directory git status decoration**
+- A directory's git status is derived from its descendants: a directory is decorated when it transitively contains at least one file or directory that carries a git status (new, new-staged, modified, or modified-staged).
+- A decorated directory's directory-row name is rendered in the same git status color as its derived status, matching the file-row name colors: new uses `rgb(88, 126, 139)`, new-staged uses `rgb(106, 158, 134)`, modified uses `rgb(184, 136, 67)`, and modified-staged uses `rgb(152, 122, 77)`.
+- A decorated directory row displays a solid filled circle icon, visually identical to the filename tab's dirty-save circle, rendered in the directory's derived git status color at a slightly reduced opacity, right-aligned in the same position and with the same right margin as the file-row status glyph.
+- A directory's derived git status resolves new and new-staged statuses with precedence over modified and modified-staged statuses: if any descendant carries a new or new-staged status, the directory uses the new color family even when other descendants carry modified or modified-staged statuses.
+- The directory git status circle is part of the same container as the directory name, occupying the right-aligned status position; it is a solid circle and never an `M`, `U`, or `A` status glyph.
+- Directory git status decoration applies only when the mounted workspace directory is itself a git repository, by the same condition that governs file git status decoration; when the mounted workspace directory is not a git repository, no directory row carries any git status color or circle.
+- File-row git status decoration is unaffected by directory git status decoration and continues to render its own `M`, `U`, or `A` status glyph and name color by its own existing rule.
 
 **File tree scrolling**
 - The file tree scrolls vertically when its content exceeds the available height, and it uses the same scrolling behavior as the canvas editor.

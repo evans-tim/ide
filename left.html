@@ -31,7 +31,7 @@
   .caret.expanded { -webkit-mask-image: url(icons/chevron-down.svg); mask-image: url(icons/chevron-down.svg); }
   @font-face { font-family: "seti"; src: url(icons/seti.woff) format("woff"); }
   .row > span.label { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
-  .row > span:last-child:not(.gitStatus) { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+  .row > span:last-child:not(.gitStatus):not(.dirStatus) { flex: 1; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
   .row.git-M > span.label { color: rgb(184, 136, 67); }
   .row.git-U > span.label { color: rgb(88, 126, 139); }
   .row.git-MS > span.label { color: rgb(152, 122, 77); }
@@ -41,12 +41,22 @@
   .row.git-U .gitStatus { color: rgb(88, 126, 139); }
   .row.git-MS .gitStatus { color: rgb(152, 122, 77); }
   .row.git-AS .gitStatus { color: rgb(106, 158, 134); }
+  .dirStatus { flex: none; margin-left: 8px; margin-right: 16px; width: 8px; height: 8px; border-radius: 50%; background: currentColor; opacity: 0.6; }
+  .row.git-M .dirStatus { color: rgb(184, 136, 67); }
+  .row.git-U .dirStatus { color: rgb(88, 126, 139); }
+  .row.git-MS .dirStatus { color: rgb(152, 122, 77); }
+  .row.git-AS .dirStatus { color: rgb(106, 158, 134); }
   .file-icon { width: 16px; height: 16px; flex: none; margin-right: 4px; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
   .guide { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--tree-indentGuidesStroke, var(--editorGroup-border)); pointer-events: none; }
   .guide.dim { opacity: 0; }
   body.hovering .guide.dim { opacity: 0.5; }
   .guide.on-selected { opacity: 1; }
-  .row.root-row > span:last-child { font-weight: bold; }
+  .row.root-row > span.label { font-weight: bold; }
+  .rootActions { margin-left: auto; display: flex; flex: none; flex-direction: row-reverse; padding-left: 4px; padding-right: 11px; }
+  .rootAction { width: 20px; height: 20px; border: 0; border-radius: 5px; padding: 0; display: flex; align-items: center; justify-content: center; background: transparent; color: inherit; cursor: pointer; }
+  .rootAction:hover { background: var(--list-inactiveSelectionBackground); }
+  .rootAction .icon { width: 14px; height: 14px; display: block; background: currentColor; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center; -webkit-mask-size: contain; mask-size: contain; }
+  .rootAction.refresh .icon { -webkit-mask-image: url(icons/refresh.svg); mask-image: url(icons/refresh.svg); }
 </style>
 <div class="topbar">
   <button class="topbarBtn filesBtn active" id="filesBtn"><span class="icon"></span></button>
@@ -113,6 +123,26 @@
     return node;
   };
 
+  const dirGitStatus = dirPath => {
+    if (!gitIsRepo || !dirPath) return null;
+    const prefix = dirPath + '/';
+    let hasU = false, hasAS = false, hasM = false, hasMS = false;
+    for (const p in gitStatus) {
+      if (p === dirPath || p.startsWith(prefix)) {
+        const code = gitStatus[p];
+        if (code === 'U') hasU = true;
+        else if (code === 'AS') hasAS = true;
+        else if (code === 'M') hasM = true;
+        else if (code === 'MS') hasMS = true;
+      }
+    }
+    if (hasU) return 'U';
+    if (hasAS) return 'AS';
+    if (hasM) return 'M';
+    if (hasMS) return 'MS';
+    return null;
+  };
+
   const isImmediateParent = dirPath => {
     if (selectedPath == null) return false;
     const idx = selectedPath.lastIndexOf('/');
@@ -165,8 +195,16 @@
       if (expanded.has(childPath)) caret.classList.add('expanded');
       row.appendChild(caret);
       const label = document.createElement('span');
+      label.className = 'label';
       label.textContent = name;
       row.appendChild(label);
+      const dirCode = dirGitStatus(childPath);
+      if (dirCode) {
+        row.classList.add('git-' + dirCode);
+        const status = document.createElement('span');
+        status.className = 'dirStatus';
+        row.appendChild(status);
+      }
       if (selectedType === 'dir' && selectedPath === childPath) row.classList.add('selected');
       row.onclick = () => {
         selectedPath = childPath;
@@ -229,8 +267,26 @@
     if (expanded.has(rootKey)) caret.classList.add('expanded');
     row.appendChild(caret);
     const label = document.createElement('span');
+    label.className = 'label';
     label.textContent = (rootLabel || '').toUpperCase();
     row.appendChild(label);
+    if (rootKey === ROOT_KEY) {
+      const actions = document.createElement('span');
+      actions.className = 'rootActions';
+      const refresh = document.createElement('button');
+      refresh.className = 'rootAction refresh';
+      refresh.type = 'button';
+      refresh.setAttribute('aria-label', 'Refresh Explorer');
+      refresh.innerHTML = '<span class="icon"></span>';
+      refresh.onmousedown = e => { e.stopPropagation(); };
+      refresh.onclick = e => {
+        e.stopPropagation();
+        parent.postMessage({ type: 'vfs:list' }, '*');
+        parent.postMessage({ type: 'git:list' }, '*');
+      };
+      actions.appendChild(refresh);
+      row.appendChild(actions);
+    }
     if (selectedType === 'dir' && selectedPath === rootKey) row.classList.add('selected');
     row.onclick = () => {
       selectedPath = rootKey;
