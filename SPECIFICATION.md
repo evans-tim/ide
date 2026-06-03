@@ -223,6 +223,15 @@
 - When the mouse is outside the left pane, only indent guides for the single parent directory immediately containing the selected file are visible.
 - Indent guides for directories containing the selected file are slightly darker than hover-only indent guides.
 
+**Git status decoration**
+- Git status decoration applies only when the mounted workspace directory is itself a git repository; when the mounted workspace directory is not a git repository, no file-tree row or filename tab carries any git status color or status glyph.
+- A file's git status is one of: modified, new, or unchanged, as reported by git for the mounted workspace directory.
+- A modified file's file-tree row file name is rendered in color `rgb(184, 136, 67)`, and an `M` glyph in the same color `rgb(184, 136, 67)` is added to the same row container, right-aligned with an 8px margin to the right.
+- A new file's file-tree row file name is rendered in color `rgb(88, 126, 139)`, and a `U` glyph in the same color `rgb(88, 126, 139)` is added to the same row container, right-aligned with an 8px margin to the right.
+- An unchanged file's file-tree row file name and container carry no git status color or status glyph.
+- The same git status decoration applies to canvas filename tabs: a modified file's filename tab renders its file name and an appended right-aligned `M` glyph (8px right margin) in `rgb(184, 136, 67)`, and a new file's filename tab renders its file name and an appended right-aligned `U` glyph (8px right margin) in `rgb(88, 126, 139)`.
+- The git status status glyph is part of the same container as the file name in both the file-tree row and the filename tab.
+
 **File tree scrolling**
 - The file tree scrolls vertically when its content exceeds the available height, and it uses the same scrolling behavior as the canvas editor.
 - The file tree's vertical scrollbar space is always reserved; the scrollbar's appearance causes no layout shift.
