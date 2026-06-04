@@ -130,13 +130,18 @@ const gitDiff = (name, fallbackBefore, after) => {
 };
 
 const MODEL_PRICING = {
-  'claude-opus-4-8':  { input: 5,  output: 25  },
-  'claude-sonnet-4-6': { input: 3,   output: 15  },
-  'claude-haiku-4-5':  { input: 1,   output: 5   },
+  'claude-opus-4-8':  { input: 5,    output: 25,   provider: 'anthropic' },
+  'claude-sonnet-4-6': { input: 3,    output: 15,   provider: 'anthropic' },
+  'claude-haiku-4-5':  { input: 1,    output: 5,    provider: 'anthropic' },
+  'gpt-5.5':          { input: 5,    output: 30,   provider: 'openai' },
+  'gpt-5.4':          { input: 2.5,  output: 15,   provider: 'openai' },
+  'gpt-5.4-mini':     { input: 0.75, output: 4.5,  provider: 'openai' },
+  'gpt-5.4-nano':     { input: 0.2,  output: 1.25, provider: 'openai' },
 };
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
 const aiModule = import('ai');
 const anthropicModule = import('@ai-sdk/anthropic');
+const openaiModule = import('@ai-sdk/openai');
 
 const server = http.createServer((req, res) => {
   if (req.url === '/api/workspace' && req.method === 'GET') {
@@ -210,7 +215,9 @@ const server = http.createServer((req, res) => {
       const pricing = MODEL_PRICING[model];
       const { streamText, tool, stepCountIs } = await aiModule;
       const { anthropic } = await anthropicModule;
+      const { openai } = await openaiModule;
       const { z } = await import('zod');
+      const languageModel = pricing.provider === 'openai' ? openai(model) : anthropic(model);
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
       const controller = new AbortController();
       let aborted = false;
@@ -236,7 +243,7 @@ const server = http.createServer((req, res) => {
           },
         }),
       };
-      const result = streamText({ model: anthropic(model), messages, tools, stopWhen: stepCountIs(5), ...(system ? { system } : {}), abortSignal: controller.signal });
+      const result = streamText({ model: languageModel, messages, tools, stopWhen: stepCountIs(5), ...(system ? { system } : {}), abortSignal: controller.signal });
       res.on('close', () => { if (!res.writableFinished) { aborted = true; controller.abort(); } });
       try {
         for await (const part of result.fullStream) {
