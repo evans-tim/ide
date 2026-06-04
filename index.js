@@ -5,7 +5,7 @@ const pty = require('node-pty');
 const { execFileSync } = require('child_process');
 const { WebSocketServer } = require('ws');
 
-const serverRoot = process.cwd();
+const serverRoot = process.env.ROOT_WORKSPACE_DIR ? path.resolve(process.env.ROOT_WORKSPACE_DIR) : path.dirname(__dirname);
 const modulesDir = path.join(serverRoot, 'modules');
 let mountedDir = serverRoot;
 
