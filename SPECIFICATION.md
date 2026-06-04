@@ -672,7 +672,7 @@
 - Gutter on the left displays line numbers, one per content line, right-aligned.
 - `editor.wordSeparators` defines the characters that delimit words.
 
-**Canvas added-line decoration**
+**Canvas added line decoration**
 - A content line that is added relative to git (a line present in the canvas's in-memory contents but absent from the file's committed git version) is decorated as an added line.
 - An added content line's row background is `rgb(228, 238, 233)`, spanning the line's full row height.
 - An added content line additionally displays a slim vertical bar of color `rgb(56, 136, 102)` positioned immediately to the right of the line-number gutter, with the bar's height equal to the line's row height.
@@ -681,6 +681,18 @@
 - On an added content line that is also the caret line, the caret-line highlight is composited as a semi-transparent overlay over the added-line background rather than replacing it, so the two colors mix; with the added background `rgb(228, 238, 233)` and the highlight at 50% opacity, the resulting blended row color is `rgb(215, 225, 220)`.
 - The added-line green vertical bar and the line's text remain fully visible above the caret-line highlight overlay on an added caret line.
 - On a content line that is not added, the caret-line highlight continues to render as a solid background by its own existing rule and is unaffected by the added-line overlay compositing.
+
+**Canvas modified/deleted line decoration**
+- A run of one or more content lines that is deleted relative to git (lines present in the file's committed git version but absent from the canvas's in-memory contents) is decorated as a deleted-line marker at the position where the deletion occurred.
+- A deleted-line marker is drawn as its own decoration row at the boundary between the surviving content lines that surround the deletion; it does not represent any in-memory content line and carries no caret position, line number, or editable text.
+- A deleted-line marker displays the removed line's text from the file's committed git version, with leading and interior whitespace preserved, rendered in the de-emphasized line-number foreground color so it reads as read-only deleted content rather than editable text.
+- Each removed line in a multi-line deletion gets its own deleted-line marker row, one per removed line, in committed order.
+- A deleted-line marker's row background is `rgb(248, 237, 239)`, spanning the marker row's full height.
+- A deleted-line marker additionally displays a slim vertical bar of color `rgb(198, 61, 87)` positioned immediately to the right of the line-number gutter, with the bar's height equal to the marker row's height, matching the added-line bar's placement and width.
+- A deletion at the very top of the file renders its marker above the first surviving content line, and a deletion at the very bottom renders its marker below the last surviving content line.
+- Deleted-line decoration applies only when the mounted workspace directory is itself a git repository, by the same condition that governs file git status decoration; when the mounted workspace directory is not a git repository, no deleted-line marker is rendered.
+- The line-number gutter, caret, text selection, and added-line decoration are unaffected by deleted-line decoration and continue to behave by their own existing rules; a deleted-line marker introduces no gutter number and is never itself an added line.
+- A modified line has no dedicated decoration; following git, a modification is represented as the deletion of the old line plus the addition of the new line, so it renders as a deleted-line marker (for the removed content) immediately followed by an added-line decoration (for the new content) on the surviving content line.
 
 **Line wrapping**
 - A content line whose rendered width exceeds the available canvas text width wraps onto one or more additional visual rows instead of scrolling horizontally.

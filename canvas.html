@@ -225,6 +225,9 @@
   body .line.added.active, body.focused .line.added.active { background: rgb(228, 238, 233) !important; color: inherit !important; }
   .line.added.active::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; background: var(--list-inactiveSelectionBackground); opacity: 0.5; }
   body.focused .line.added.active::after { background: var(--list-activeSelectionBackground); }
+  .deleted { display: block; position: relative; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: rgb(248, 237, 239); color: var(--editorLineNumber-foreground, #999); white-space: pre; }
+  .deleted::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgb(198, 61, 87); z-index: 1; }
+  .gdeleted { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); }
   .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
   body:not(.focused) .selection { background: transparent; color: inherit; }
   .cursor { position: absolute; top: 0; width: 1px; background: var(--editor-foreground, #000); animation: blink 1s step-end infinite; height: var(--ide-line-height, 18px); }
@@ -396,7 +399,21 @@
     recomputeAddedLines();
     wrapCols = computeWrap();
     const gutterChildren = [];
-    lines.forEach((_, i) => {
+    const addDeletedMarkers = texts => {
+      for (const text of (texts || [])) {
+        const g = document.createElement('div');
+        g.className = 'gdeleted';
+        g.textContent = '';
+        gutterChildren.push(g);
+        const marker = document.createElement('div');
+        marker.className = 'deleted';
+        marker.textContent = text || '\u200b';
+        view.appendChild(marker);
+      }
+    };
+    view.innerHTML = '';
+    lines.forEach((text, i) => {
+      addDeletedMarkers(deletedBefore.get(i));
       const block = document.createElement('div');
       block.className = 'gblock';
       const rows = wrapCols[i].length;
@@ -407,16 +424,14 @@
         block.appendChild(g);
       }
       gutterChildren.push(block);
-    });
-    gutter.replaceChildren(...gutterChildren);
-    view.innerHTML = '';
-    lines.forEach((text, i) => {
       const div = document.createElement('div');
       div.className = 'line' + (!range && i === cur.line ? ' active' : '') + (addedLines.has(i) ? ' added' : '');
       div.dataset.line = i;
       appendLine(div, text, i, range);
       view.appendChild(div);
     });
+    addDeletedMarkers(deletedBefore.get(lines.length));
+    gutter.replaceChildren(...gutterChildren);
     positionGutterHighlight();
   }
 
@@ -521,10 +536,12 @@
   let gitStatus = {};
   let gitIsRepo = false;
   let addedLines = new Set();
+  let deletedBefore = new Map();
 
-  function computeAddedLines(headContent, currentLines) {
+  function computeDiff(headContent, currentLines) {
     const added = new Set();
-    if (headContent == null) return added;
+    const deleted = new Map();
+    if (headContent == null) return { added, deleted };
     const a = headContent.replace(/\r\n?/g, '\n').split('\n');
     const b = currentLines;
     const m = a.length, n = b.length;
@@ -534,14 +551,19 @@
         lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
       }
     }
+    const bump = (j, text) => {
+      if (!deleted.has(j)) deleted.set(j, []);
+      deleted.get(j).push(text);
+    };
     let i = 0, j = 0;
     while (i < m && j < n) {
       if (a[i] === b[j]) { i++; j++; }
-      else if (lcs[i + 1][j] >= lcs[i][j + 1]) i++;
+      else if (lcs[i + 1][j] >= lcs[i][j + 1]) { bump(j, a[i]); i++; }
       else { added.add(j); j++; }
     }
+    while (i < m) { bump(n, a[i]); i++; }
     while (j < n) { added.add(j); j++; }
-    return added;
+    return { added, deleted };
   }
 
   function requestGitHead(tab) {
@@ -551,9 +573,14 @@
 
   function recomputeAddedLines() {
     const tab = activeEditableFileTab();
-    addedLines = (gitIsRepo && tab && tab.headTracked && tab.headContent != null)
-      ? computeAddedLines(tab.headContent, lines)
-      : new Set();
+    if (gitIsRepo && tab && tab.headTracked && tab.headContent != null) {
+      const diff = computeDiff(tab.headContent, lines);
+      addedLines = diff.added;
+      deletedBefore = diff.deleted;
+    } else {
+      addedLines = new Set();
+      deletedBefore = new Map();
+    }
   }
   const EXT_LANG = {
     js: 'javascript', mjs: 'javascript', cjs: 'javascript', jsx: 'javascript',
