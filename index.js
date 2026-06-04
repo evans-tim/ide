@@ -217,11 +217,7 @@ const server = http.createServer((req, res) => {
       let streamed = '';
       const writeEvent = event => res.write('\u0000' + JSON.stringify(event) + '\u0000');
       const tools = {
-        'hello-world': tool({
-          description: 'Returns a hello world greeting.',
-          inputSchema: z.object({}),
-          execute: async () => { await new Promise(resolve => setTimeout(resolve, 1000)); return { content: 'Hello, World!', elapsed: 1000 }; },
-        }),
+        
         'edit-file': tool({
           description: 'Edit a file in the workspace by replacing a regex match with a replacement string. Returns the resulting diff.',
           inputSchema: z.object({
