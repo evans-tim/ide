@@ -200,16 +200,23 @@ const server = http.createServer((req, res) => {
       }
       res.end();
       if (aborted) {
-        const usage = await result.usage.catch(() => null);
+        const usage = await result.totalUsage.catch(() => null);
         const inputTokens = usage?.inputTokens ?? Math.ceil(JSON.stringify(messages).length / 3);
         const outputTokens = usage?.outputTokens ?? Math.ceil(streamed.length / 3);
         const cost = (inputTokens / 1e6) * pricing.input + (outputTokens / 1e6) * pricing.output;
         console.log(`[cost][aborted] model=${model} in=${inputTokens} out=${outputTokens} $${cost.toFixed(6)}`);
         return;
       }
-      const usage = await result.usage;
+      const steps = await result.steps.catch(() => []);
+      steps.forEach((step, i) => {
+        const stepIn = step.usage?.inputTokens ?? 0;
+        const stepOut = step.usage?.outputTokens ?? 0;
+        const stepCost = (stepIn / 1e6) * pricing.input + (stepOut / 1e6) * pricing.output;
+        console.log(`[cost][turn ${i + 1}/${steps.length}] model=${model} in=${stepIn} out=${stepOut} $${stepCost.toFixed(6)}`);
+      });
+      const usage = await result.totalUsage;
       const cost = (usage.inputTokens / 1e6) * pricing.input + (usage.outputTokens / 1e6) * pricing.output;
-      console.log(`[cost] model=${model} in=${usage.inputTokens} out=${usage.outputTokens} $${cost.toFixed(6)}`);
+      console.log(`[cost][total] model=${model} in=${usage.inputTokens} out=${usage.outputTokens} $${cost.toFixed(6)}`);
     }).catch(err => {
       if (!res.headersSent) sendJson(res, 500, { error: err.message });
       else res.end();

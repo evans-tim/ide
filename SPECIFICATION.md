@@ -368,6 +368,7 @@
 - The agent chooser is unaffected by the send control and continues to behave by its own rule; it is not a general purpose button or dropdown trigger.
 - The cost logger computes per-token cost using the pricing for the currently selected model; switching the selected model changes the per-token rate applied to all subsequent cost calculations.
 - The cost logger's model pricing is: `claude-opus-4-8` at the Opus 4 rate, `claude-sonnet-4-6` at the Sonnet 4.5 rate, and `claude-haiku-4-5` at the Haiku 4.5 rate.
+- A SINGLE PROMPT SUBMISSION THAT TRIGGERS A TOOL CALL IS RESOLVED ACROSS MULTIPLE SEQUENTIAL MODEL REQUESTS: THE FIRST REQUEST RETURNS THE ASSISTANT TEXT TOGETHER WITH THE TOOL-CALL, AND THE SECOND REQUEST (WITH THE TOOL RESULT APPENDED) RETURNS THE POST-TOOL RESPONSE; EACH SUCH REQUEST RE-SENDS THE ENTIRE GROWING MESSAGE HISTORY AS INPUT TOKENS. THE COST LOGGER MUST NEVER MISS THIS: IT MUST ACCOUNT FOR THE INPUT AND OUTPUT TOKENS OF EVERY REQUEST IN THE MULTI-STEP RESOLUTION, SUMMING USAGE ACROSS ALL STEPS RATHER THAN REPORTING ONLY THE FINAL STEP'S USAGE; REPORTING A SINGLE STEP'S USAGE FOR A MULTI-STEP RESOLUTION UNDERCOUNTS COST AND IS AN ACCOUNTING FAILURE. This multi-step summation requirement governs only the cost logger's token accounting; the per-token pricing rule and the selected-model rate selection are unaffected by it and continue to behave by their own existing rules.
 
 
 **File mention autocomplete**
