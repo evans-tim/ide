@@ -228,17 +228,22 @@ const server = http.createServer((req, res) => {
       const tools = {
         
         'edit-file': tool({
-          description: 'Edit a file in the workspace by replacing a regex match with a replacement string. Returns the resulting diff.',
+          description: 'Edit a file in the workspace by applying every needed replacement in one call. Each replacement must be a match/replace pair, ordered as it should be applied. Returns one resulting diff.',
           inputSchema: z.object({
             path: z.string().describe('Path to the file relative to the workspace root.'),
-            pattern: z.string().describe('A JavaScript regular expression matched against the file contents.'),
-            replacement: z.string().describe('The string that replaces the regex match.'),
+            replacements: z.array(z.object({
+              pattern: z.string().describe('A JavaScript regular expression matched against the current file contents.'),
+              replacement: z.string().describe('The string that replaces this regex match.'),
+            })).min(1).describe('All replacements for this file as ordered match/replace pairs. Do not split replacements for the same file across multiple tool calls.'),
           }),
-          execute: async ({ path: name, pattern, replacement }) => {
+          execute: async ({ path: name, replacements }) => {
             const full = filePath(name);
             if (!full) throw new Error('Invalid path');
             const before = fs.readFileSync(full, 'utf8');
-            const after = before.replace(new RegExp(pattern), replacement);
+            let after = before;
+            for (const { pattern, replacement } of replacements) {
+              after = after.replace(new RegExp(pattern), replacement);
+            }
             fs.writeFileSync(full, after, 'utf8');
             const diff = gitDiff(name, before, after);
             return { path: name, ...diff };
