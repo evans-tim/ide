@@ -206,6 +206,7 @@
   .editor { flex: 1; min-height: 0; background: var(--editor-background); position: relative; }
   .vScrollbar { position: absolute; top: 0; right: 0; width: 14px; bottom: 0; pointer-events: none; z-index: 11; display: none; }
   body:not(.empty):not(.settings):not(.preview):not(.htmlpreview) .vScrollbar.hasOverflow { display: block; }
+  .vScrollbarMarkers { position: absolute; top: 0; right: 0; width: 14px; height: 100%; pointer-events: none; z-index: 12; display: block; }
   .vScrollbarThumb { position: absolute; right: 0; width: 14px; background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; pointer-events: auto; }
   .vScrollbarThumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
   .settingsFrame { display: none; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
@@ -293,7 +294,7 @@
     </div>
   </div>
 </div>
-<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><iframe id="htmlPreview" class="htmlPreview"></iframe><div id="top-shadow"></div><div class="vScrollbar" id="vScrollbar"><div class="vScrollbarThumb" id="vScrollbarThumb"></div></div></div>
+<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><iframe id="htmlPreview" class="htmlPreview"></iframe><div id="top-shadow"></div><div class="vScrollbar" id="vScrollbar"><div class="vScrollbarThumb" id="vScrollbarThumb"></div><canvas class="vScrollbarMarkers" id="vScrollbarMarkers" aria-hidden="true"></canvas></div></div>
 <script type="module">
   import { prepare, prepareWithSegments, layout, layoutWithLines } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
@@ -320,6 +321,7 @@
   const scroller = document.getElementById('scroller');
   const vScrollbar = document.getElementById('vScrollbar');
   const vScrollbarThumb = document.getElementById('vScrollbarThumb');
+  const vScrollbarMarkers = document.getElementById('vScrollbarMarkers');
   const settings = {
     'editor.wordSeparators': " `~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?"
   };
@@ -359,6 +361,32 @@
     const thumbTop = scroller.scrollTop * (trackHeight - thumbHeight) / maxScroll;
     vScrollbarThumb.style.height = thumbHeight + 'px';
     vScrollbarThumb.style.transform = `translateY(${thumbTop}px)`;
+    drawDiffMarkers(trackHeight);
+  }
+
+  function drawDiffMarkers(trackHeight) {
+    const ratio = window.devicePixelRatio || 1;
+    const width = vScrollbarMarkers.clientWidth;
+    vScrollbarMarkers.width = Math.round(width * ratio);
+    vScrollbarMarkers.height = Math.round(trackHeight * ratio);
+    vScrollbarMarkers.style.height = trackHeight + 'px';
+    const ctx = vScrollbarMarkers.getContext('2d');
+    ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    ctx.clearRect(0, 0, width, trackHeight);
+    if (!gitIsRepo) return;
+    const contentHeight = scroller.scrollHeight;
+    if (contentHeight <= 0) return;
+    const scale = trackHeight / contentHeight;
+    const markH = Math.max(2, LINE_HEIGHT * scale);
+    const scrollerTop = scroller.getBoundingClientRect().top;
+    const paint = (el, color) => {
+      const contentTop = el.getBoundingClientRect().top - scrollerTop + scroller.scrollTop;
+      const top = contentTop * scale;
+      ctx.fillStyle = color;
+      ctx.fillRect(0, top, width, markH);
+    };
+    view.querySelectorAll('.line.added').forEach(el => paint(el, 'rgb(56, 136, 102)'));
+    view.querySelectorAll('.deleted').forEach(el => paint(el, 'rgb(198, 61, 87)'));
   }
 
   function updateTopShadow() {

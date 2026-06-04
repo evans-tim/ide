@@ -778,6 +778,19 @@
 - Scrolling has no momentum; motion stops as soon as scroll input stops.
 - No horizontal scroll.
 
+**Scrollbar diff markers**
+- The canvas vertical scrollbar gutter renders a diff marker for every line that carries added-line or deleted-line decoration, overlaying the gutter without obscuring the scrollbar thumb's contents underneath.
+- Each added content line contributes a green marker of color `rgb(56, 136, 102)` in the scrollbar gutter, and each deleted-line marker contributes a red marker of color `rgb(198, 61, 87)` in the scrollbar gutter.
+- A scrollbar diff marker is positioned vertically so its location in the gutter corresponds precisely to its decorated line's position within the full scrollable content height, mapping the full content height onto the full scrollbar gutter height.
+- The scrollbar diff marker mapping is exact and stays correct at every canvas viewport height, including every height the canvas takes as the lower panel opens, closes, or is resized; the mapping must be recomputed against the canvas's current viewable height, never against a stale or fixed height.
+- The mapping must precisely account for every element that affects the available height of the scrollable canvas content region, including the canvas topbar, the canvas file breadcrumb bar, the lower panel, and any other chrome above or below the scrollable region; the diff marker gutter height equals the scrollable content region's actual rendered height after all such elements are subtracted, never the full pane or viewport height.
+- The scrollbar diff marker mapping is the same mapping that positions the scrollbar thumb: the gutter height, content height, and per-line offsets used to place a diff marker are identical to those used to size and position the thumb, so a diff marker and the thumb always agree about where a given content line sits in the gutter.
+- Because the thumb represents the currently viewable section of the canvas, whenever a decorated line is within the viewable section the thumb spans that line's diff marker, and a decorated line at the exact top or exact bottom edge of the viewable section aligns with the thumb's top or bottom edge respectively (e.g. a green added line visible as the very last viewable line places its green marker precisely at the bottom edge of the thumb).
+- Scrollbar diff markers reflect the same in-memory diff state that drives the canvas added-line and deleted-line decorations, so a line shown with a green bar in the editor has a green scrollbar marker and a deleted-line marker shown with a red bar in the editor has a red scrollbar marker.
+- Scrollbar diff markers remain at their content-proportional positions regardless of the current scroll position, so they always indicate where changes are within the entire file.
+- Scrollbar diff markers apply only when the mounted workspace directory is itself a git repository, by the same condition that governs the canvas added-line and deleted-line decoration; when the mounted workspace directory is not a git repository, the scrollbar gutter carries no diff markers.
+- The scrollbar thumb and its ability to let content exist underneath it are unaffected by scrollbar diff markers and continue to behave by their own existing rules; the diff markers are decoration drawn within the gutter.
+
 **Scroll past end**
 - The canvas can always be scrolled until the last line is precisely flush with the top edge of the canvas viewport, regardless of file length.
 - Even a single-line file is scrollable due to small padding above first line. 
