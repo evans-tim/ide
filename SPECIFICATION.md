@@ -824,6 +824,7 @@
 - Pressing the mouse down anywhere on the scrollbar gutter other than the thumb jumps the thumb so it is centered on the pressed point, scrolling the canvas to the corresponding position.
 - After a gutter mousedown jumps the thumb, holding and dragging the mouse continues to drag the thumb (tracking the pointer exactly as the thumb's own drag does) until the mouse is released, without requiring the press to land on the thumb.
 - The editable canvas area's caret and selection behavior is unaffected by gutter mousedown and gutter drag and continues to behave by its own existing rules.
+- Selection drag must auto-scroll the canvas when the pointer moves above or below the visible viewport, continuing the selection to track the pointer’s logical text position until mouse release.
 
 **Scrollbar diff markers**
 - The canvas vertical scrollbar gutter renders a diff marker for every line that carries added-line or deleted-line decoration, overlaying the gutter without obscuring the scrollbar thumb's contents underneath.

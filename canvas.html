@@ -1193,7 +1193,14 @@
         render();
         view.focus();
         view.setPointerCapture(e.pointerId);
+        const autoScroll = clientY => {
+          const rect = scroller.getBoundingClientRect();
+          const margin = 24;
+          if (clientY < rect.top + margin) scroller.scrollTop -= Math.min(24, rect.top + margin - clientY);
+          else if (clientY > rect.bottom - margin) scroller.scrollTop += Math.min(24, clientY - (rect.bottom - margin));
+        };
         const onMove = moveEvent => {
+          autoScroll(moveEvent.clientY);
           const pos = positionFromEvent(moveEvent, 'character');
           if (!pos) return;
           const hover = wordRangeAt(pos);
@@ -1221,7 +1228,14 @@
     sel = null;
     render();
     view.focus();
+    const autoScroll = clientY => {
+      const rect = scroller.getBoundingClientRect();
+      const margin = 24;
+      if (clientY < rect.top + margin) scroller.scrollTop -= Math.min(24, rect.top + margin - clientY);
+      else if (clientY > rect.bottom - margin) scroller.scrollTop += Math.min(24, clientY - (rect.bottom - margin));
+    };
     const onMove = moveEvent => {
+      autoScroll(moveEvent.clientY);
       const pos = positionFromEvent(moveEvent);
       if (!pos) return;
       cur = pos;
@@ -1241,7 +1255,6 @@
     view.addEventListener('pointercancel', onUp);
     e.preventDefault();
   });
-
   document.addEventListener('dblclick', e => {
     if (closestTarget(e.target, '.topbar')) return;
     if (closestTarget(e.target, '.breadcrumbBar')) return;
