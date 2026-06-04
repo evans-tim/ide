@@ -11,6 +11,7 @@
 - (DONE) md parser and preview
 - edit visualizer and accept/reject
 - (DONE) show git status for line in canvas editor
+- drag selection downwards past end of current canvas view should auto scroll and same for upwards. 
 
 # Lower Panel
 - (DONE) Add simple terminal
