@@ -220,7 +220,8 @@
   .response {
     padding: 0 8px;
   }
-  .response.planning {
+  .response.planning,
+  .diffStreamingName {
     display: inline-block;
     width: fit-content;
     color: transparent;
@@ -522,27 +523,11 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    margin: 8px;
-    padding: 4px 8px;
-    border: 1px solid var(--editorGroup-border);
-    border-radius: 6px;
+    padding: 8px;
   }
   .diffStreaming .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
   .diffStreamingName {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
-    color: transparent;
-    background-image:
-      linear-gradient(90deg, transparent 35%, var(--foreground, var(--editor-foreground)) 50%, transparent 65%),
-      linear-gradient(var(--tab-inactiveForeground), var(--tab-inactiveForeground));
-    background-size: 250% 100%, auto;
-    background-position: 100% center, center;
-    background-repeat: no-repeat;
-    -webkit-background-clip: text;
-    background-clip: text;
-    animation: planningShimmer 1s linear infinite;
   }
   .diffBody {
     position: relative;
@@ -1245,49 +1230,105 @@
       const decoder = new TextDecoder();
       let buffer = '';
       const handleText = text => {
-        if (!text) return;
+        if (!text) return false;
         if (firstToken) { turn.responseText = ''; firstToken = false; }
         turn.responseText += text;
         const last = turn.parts[turn.parts.length - 1];
         if (last && last.kind === 'text') last.text += text;
         else turn.parts.push({ kind: 'text', text });
+        return true;
+      };
+      const parseToolInputPath = event => {
+        if (event.input && typeof event.input.path === 'string') return event.input.path;
+        if (!event.inputText) return null;
+        try {
+          const parsed = JSON.parse(event.inputText);
+          if (typeof parsed.path === 'string') return parsed.path;
+        } catch {}
+        const match = event.inputText.match(/"path"\s*:\s*"((?:\\.|[^"\\])*)/);
+        if (!match) return null;
+        try { return JSON.parse('"' + match[1] + '"'); } catch { return match[1]; }
+      };
+      const ensureDiffPart = event => {
+        let diffItem = turn.parts.find(p => p.kind === 'diff' && p.toolCallId === event.toolCallId);
+        let changed = false;
+        if (!diffItem) {
+          diffItem = { kind: 'diff', toolCallId: event.toolCallId, path: null, added: 0, removed: 0, lines: [], mode: 'streaming' };
+          turn.parts.push(diffItem);
+          changed = true;
+        }
+        const inputPath = parseToolInputPath(event);
+        if (inputPath && diffItem.path !== inputPath) {
+          diffItem.path = inputPath;
+          changed = true;
+        }
+        return { diffItem, changed };
+      };
+      const ensureToolPart = event => {
+        let item = turn.parts.find(p => p.kind === 'tool' && p.toolCallId === event.toolCallId);
+        let changed = false;
+        if (!item) {
+          item = { kind: 'tool', toolCallId: event.toolCallId, toolName: event.toolName, output: null, running: true };
+          turn.parts.push(item);
+          changed = true;
+        }
+        if (event.toolName && item.toolName !== event.toolName) {
+          item.toolName = event.toolName;
+          changed = true;
+        }
+        return { item, changed };
       };
       const handleEvent = event => {
-        if (firstToken) { turn.responseText = ''; firstToken = false; }
-        if (event.kind === 'tool-call') {
+        let changed = false;
+        if (firstToken) { turn.responseText = ''; firstToken = false; changed = true; }
+        if (event.kind === 'tool-call' || event.kind === 'tool-input' || event.kind === 'tool-input-delta') {
           if (event.toolName === 'edit-file') {
-            turn.parts.push({ kind: 'diff', toolCallId: event.toolCallId, path: null, added: 0, removed: 0, lines: [], mode: 'streaming' });
-          } else {
-            turn.parts.push({ kind: 'tool', toolCallId: event.toolCallId, toolName: event.toolName, output: null, running: true });
+            changed = ensureDiffPart(event).changed || changed;
+          } else if (event.kind === 'tool-call' || event.kind === 'tool-input') {
+            changed = ensureToolPart(event).changed || changed;
           }
         } else if (event.kind === 'tool-result') {
-          const diffItem = turn.parts.find(p => p.kind === 'diff' && p.toolCallId === event.toolCallId);
+          let diffItem = turn.parts.find(p => p.kind === 'diff' && p.toolCallId === event.toolCallId);
+          if (!diffItem && event.toolName === 'edit-file') {
+            const ensured = ensureDiffPart(event);
+            diffItem = ensured.diffItem;
+            changed = ensured.changed || changed;
+          }
           if (diffItem) {
             const out = event.output || {};
-            diffItem.path = out.path;
+            if (out.path) diffItem.path = out.path;
             diffItem.added = out.added || 0;
             diffItem.removed = out.removed || 0;
             diffItem.lines = out.lines || [];
             diffItem.mode = 'collapsed';
+            changed = true;
           }
           const item = turn.parts.find(p => p.kind === 'tool' && p.toolCallId === event.toolCallId);
-          if (item) { item.output = event.output; item.running = false; }
+          if (item) { item.output = event.output; item.running = false; changed = true; }
+        } else if (event.kind === 'tool-error') {
+          const ensured = ensureToolPart(event);
+          const item = ensured.item;
+          item.output = { error: event.error };
+          item.running = false;
+          changed = true;
         }
+        return changed;
       };
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
         let start;
+        let changed = false;
         while ((start = buffer.indexOf('\u0000')) !== -1) {
-          handleText(buffer.slice(0, start));
+          changed = handleText(buffer.slice(0, start)) || changed;
           const end = buffer.indexOf('\u0000', start + 1);
           if (end === -1) { buffer = buffer.slice(start); break; }
-          try { handleEvent(JSON.parse(buffer.slice(start + 1, end))); } catch {}
+          try { changed = handleEvent(JSON.parse(buffer.slice(start + 1, end))) || changed; } catch {}
           buffer = buffer.slice(end + 1);
         }
-        if (buffer.indexOf('\u0000') === -1) { handleText(buffer); buffer = ''; }
-        if (tab.id === activeTabId) renderActiveTab();
+        if (buffer.indexOf('\u0000') === -1) { changed = handleText(buffer) || changed; buffer = ''; }
+        if (changed && tab.id === activeTabId) renderActiveTab();
       }
     } catch (err) {
       if (err.name === 'AbortError') return;
@@ -1476,6 +1517,11 @@
       const name = document.createElement('span');
       name.className = 'diffStreamingName';
       name.textContent = part.path ? part.path.split('/').pop() : 'Editing file';
+      if (part.path) {
+        const glyph = fileIconFor(part.path);
+        icon.textContent = glyph.char;
+        icon.style.color = glyph.color;
+      }
       row.append(icon, name);
       panel.append(row);
       return panel;

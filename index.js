@@ -223,6 +223,8 @@ const server = http.createServer((req, res) => {
       let aborted = false;
       let streamed = '';
       const writeEvent = event => res.write('\u0000' + JSON.stringify(event) + '\u0000');
+      const streamingToolInputs = new Map();
+      const toolNamesById = new Map();
       const tools = {
         
         'edit-file': tool({
@@ -247,9 +249,39 @@ const server = http.createServer((req, res) => {
       res.on('close', () => { if (!res.writableFinished) { aborted = true; controller.abort(); } });
       try {
         for await (const part of result.fullStream) {
-          if (part.type === 'text-delta') { const delta = part.text ?? part.textDelta ?? ''; streamed += delta; res.write(delta); }
-          else if (part.type === 'tool-call') writeEvent({ kind: 'tool-call', toolCallId: part.toolCallId, toolName: part.toolName });
-          else if (part.type === 'tool-result') writeEvent({ kind: 'tool-result', toolCallId: part.toolCallId, toolName: part.toolName, output: part.output });
+          if (part.type === 'text-delta') {
+            const delta = part.text ?? part.delta ?? part.textDelta ?? '';
+            streamed += delta;
+            res.write(delta);
+          } else if (part.type === 'tool-input-start') {
+            const toolCallId = part.toolCallId ?? part.id;
+            if (!toolCallId) continue;
+            toolNamesById.set(toolCallId, part.toolName);
+            streamingToolInputs.set(toolCallId, '');
+            writeEvent({ kind: 'tool-call', toolCallId, toolName: part.toolName });
+          } else if (part.type === 'tool-input-delta') {
+            const toolCallId = part.toolCallId ?? part.id;
+            if (!toolCallId) continue;
+            const delta = part.inputTextDelta ?? part.delta ?? '';
+            const inputText = (streamingToolInputs.get(toolCallId) || '') + delta;
+            streamingToolInputs.set(toolCallId, inputText);
+            writeEvent({ kind: 'tool-input-delta', toolCallId, toolName: toolNamesById.get(toolCallId), inputText, inputTextDelta: delta });
+          } else if (part.type === 'tool-input-available') {
+            const toolCallId = part.toolCallId ?? part.id;
+            if (!toolCallId) continue;
+            toolNamesById.set(toolCallId, part.toolName);
+            writeEvent({ kind: 'tool-input', toolCallId, toolName: part.toolName, input: part.input });
+          } else if (part.type === 'tool-call') {
+            toolNamesById.set(part.toolCallId, part.toolName);
+            writeEvent({ kind: 'tool-call', toolCallId: part.toolCallId, toolName: part.toolName, input: part.input });
+          } else if (part.type === 'tool-result') {
+            toolNamesById.set(part.toolCallId, part.toolName);
+            writeEvent({ kind: 'tool-result', toolCallId: part.toolCallId, toolName: part.toolName, input: part.input, output: part.output });
+          } else if (part.type === 'tool-output-available') {
+            writeEvent({ kind: 'tool-result', toolCallId: part.toolCallId, toolName: toolNamesById.get(part.toolCallId), output: part.output });
+          } else if (part.type === 'tool-error' || part.type === 'tool-output-error') {
+            writeEvent({ kind: 'tool-error', toolCallId: part.toolCallId, toolName: part.toolName ?? toolNamesById.get(part.toolCallId), error: part.error ?? part.errorText });
+          }
         }
       } catch (err) {
         if (!aborted) throw err;
