@@ -296,9 +296,11 @@
 </div>
 <div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><iframe id="htmlPreview" class="htmlPreview"></iframe><div id="top-shadow"></div><div class="vScrollbar" id="vScrollbar"><div class="vScrollbarThumb" id="vScrollbarThumb"></div><canvas class="vScrollbarMarkers" id="vScrollbarMarkers" aria-hidden="true"></canvas></div></div>
 <script type="module">
-  import { prepare, prepareWithSegments, layout, layoutWithLines } from '/node_modules/@chenglou/pretext/dist/layout.js';
+  import { prepare, prepareWithSegments, layout, layoutWithLines, measureNaturalWidth } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
-  const LINE_HEIGHT = layout(prepare('M', FONT), 10000, 18).height;
+  const PRETEXT_OPTIONS = { whiteSpace: 'pre-wrap' };
+  const GRAPHEME_SEGMENTER = new Intl.Segmenter(undefined, { granularity: 'grapheme' });
+  const LINE_HEIGHT = layout(prepare('M', FONT, PRETEXT_OPTIONS), 10000, 18).height;
   let lines = [''];
   let cur = { line: 0, col: 0 };
   let fileTabs = [];
@@ -334,14 +336,44 @@
 
   function wrapColumnsFor(text, maxWidth) {
     if (!text || maxWidth <= 0) return [0];
-    const result = layoutWithLines(prepareWithSegments(text, FONT), maxWidth, LINE_HEIGHT);
+    const prepared = prepareWithSegments(text, FONT, PRETEXT_OPTIONS);
+    const result = layoutWithLines(prepared, maxWidth, LINE_HEIGHT);
+    const segmentStarts = segmentSourceStarts(prepared.segments);
     const cols = [0];
-    let consumed = 0;
     for (let r = 0; r < result.lines.length - 1; r++) {
-      consumed += result.lines[r].text.length;
-      if (consumed > 0 && consumed < text.length) cols.push(consumed);
+      const col = sourceColumnForCursor(prepared.segments, segmentStarts, result.lines[r].end);
+      if (col > 0 && col < text.length) cols.push(col);
     }
     return cols;
+  }
+
+  function segmentSourceStarts(segments) {
+    const starts = [];
+    let col = 0;
+    for (const segment of segments) {
+      starts.push(col);
+      col += segment.length;
+    }
+    starts.push(col);
+    return starts;
+  }
+
+  function sourceColumnForCursor(segments, segmentStarts, cursor) {
+    if (cursor.segmentIndex >= segments.length) return segmentStarts[segments.length] || 0;
+    if (cursor.graphemeIndex === 0) return segmentStarts[cursor.segmentIndex] || 0;
+    return (segmentStarts[cursor.segmentIndex] || 0)
+      + graphemePrefixLength(segments[cursor.segmentIndex], cursor.graphemeIndex);
+  }
+
+  function graphemePrefixLength(text, count) {
+    let offset = 0;
+    let seen = 0;
+    for (const { segment } of GRAPHEME_SEGMENTER.segment(text)) {
+      if (seen >= count) break;
+      offset += segment.length;
+      seen++;
+    }
+    return offset;
   }
 
   function computeWrap() {
@@ -519,7 +551,7 @@
 
   function textWidth(text) {
     if (!text) return 0;
-    return layout(prepare(text, FONT), 10000, LINE_HEIGHT).width;
+    return measureNaturalWidth(prepareWithSegments(text, FONT, PRETEXT_OPTIONS));
   }
 
   function appendCaret(parent, text, rowStart, col) {
