@@ -204,18 +204,21 @@
     opacity: 1;
   }
   .editor { flex: 1; min-height: 0; background: var(--editor-background); position: relative; }
+  .vScrollbar { position: absolute; top: 0; right: 0; width: 14px; bottom: 0; pointer-events: none; z-index: 11; display: none; }
+  body:not(.empty):not(.settings):not(.preview):not(.htmlpreview) .vScrollbar.hasOverflow { display: block; }
+  .vScrollbarThumb { position: absolute; right: 0; width: 14px; background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; pointer-events: auto; }
+  .vScrollbarThumb:hover { background: var(--scrollbarSlider-hoverBackground, #a8a8a8); }
   .settingsFrame { display: none; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
   body.settings .settingsFrame { display: block; }
-  body.settings .scroller, body.settings #top-shadow, body.settings #gutter-highlight { display: none; }
-  .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; }
+  body.settings .scroller, body.settings #top-shadow { display: none; }
+  .scroller { height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; scrollbar-width: none; }
+  .scroller::-webkit-scrollbar { display: none; }
   #top-shadow { position: fixed; top: 64px; left: 0; right: 0; height: 6px; pointer-events: none; z-index: 10; opacity: 0; background: linear-gradient(to bottom, rgba(0, 0, 0, 0.08), transparent); }
   body.scrolled #top-shadow { opacity: 1; }
   .wrap { display: flex; min-height: 100%; cursor: text; }
   .gutter { color: var(--editorLineNumber-foreground, #999); text-align: right; padding: 12px 12px 0 0; user-select: none; min-width: 3ch; cursor: default; }
   .gutter .gline { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); }
   #view { margin: 0; padding: 12px 0 0 0; white-space: pre; outline: none; position: relative; flex: 1; min-width: 0; user-select: none; }
-  #gutter-highlight { display: none; position: fixed; pointer-events: none; z-index: 10; background: var(--list-inactiveSelectionBackground); }
-  body.focused #gutter-highlight { background: var(--list-activeSelectionBackground); }
   .line { display: block; position: relative; }
   .line.added { background: rgb(228, 238, 233); }
   .line.added::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgb(56, 136, 102); z-index: 1; }
@@ -234,14 +237,14 @@
   body:not(.focused) .cursor { display: none; }
   body.empty .editor { background: var(--titleBar-activeBackground, var(--sideBar-background)); }
   body.empty .scroller { overflow: hidden; }
-  body.empty .wrap, body.empty #top-shadow, body.empty #gutter-highlight { display: none; }
+  body.empty .wrap, body.empty #top-shadow { display: none; }
   @keyframes blink { 50% { opacity: 0; } }
 
   .previewScroller { display: none; height: 100%; overflow-y: scroll; overflow-x: hidden; overscroll-behavior: none; background: var(--editor-background); }
-  body.preview .scroller, body.preview #gutter-highlight { display: none; }
+  body.preview .scroller { display: none; }
   body.preview .previewScroller { display: block; }
   .htmlPreview { display: none; position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: var(--editor-background); }
-  body.htmlpreview .scroller, body.htmlpreview #gutter-highlight, body.htmlpreview #top-shadow { display: none; }
+  body.htmlpreview .scroller, body.htmlpreview #top-shadow { display: none; }
   body.htmlpreview .htmlPreview { display: block; }
   .markdown {
     box-sizing: border-box;
@@ -290,7 +293,7 @@
     </div>
   </div>
 </div>
-<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><iframe id="htmlPreview" class="htmlPreview"></iframe><div id="top-shadow"></div><div id="gutter-highlight"></div></div>
+<div class="editor"><iframe id="settingsFrame" class="settingsFrame" src="settings.html"></iframe><div class="scroller" id="scroller"><div class="wrap"><div class="gutter" id="gutter"></div><pre id="view" tabindex="0"></pre></div></div><div class="previewScroller" id="previewScroller"><div class="markdown" id="markdown"></div></div><iframe id="htmlPreview" class="htmlPreview"></iframe><div id="top-shadow"></div><div class="vScrollbar" id="vScrollbar"><div class="vScrollbarThumb" id="vScrollbarThumb"></div></div></div>
 <script type="module">
   import { prepare, prepareWithSegments, layout, layoutWithLines } from '/node_modules/@chenglou/pretext/dist/layout.js';
   const FONT = '13px Menlo, Monaco, "Courier New", monospace';
@@ -315,7 +318,8 @@
   const view = document.getElementById('view');
   const gutter = document.getElementById('gutter');
   const scroller = document.getElementById('scroller');
-  const gutterHighlight = document.getElementById('gutter-highlight');
+  const vScrollbar = document.getElementById('vScrollbar');
+  const vScrollbarThumb = document.getElementById('vScrollbarThumb');
   const settings = {
     'editor.wordSeparators': " `~!@#$%^&*()-=+[{]}\\|;:'\",.<>/?"
   };
@@ -323,7 +327,7 @@
   let lastPointerDown = null;
 
   function availableTextWidth() {
-    return view.clientWidth;
+    return view.clientWidth - 14;
   }
 
   function wrapColumnsFor(text, maxWidth) {
@@ -345,24 +349,16 @@
 
   let wrapCols = [[0]];
 
-  function positionGutterHighlight() {
-    const line = view.querySelector('.line.active');
-    if (!line) {
-      gutterHighlight.style.display = 'none';
-      return;
-    }
-    const lr = line.getBoundingClientRect();
-    const sr = scroller.getBoundingClientRect();
-    const gutterW = sr.right - sr.left - scroller.clientWidth;
-    if (gutterW <= 0) {
-      gutterHighlight.style.display = 'none';
-      return;
-    }
-    gutterHighlight.style.display = 'block';
-    gutterHighlight.style.top = lr.top + 'px';
-    gutterHighlight.style.left = (sr.left + scroller.clientWidth) + 'px';
-    gutterHighlight.style.width = gutterW + 'px';
-    gutterHighlight.style.height = lr.height + 'px';
+  function updateVScrollbar() {
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+    const hasOverflow = maxScroll > 0;
+    vScrollbar.classList.toggle('hasOverflow', hasOverflow);
+    if (!hasOverflow) return;
+    const trackHeight = scroller.clientHeight;
+    const thumbHeight = Math.max(20, trackHeight * scroller.clientHeight / scroller.scrollHeight);
+    const thumbTop = scroller.scrollTop * (trackHeight - thumbHeight) / maxScroll;
+    vScrollbarThumb.style.height = thumbHeight + 'px';
+    vScrollbarThumb.style.transform = `translateY(${thumbTop}px)`;
   }
 
   function updateTopShadow() {
@@ -383,10 +379,10 @@
   addEventListener('resize', () => {
     updateScrollPast();
     if (!document.body.classList.contains('empty') && !document.body.classList.contains('settings')) render();
-    positionGutterHighlight();
     updateTopShadow();
+    updateVScrollbar();
   });
-  scroller.addEventListener('scroll', () => { positionGutterHighlight(); updateTopShadow(); });
+  scroller.addEventListener('scroll', () => { updateTopShadow(); updateVScrollbar(); });
   scroller.addEventListener('wheel', e => {
     e.preventDefault();
     scroller.scrollTop += e.deltaY;
@@ -432,7 +428,7 @@
     });
     addDeletedMarkers(deletedBefore.get(lines.length));
     gutter.replaceChildren(...gutterChildren);
-    positionGutterHighlight();
+    updateVScrollbar();
   }
 
   function samePos(a, b) {
@@ -1124,6 +1120,7 @@
     if (closestTarget(e.target, '.breadcrumbBar')) return;
     if (document.body.classList.contains('empty')) return;
     if (closestTarget(e.target, '.gutter')) return;
+    if (closestTarget(e.target, '.vScrollbar')) return;
     const start = positionFromEvent(e);
     if (!start) return;
     const repeatedPointerDown = isRepeatedPointerDown(e);
@@ -1330,6 +1327,26 @@
     document.addEventListener('mouseup', up);
   });
   addEventListener('resize', updateTabScrollbar);
+  vScrollbarThumb.addEventListener('mousedown', event => {
+    event.preventDefault();
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+    const thumbHeight = vScrollbarThumb.getBoundingClientRect().height;
+    const maxThumbTop = scroller.clientHeight - thumbHeight;
+    if (maxScroll <= 0 || maxThumbTop <= 0) return;
+    const startY = event.clientY;
+    const startScrollTop = scroller.scrollTop;
+    const move = moveEvent => {
+      scroller.scrollTop = startScrollTop + (moveEvent.clientY - startY) * maxScroll / maxThumbTop;
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      document.body.style.userSelect = '';
+    };
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
 
   function escapeHtml(s) {
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
