@@ -536,6 +536,8 @@
 - Clicking the bottom (4th) line expand area moves the diff panel from collapsed mode to opened mode.
 - Opened mode shows the full diff of the diff panel, with 3 unchanged lines of padding at the top and 3 unchanged lines of padding at the bottom.
 - Opened mode is horizontally scrollable when its content has horizontal overflow.
+- Clicking outside an opened diff panel returns it to collapsed mode; a click inside the opened diff panel leaves it opened.
+- A diff panel in streaming or collapsed mode is unaffected by the click-outside-to-collapse rule and continues to behave by its own mode rules; the rule governs only an opened diff panel.
 - The diff panel body area is unaffected by the submitted user message panel's no-internal-scroll and click-to-edit rules and continues to behave by its own mode rules; it is not a user message panel.
 
 **Tool calls**

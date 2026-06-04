@@ -130,7 +130,7 @@ const gitDiff = (name, fallbackBefore, after) => {
 };
 
 const MODEL_PRICING = {
-  'claude-opus-4-8':  { input: 15,  output: 75  },
+  'claude-opus-4-8':  { input: 5,  output: 25  },
   'claude-sonnet-4-6': { input: 3,   output: 15  },
   'claude-haiku-4-5':  { input: 1,   output: 5   },
 };

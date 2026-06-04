@@ -1430,6 +1430,18 @@
     return el;
   }
 
+  document.addEventListener('mousedown', () => {
+    const tab = activeTab();
+    if (!tab) return;
+    let changed = false;
+    for (const turn of tab.turns) {
+      for (const part of turn.parts) {
+        if (part.kind === 'diff' && part.mode === 'opened') { part.mode = 'collapsed'; changed = true; }
+      }
+    }
+    if (changed) renderActiveTab();
+  });
+
   document.addEventListener('mousedown', event => {
     if (!pinnedToolEl) return;
     if (toolModal.contains(event.target) || pinnedToolEl.contains(event.target)) return;
@@ -1504,6 +1516,9 @@
       expand.className = 'diffExpand';
       expand.addEventListener('click', () => { part.mode = 'opened'; renderActiveTab(); });
       body.append(expand);
+    }
+    if (part.mode === 'opened') {
+      panel.addEventListener('mousedown', event => event.stopPropagation());
     }
     const chevron = document.createElement('div');
     chevron.className = 'diffChevron';
