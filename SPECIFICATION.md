@@ -542,7 +542,7 @@
 - While a tool call is executing, it displays the text `calling {toolname}` with the same subtle looping shimmer used by the `Planning next moves` placeholder.
 - Once a tool call completes, it displays the text `called {toolname}` in a slightly de-emphasized foreground color, with no shimmer.
 - Hovering a tool call opens a tool-output modal containing the full output/response of the tool.
-- The tool-output modal spans the full width of the right panel.
+- The tool-output modal spans the same width as the full message panels and prompt composer.
 - The tool-output modal's top edge is flush with the bottom edge of the tool call text.
 - The tool-output modal has the same visual specifications (rounded corners, border, and shadow) as other similar right panel modals, but its contents have no interactive behavior.
 - The hover-opened tool-output modal closes when the tool call is no longer hovered.
