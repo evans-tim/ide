@@ -496,6 +496,99 @@
     animation: planningShimmer 1s linear infinite;
     cursor: default;
   }
+  .diffPanel {
+    box-sizing: border-box;
+    margin-right: 12px;
+    border: 1px solid var(--editorGroup-border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .diffTopbar {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .diffTopbar:hover { background: var(--list-inactiveSelectionBackground); }
+  .diffTopbar .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
+  .diffName { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 0 1 auto; }
+  .diffAdded { flex: none; color: rgb(102, 165, 135); }
+  .diffRemoved { flex: none; color: rgb(222, 103, 121); }
+  .diffStreaming {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px;
+    padding: 4px 8px;
+    border: 1px solid var(--editorGroup-border);
+    border-radius: 6px;
+  }
+  .diffStreaming .fileIcon { width: 16px; height: 16px; flex: none; font-family: "seti"; font-size: 16px; line-height: 16px; text-align: center; }
+  .diffStreamingName {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: transparent;
+    background-image:
+      linear-gradient(90deg, transparent 35%, var(--foreground, var(--editor-foreground)) 50%, transparent 65%),
+      linear-gradient(var(--tab-inactiveForeground), var(--tab-inactiveForeground));
+    background-size: 250% 100%, auto;
+    background-position: 100% center, center;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: planningShimmer 1s linear infinite;
+  }
+  .diffBody {
+    position: relative;
+    font-family: var(--ide-font-mono, Menlo, Monaco, "Courier New", monospace);
+    border-top: 1px solid var(--editorGroup-border);
+  }
+  .diffBody.collapsed { overflow: hidden; }
+  .diffBody.opened { overflow-x: auto; }
+  .diffLine { display: block; position: relative; padding-left: 6px; white-space: pre; }
+  .diffLine.add { background: rgb(228, 238, 233); }
+  .diffLine.add::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgb(56, 136, 102); }
+  .diffLine.del { background: rgb(248, 237, 239); color: var(--editorLineNumber-foreground, #999); }
+  .diffLine.del::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgb(198, 61, 87); }
+  .diffBody.collapsed::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 24px;
+    background: linear-gradient(to bottom, transparent, var(--editor-background));
+    pointer-events: none;
+  }
+  .diffExpand {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 18px;
+    cursor: pointer;
+    z-index: 1;
+  }
+  .diffChevron {
+    position: absolute;
+    left: 50%;
+    bottom: 2px;
+    transform: translateX(-50%);
+    width: 12px;
+    height: 6px;
+    display: none;
+    color: var(--tab-inactiveForeground);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .diffPanel:hover .diffChevron { display: block; }
+  .diffExpand:hover ~ .diffChevron { color: var(--foreground, var(--editor-foreground)); }
   .toolModal {
     position: fixed;
     left: 12px;
@@ -1158,8 +1251,21 @@
       const handleEvent = event => {
         if (firstToken) { turn.responseText = ''; firstToken = false; }
         if (event.kind === 'tool-call') {
-          turn.parts.push({ kind: 'tool', toolCallId: event.toolCallId, toolName: event.toolName, output: null, running: true });
+          if (event.toolName === 'edit-file') {
+            turn.parts.push({ kind: 'diff', toolCallId: event.toolCallId, path: null, added: 0, removed: 0, lines: [], mode: 'streaming' });
+          } else {
+            turn.parts.push({ kind: 'tool', toolCallId: event.toolCallId, toolName: event.toolName, output: null, running: true });
+          }
         } else if (event.kind === 'tool-result') {
+          const diffItem = turn.parts.find(p => p.kind === 'diff' && p.toolCallId === event.toolCallId);
+          if (diffItem) {
+            const out = event.output || {};
+            diffItem.path = out.path;
+            diffItem.added = out.added || 0;
+            diffItem.removed = out.removed || 0;
+            diffItem.lines = out.lines || [];
+            diffItem.mode = 'collapsed';
+          }
           const item = turn.parts.find(p => p.kind === 'tool' && p.toolCallId === event.toolCallId);
           if (item) { item.output = event.output; item.running = false; }
         }
@@ -1330,6 +1436,83 @@
     closeToolModal();
   });
 
+  function createDiffLineEl(line) {
+    const el = document.createElement('span');
+    el.className = 'diffLine' + (line.type === 'add' ? ' add' : line.type === 'del' ? ' del' : '');
+    el.textContent = line.text === '' ? '\u200b' : line.text;
+    return el;
+  }
+
+  function firstChangeIndex(lines) {
+    const idx = lines.findIndex(l => l.type !== 'context');
+    return idx === -1 ? 0 : idx;
+  }
+
+  function createDiffPanelEl(part) {
+    const panel = document.createElement('div');
+    panel.className = 'diffPanel';
+
+    if (part.mode === 'streaming') {
+      const row = document.createElement('div');
+      row.className = 'diffStreaming';
+      const icon = document.createElement('span');
+      icon.className = 'fileIcon';
+      const name = document.createElement('span');
+      name.className = 'diffStreamingName';
+      name.textContent = part.path ? part.path.split('/').pop() : 'Editing file';
+      row.append(icon, name);
+      panel.append(row);
+      return panel;
+    }
+
+    const topbar = document.createElement('div');
+    topbar.className = 'diffTopbar';
+    const icon = document.createElement('span');
+    icon.className = 'fileIcon';
+    const glyph = fileIconFor(part.path);
+    icon.textContent = glyph.char;
+    icon.style.color = glyph.color;
+    const name = document.createElement('span');
+    name.className = 'diffName';
+    name.textContent = part.path.split('/').pop();
+    const added = document.createElement('span');
+    added.className = 'diffAdded';
+    added.textContent = '+' + part.added;
+    const removed = document.createElement('span');
+    removed.className = 'diffRemoved';
+    removed.textContent = '-' + part.removed;
+    topbar.append(icon, name, added, removed);
+    topbar.addEventListener('click', () => parent.postMessage({ type: 'vfs:open', name: part.path }, '*'));
+    panel.append(topbar);
+
+    const body = document.createElement('div');
+    const lines = part.lines;
+    if (part.mode === 'opened') {
+      body.className = 'diffBody opened';
+      const change = firstChangeIndex(lines);
+      const lastChange = lines.length - 1 - [...lines].reverse().findIndex(l => l.type !== 'context');
+      const start = Math.max(0, change - 3);
+      const end = Math.min(lines.length, lastChange + 4);
+      for (let i = start; i < end; i++) body.append(createDiffLineEl(lines[i]));
+    } else {
+      body.className = 'diffBody collapsed';
+      const change = firstChangeIndex(lines);
+      const start = Math.max(0, change - 1);
+      const shown = lines.slice(start, start + 4);
+      shown.forEach(line => body.append(createDiffLineEl(line)));
+      const expand = document.createElement('div');
+      expand.className = 'diffExpand';
+      expand.addEventListener('click', () => { part.mode = 'opened'; renderActiveTab(); });
+      body.append(expand);
+    }
+    const chevron = document.createElement('div');
+    chevron.className = 'diffChevron';
+    chevron.innerHTML = '<svg viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    body.append(chevron);
+    panel.append(body);
+    return panel;
+  }
+
   function renderConversation(tab) {
     messages.replaceChildren();
     closeToolModal();
@@ -1378,6 +1561,8 @@
         for (const part of turn.parts) {
           if (part.kind === 'tool') {
             turnEl.append(createToolCallEl(part));
+          } else if (part.kind === 'diff') {
+            turnEl.append(createDiffPanelEl(part));
           } else {
             const response = document.createElement('div');
             response.className = 'response';

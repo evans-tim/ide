@@ -93,6 +93,42 @@ const gitStatus = () => {
   return { isRepo: true, status };
 };
 
+const lcsDiff = (a, b) => {
+  const m = a.length, n = b.length;
+  const lcs = Array.from({ length: m + 1 }, () => new Int32Array(n + 1));
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
+      lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);
+    }
+  }
+  const lines = [];
+  let i = 0, j = 0;
+  while (i < m && j < n) {
+    if (a[i] === b[j]) { lines.push({ type: 'context', text: b[j] }); i++; j++; }
+    else if (lcs[i + 1][j] >= lcs[i][j + 1]) { lines.push({ type: 'del', text: a[i] }); i++; }
+    else { lines.push({ type: 'add', text: b[j] }); j++; }
+  }
+  while (i < m) { lines.push({ type: 'del', text: a[i] }); i++; }
+  while (j < n) { lines.push({ type: 'add', text: b[j] }); j++; }
+  return lines;
+};
+
+const gitDiff = (name, fallbackBefore, after) => {
+  let base = fallbackBefore;
+  try {
+    execFileSync('git', ['-C', mountedDir, 'rev-parse', '--is-inside-work-tree'], { stdio: 'ignore' });
+    base = execFileSync('git', ['-C', mountedDir, 'show', 'HEAD:' + name], { encoding: 'utf8' });
+  } catch {
+    base = fallbackBefore;
+  }
+  const a = base.replace(/\r\n?/g, '\n').split('\n');
+  const b = after.replace(/\r\n?/g, '\n').split('\n');
+  const lines = lcsDiff(a, b);
+  const added = lines.filter(l => l.type === 'add').length;
+  const removed = lines.filter(l => l.type === 'del').length;
+  return { added, removed, lines };
+};
+
 const MODEL_PRICING = {
   'claude-opus-4-8':  { input: 15,  output: 75  },
   'claude-sonnet-4-6': { input: 3,   output: 15  },
@@ -185,6 +221,23 @@ const server = http.createServer((req, res) => {
           description: 'Returns a hello world greeting.',
           inputSchema: z.object({}),
           execute: async () => { await new Promise(resolve => setTimeout(resolve, 1000)); return { content: 'Hello, World!', elapsed: 1000 }; },
+        }),
+        'edit-file': tool({
+          description: 'Edit a file in the workspace by replacing a regex match with a replacement string. Returns the resulting diff.',
+          inputSchema: z.object({
+            path: z.string().describe('Path to the file relative to the workspace root.'),
+            pattern: z.string().describe('A JavaScript regular expression matched against the file contents.'),
+            replacement: z.string().describe('The string that replaces the regex match.'),
+          }),
+          execute: async ({ path: name, pattern, replacement }) => {
+            const full = filePath(name);
+            if (!full) throw new Error('Invalid path');
+            const before = fs.readFileSync(full, 'utf8');
+            const after = before.replace(new RegExp(pattern), replacement);
+            fs.writeFileSync(full, after, 'utf8');
+            const diff = gitDiff(name, before, after);
+            return { path: name, ...diff };
+          },
         }),
       };
       const result = streamText({ model: anthropic(model), messages, tools, stopWhen: stepCountIs(5), ...(system ? { system } : {}), abortSignal: controller.signal });
