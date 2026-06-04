@@ -10,7 +10,7 @@
 - (DONE) file preview
 - (DONE) md parser and preview
 - edit visualizer and accept/reject
-- show git status for line in canvas editor
+- (DONE) show git status for line in canvas editor
 
 # Lower Panel
 - (DONE) Add simple terminal
