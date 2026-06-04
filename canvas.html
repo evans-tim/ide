@@ -204,7 +204,7 @@
     opacity: 1;
   }
   .editor { flex: 1; min-height: 0; background: var(--editor-background); position: relative; }
-  .vScrollbar { position: absolute; top: 0; right: 0; width: 14px; bottom: 0; pointer-events: none; z-index: 11; display: none; }
+  .vScrollbar { position: absolute; top: 0; right: 0; width: 14px; bottom: 0; pointer-events: auto; cursor: default; z-index: 11; display: none; }
   body:not(.empty):not(.settings):not(.preview):not(.htmlpreview) .vScrollbar.hasOverflow { display: block; }
   .vScrollbarMarkers { position: absolute; top: 0; right: 0; width: 14px; height: 100%; pointer-events: none; z-index: 12; display: block; }
   .vScrollbarThumb { position: absolute; right: 0; width: 14px; background: var(--scrollbarSlider-background, #c1c1c1); border-radius: 0; pointer-events: auto; }
@@ -1355,6 +1355,30 @@
     document.addEventListener('mouseup', up);
   });
   addEventListener('resize', updateTabScrollbar);
+  vScrollbar.addEventListener('mousedown', event => {
+    if (event.target === vScrollbarThumb) return;
+    event.preventDefault();
+    const maxScroll = scroller.scrollHeight - scroller.clientHeight;
+    const thumbHeight = vScrollbarThumb.getBoundingClientRect().height;
+    const maxThumbTop = scroller.clientHeight - thumbHeight;
+    if (maxScroll <= 0 || maxThumbTop <= 0) return;
+    const rect = vScrollbar.getBoundingClientRect();
+    const targetThumbTop = (event.clientY - rect.top) - thumbHeight / 2;
+    scroller.scrollTop = Math.max(0, Math.min(maxThumbTop, targetThumbTop)) * maxScroll / maxThumbTop;
+    const startY = event.clientY;
+    const startScrollTop = scroller.scrollTop;
+    const move = moveEvent => {
+      scroller.scrollTop = startScrollTop + (moveEvent.clientY - startY) * maxScroll / maxThumbTop;
+    };
+    const up = () => {
+      document.removeEventListener('mousemove', move);
+      document.removeEventListener('mouseup', up);
+      document.body.style.userSelect = '';
+    };
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', move);
+    document.addEventListener('mouseup', up);
+  });
   vScrollbarThumb.addEventListener('mousedown', event => {
     event.preventDefault();
     const maxScroll = scroller.scrollHeight - scroller.clientHeight;

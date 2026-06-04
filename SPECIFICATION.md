@@ -777,6 +777,11 @@
 - Scrollbar thumb has square corners and fills the full width of the gutter.
 - Scrolling has no momentum; motion stops as soon as scroll input stops.
 - No horizontal scroll.
+- The scrollbar gutter uses the default cursor (not the text cursor) on hover, overriding the editable canvas area's text cursor.
+- The scrollbar gutter intercepts pointer events and does not pass them through to the canvas editor, so interacting with the gutter never positions the caret, starts a selection, or otherwise affects the editor's text.
+- Pressing the mouse down anywhere on the scrollbar gutter other than the thumb jumps the thumb so it is centered on the pressed point, scrolling the canvas to the corresponding position.
+- After a gutter mousedown jumps the thumb, holding and dragging the mouse continues to drag the thumb (tracking the pointer exactly as the thumb's own drag does) until the mouse is released, without requiring the press to land on the thumb.
+- The editable canvas area's caret and selection behavior is unaffected by gutter mousedown and gutter drag and continues to behave by its own existing rules.
 
 **Scrollbar diff markers**
 - The canvas vertical scrollbar gutter renders a diff marker for every line that carries added-line or deleted-line decoration, overlaying the gutter without obscuring the scrollbar thumb's contents underneath.
