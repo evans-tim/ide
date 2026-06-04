@@ -510,6 +510,33 @@
 - Subsequent submissions append a new user message panel beneath the previous response, followed by its own streamed response; prior messages and responses remain visible above.
 - The conversation area scrolls vertically when its content exceeds the available height; the composer remains pinned to the bottom of the right panel.
 
+**Diff panel**
+- A diff panel appears in the conversation area alongside user message panels and assistant response messages, in chronological order like any other conversation item.
+- The diff panel has a 1px border with rounded corners and the same width as user message panels and prompt composers.
+- The diff panel has a topbar containing the file's file-type icon, the file name, the number of lines added, and the number of lines removed.
+- The diff panel topbar file-type icon is resolved and rendered identically to a file tree row's file-type icon (same Seti glyph priority order, same square size, same per-extension active-theme variant color).
+- The diff panel topbar has 8px of padding around its text content.
+- The diff panel topbar file name truncates with a trailing ellipsis when there is not enough room, so the added and removed line counts remain fully visible no matter how long the file name is.
+- The number of lines added is displayed as a `+` character followed immediately by the count of added lines, with both the `+` and the count in color `rgb(102, 165, 135)`.
+- The number of lines removed is displayed as a `-` character followed immediately by the count of removed lines, with both the `-` and the count in color `rgb(222, 103, 121)`.
+- Hovering the diff panel topbar changes its background from transparent to a slightly emphasized background and uses the pointer cursor.
+- Clicking the diff panel topbar opens the corresponding file in the canvas editor in the same manner as clicking a file tree row in the left panel (creating a new filename tab if not already open, or activating its existing tab).
+
+**Diff panel body modes**
+- The diff panel has a body area with three modes: streaming, collapsed, and opened.
+- In streaming mode the diff panel shows only a full-width rounded, padded-border row containing the file-type icon and the file name, with no line counts and no body diff content; the file name displays the same subtle looping shimmer used by the `Planning next moves` placeholder.
+- The body area renders diff lines using the same color scheme and behavior as the canvas editor's added-line and deleted-line decoration.
+- Collapsed mode shows 4 lines of text in the body area.
+- Collapsed mode's first shown line is one unchanged line at the top, immediately followed by the first changed line.
+- Collapsed mode tails off with a bottom blur/fade affordance in the same manner as the submitted user message panel's bottom fade affordance.
+- Hovering the diff panel reveals a slightly de-emphasized down chevron centered along the bottom of the body area.
+- In collapsed mode the entire 4th line is covered by a clickable expand area; hovering that area emphasizes the down chevron slightly more.
+- Hovering the other 3 lines reveals the i-beam cursor with normal text selection working as usual but with no functional effect.
+- Clicking the bottom (4th) line expand area moves the diff panel from collapsed mode to opened mode.
+- Opened mode shows the full diff of the diff panel, with 3 unchanged lines of padding at the top and 3 unchanged lines of padding at the bottom.
+- Opened mode is horizontally scrollable when its content has horizontal overflow.
+- The diff panel body area is unaffected by the submitted user message panel's no-internal-scroll and click-to-edit rules and continues to behave by its own mode rules; it is not a user message panel.
+
 **Right panel spacing**
 - 12px padding between the right panel edges and the conversation/composer content on all sides.
 - 12px vertical gap between consecutive conversation items (user message panel, response text, composer).
