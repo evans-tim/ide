@@ -477,6 +477,40 @@
   }
   .historyItem.highlighted { background: var(--editorSuggestWidget-selectedBackground, var(--list-activeSelectionBackground)); border-radius: 4px; }
   .historyItem .historyTitle { color: var(--editorSuggestWidget-foreground, var(--foreground, var(--editor-foreground))); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .toolCall {
+    padding: 0 8px;
+    width: fit-content;
+    cursor: pointer;
+    color: var(--tab-inactiveForeground);
+  }
+  .toolCall-running {
+    color: transparent;
+    background-image:
+      linear-gradient(90deg, transparent 35%, var(--foreground, var(--editor-foreground)) 50%, transparent 65%),
+      linear-gradient(var(--tab-inactiveForeground), var(--tab-inactiveForeground));
+    background-size: 250% 100%, auto;
+    background-position: 100% center, center;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: planningShimmer 1s linear infinite;
+    cursor: default;
+  }
+  .toolModal {
+    position: fixed;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    box-sizing: border-box;
+    padding: 8px;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    color: var(--foreground, var(--editor-foreground));
+    background: var(--editorHoverWidget-background, var(--editor-background));
+    border: 1px solid var(--editorHoverWidget-border, var(--editorGroup-border));
+    border-radius: 4px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.12);
+  }
 </style>
 <div class="topbar"><div class="tabArea"><div class="tabs"></div><div class="tabScrollbar"><div class="tabScrollbarThumb"></div></div></div><div class="buttonGroup"><button class="topbarControl addControl" type="button" aria-label="Add"><img src="icons/add.svg" alt=""></button><button class="topbarControl clockControl" type="button" aria-label="History"><span class="iconMask clockIcon"></span></button></div></div>
 <div class="content">
@@ -496,6 +530,7 @@
 <div class="commandMenu mentionMenu" style="display: none;"></div>
 <div class="historyMenu" style="display: none;"></div>
 <div class="agentChooserMenu" id="agentChooserMenu" style="display: none;"></div>
+<div class="toolModal" style="display: none;"></div>
 <script>
   const MODELS = [
     { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
@@ -1048,6 +1083,7 @@
       responseText: 'Planning next moves',
       responding: true,
       abortController: null,
+      parts: [],
     };
   }
 
@@ -1110,13 +1146,37 @@
       });
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
+      let buffer = '';
+      const handleText = text => {
+        if (!text) return;
+        if (firstToken) { turn.responseText = ''; firstToken = false; }
+        turn.responseText += text;
+        const last = turn.parts[turn.parts.length - 1];
+        if (last && last.kind === 'text') last.text += text;
+        else turn.parts.push({ kind: 'text', text });
+      };
+      const handleEvent = event => {
+        if (firstToken) { turn.responseText = ''; firstToken = false; }
+        if (event.kind === 'tool-call') {
+          turn.parts.push({ kind: 'tool', toolCallId: event.toolCallId, toolName: event.toolName, output: null, running: true });
+        } else if (event.kind === 'tool-result') {
+          const item = turn.parts.find(p => p.kind === 'tool' && p.toolCallId === event.toolCallId);
+          if (item) { item.output = event.output; item.running = false; }
+        }
+      };
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        const chunk = decoder.decode(value, { stream: true });
-        if (!chunk) continue;
-        if (firstToken) { turn.responseText = ''; firstToken = false; }
-        turn.responseText += chunk;
+        buffer += decoder.decode(value, { stream: true });
+        let start;
+        while ((start = buffer.indexOf('\u0000')) !== -1) {
+          handleText(buffer.slice(0, start));
+          const end = buffer.indexOf('\u0000', start + 1);
+          if (end === -1) { buffer = buffer.slice(start); break; }
+          try { handleEvent(JSON.parse(buffer.slice(start + 1, end))); } catch {}
+          buffer = buffer.slice(end + 1);
+        }
+        if (buffer.indexOf('\u0000') === -1) { handleText(buffer); buffer = ''; }
         if (tab.id === activeTabId) renderActiveTab();
       }
     } catch (err) {
@@ -1233,8 +1293,46 @@
     tabScrollbarThumb.style.transform = `translateX(${thumbLeft}px)`;
   }
 
+  let pinnedToolEl = null;
+  const toolModal = document.querySelector('.toolModal');
+
+  function closeToolModal() {
+    toolModal.style.display = 'none';
+    pinnedToolEl = null;
+  }
+
+  function showToolModal(toolEl, output) {
+    toolModal.textContent = output == null ? '' : (typeof output === 'string' ? output : JSON.stringify(output, null, 2));
+    const rect = toolEl.getBoundingClientRect();
+    toolModal.style.display = 'block';
+    toolModal.style.top = rect.bottom + 'px';
+  }
+
+  function createToolCallEl(toolItem) {
+    const el = document.createElement('div');
+    el.className = toolItem.running ? 'toolCall toolCall-running' : 'toolCall';
+    el.textContent = (toolItem.running ? 'calling ' : 'called ') + toolItem.toolName;
+    if (!toolItem.running) {
+      el.addEventListener('mouseenter', () => { if (!pinnedToolEl) showToolModal(el, toolItem.output); });
+      el.addEventListener('mouseleave', () => { if (!pinnedToolEl) toolModal.style.display = 'none'; });
+      el.addEventListener('click', event => {
+        event.stopPropagation();
+        pinnedToolEl = el;
+        showToolModal(el, toolItem.output);
+      });
+    }
+    return el;
+  }
+
+  document.addEventListener('mousedown', event => {
+    if (!pinnedToolEl) return;
+    if (toolModal.contains(event.target) || pinnedToolEl.contains(event.target)) return;
+    closeToolModal();
+  });
+
   function renderConversation(tab) {
     messages.replaceChildren();
+    closeToolModal();
 
     tab.turns.forEach((turn, index) => {
       const turnEl = document.createElement('div');
@@ -1268,12 +1366,26 @@
         message.append(stopButton);
       }
 
-      const response = document.createElement('div');
-      response.className = 'response';
-      if (turn.responseText === 'Planning next moves') response.classList.add('planning');
-      response.textContent = turn.responseText;
+      turnEl.append(message);
 
-      turnEl.append(message, response);
+      if (turn.parts.length === 0) {
+        const response = document.createElement('div');
+        response.className = 'response';
+        if (turn.responseText === 'Planning next moves') response.classList.add('planning');
+        response.textContent = turn.responseText;
+        turnEl.append(response);
+      } else {
+        for (const part of turn.parts) {
+          if (part.kind === 'tool') {
+            turnEl.append(createToolCallEl(part));
+          } else {
+            const response = document.createElement('div');
+            response.className = 'response';
+            response.textContent = part.text;
+            turnEl.append(response);
+          }
+        }
+      }
       messages.append(turnEl);
       if (message.classList.contains('message') && message.scrollHeight > message.clientHeight) {
         message.classList.add('overflowing');

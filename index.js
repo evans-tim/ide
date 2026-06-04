@@ -172,16 +172,29 @@ const server = http.createServer((req, res) => {
       const { messages, system, model: requestedModel } = JSON.parse(body);
       const model = MODEL_PRICING[requestedModel] ? requestedModel : DEFAULT_MODEL;
       const pricing = MODEL_PRICING[model];
-      const { streamText } = await aiModule;
+      const { streamText, tool, stepCountIs } = await aiModule;
       const { anthropic } = await anthropicModule;
+      const { z } = await import('zod');
       res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
       const controller = new AbortController();
       let aborted = false;
       let streamed = '';
-      const result = streamText({ model: anthropic(model), messages, ...(system ? { system } : {}), abortSignal: controller.signal });
+      const writeEvent = event => res.write('\u0000' + JSON.stringify(event) + '\u0000');
+      const tools = {
+        'hello-world': tool({
+          description: 'Returns a hello world greeting.',
+          inputSchema: z.object({}),
+          execute: async () => { await new Promise(resolve => setTimeout(resolve, 1000)); return { content: 'Hello, World!', elapsed: 1000 }; },
+        }),
+      };
+      const result = streamText({ model: anthropic(model), messages, tools, stopWhen: stepCountIs(5), ...(system ? { system } : {}), abortSignal: controller.signal });
       res.on('close', () => { if (!res.writableFinished) { aborted = true; controller.abort(); } });
       try {
-        for await (const delta of result.textStream) { streamed += delta; res.write(delta); }
+        for await (const part of result.fullStream) {
+          if (part.type === 'text-delta') { const delta = part.text ?? part.textDelta ?? ''; streamed += delta; res.write(delta); }
+          else if (part.type === 'tool-call') writeEvent({ kind: 'tool-call', toolCallId: part.toolCallId, toolName: part.toolName });
+          else if (part.type === 'tool-result') writeEvent({ kind: 'tool-result', toolCallId: part.toolCallId, toolName: part.toolName, output: part.output });
+        }
       } catch (err) {
         if (!aborted) throw err;
       }

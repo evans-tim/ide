@@ -537,6 +537,18 @@
 - Opened mode is horizontally scrollable when its content has horizontal overflow.
 - The diff panel body area is unaffected by the submitted user message panel's no-internal-scroll and click-to-edit rules and continues to behave by its own mode rules; it is not a user message panel.
 
+**Tool calls**
+- A tool call appears in the conversation area alongside user message panels, assistant response messages, and diff panels, in chronological order like any other conversation item.
+- While a tool call is executing, it displays the text `calling {toolname}` with the same subtle looping shimmer used by the `Planning next moves` placeholder.
+- Once a tool call completes, it displays the text `called {toolname}` in a slightly de-emphasized foreground color, with no shimmer.
+- Hovering a tool call opens a tool-output modal containing the full output/response of the tool.
+- The tool-output modal spans the full width of the right panel.
+- The tool-output modal's top edge is flush with the bottom edge of the tool call text.
+- The tool-output modal has the same visual specifications (rounded corners, border, and shadow) as other similar right panel modals, but its contents have no interactive behavior.
+- The hover-opened tool-output modal closes when the tool call is no longer hovered.
+- Clicking a tool call opens the tool-output modal persistently, and it remains open until a click occurs outside it.
+- The tool call is unaffected by the submitted user message panel's click-to-edit rule and the diff panel's body-mode rules, and continues to behave by its own rules; it is neither a user message panel nor a diff panel.
+
 **Right panel spacing**
 - 12px padding between the right panel edges and the conversation/composer content on all sides.
 - 12px vertical gap between consecutive conversation items (user message panel, response text, composer).
