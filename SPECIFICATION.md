@@ -677,7 +677,10 @@
 - An added content line's row background is `rgb(228, 238, 233)`, spanning the line's full row height.
 - An added content line additionally displays a slim vertical bar of color `rgb(56, 136, 102)` positioned immediately to the right of the line-number gutter, with the bar's height equal to the line's row height.
 - Added-line decoration applies only when the mounted workspace directory is itself a git repository, by the same condition that governs file git status decoration; when the mounted workspace directory is not a git repository, no canvas line carries added-line decoration.
-- The line-number gutter, caret, caret-line highlight, and text selection are unaffected by added-line decoration and continue to behave by their own existing rules; the added-line background and bar are decoration drawn beneath them.
+- The line-number gutter, caret, and text selection are unaffected by added-line decoration and continue to behave by their own existing rules; the added-line background and bar are decoration drawn beneath them.
+- On an added content line that is also the caret line, the caret-line highlight is composited as a semi-transparent overlay over the added-line background rather than replacing it, so the two colors mix; with the added background `rgb(228, 238, 233)` and the highlight at 50% opacity, the resulting blended row color is `rgb(215, 225, 220)`.
+- The added-line green vertical bar and the line's text remain fully visible above the caret-line highlight overlay on an added caret line.
+- On a content line that is not added, the caret-line highlight continues to render as a solid background by its own existing rule and is unaffected by the added-line overlay compositing.
 
 **Line wrapping**
 - A content line whose rendered width exceeds the available canvas text width wraps onto one or more additional visual rows instead of scrolling horizontally.

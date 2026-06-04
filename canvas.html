@@ -222,7 +222,7 @@
   .vrow { display: block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); position: relative; z-index: 1; }
   .line.active { background: var(--list-inactiveSelectionBackground); color: var(--list-inactiveSelectionForeground); }
   body.focused .line.active { background: var(--list-activeSelectionBackground); color: var(--list-activeSelectionForeground); }
-  body .line.added.active, body.focused .line.added.active { background: rgb(228, 238, 233); color: inherit; }
+  body .line.added.active, body.focused .line.added.active { background: rgb(228, 238, 233) !important; color: inherit !important; }
   .line.added.active::after { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0; background: var(--list-inactiveSelectionBackground); opacity: 0.5; }
   body.focused .line.added.active::after { background: var(--list-activeSelectionBackground); }
   .selection { display: inline-block; height: var(--ide-line-height, 18px); line-height: var(--ide-line-height, 18px); background: var(--editor-selectionBackground, Highlight); color: var(--editor-selectionForeground, inherit); }
